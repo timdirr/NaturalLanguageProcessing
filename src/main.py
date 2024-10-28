@@ -12,7 +12,7 @@ def main():
 
     df_raw = load_raw_data()
     df_clean = clean_data(df_raw)
-    # raw_data_exploration.analyse_data(df_raw)
+    raw_data_exploration.analyse_data(df_raw)
     clean_data_exploration.analyse_data(df_clean)
     del df_raw
 
