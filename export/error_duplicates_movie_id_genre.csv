@@ -1,0 +1,109 @@
+movie_id,genre,number_different_values
+tt0014738,"[['Mystery, Romance'], ['Mystery']]",2
+tt14857720,"[['Fantasy, Romance, Sci-Fi'], ['Sci-Fi']]",2
+tt1911658,"[['Animation, Adventure, Comedy'], ['Animation, Action, Adventure'], ['Animation, Adventure, Comedy'], ['Animation, Adventure, Comedy']]",2
+tt19047064,"[['Animation, Adventure, Comedy'], ['Animation, Fantasy']]",2
+tt1854254,"[['Action, Romance'], ['Action']]",2
+tt1579718,"[['Action, Comedy, Romance'], ['Family']]",2
+tt15783458,"[['Animation, Adventure, Fantasy'], ['Adventure']]",2
+tt15755028,"[['Action, Drama, Romance'], ['Action, Drama']]",2
+tt15654262,"[['Crime, Romance, Thriller'], ['Crime, Mystery, Romance'], ['Crime, Romance, Thriller']]",2
+tt15464742,"[['Crime, Drama'], ['Crime, Drama, Romance']]",2
+tt15427980,"[['Action, Comedy, Drama'], ['Action, Drama']]",2
+tt15326988,"[['Action, Adventure, Comedy'], ['Action, Adventure, Romance'], ['Action, Adventure, Romance']]",2
+tt14864014,"[['Drama, Romance, Sport'], ['Crime, Horror, Sport']]",2
+tt14210968,"[['Comedy, Horror, Romance'], ['Adventure']]",2
+tt0015732,"[['Action, Adventure, Drama'], ['Action, Adventure, Romance'], ['Action, Adventure, Romance']]",2
+tt13642590,"[['Animation, Action, Adventure'], ['Animation, Mystery']]",2
+tt13281376,"[['Comedy, Horror, Sci-Fi'], ['Animation, Comedy, Horror'], ['Comedy, Horror, Sci-Fi']]",2
+tt12965390,"[['Action, Drama, Romance'], ['Action, Romance']]",2
+tt12758060,"[['Biography, Thriller'], ['Biography, Drama, History']]",2
+tt12712014,"[['Drama, Fantasy, Thriller'], ['Drama, Fantasy, Thriller'], ['Biography, Drama, Thriller']]",2
+tt10826352,"[['Action, Adventure, Comedy'], ['Action, Adventure, Sci-Fi'], ['Action, Adventure, Sci-Fi'], ['Action, Adventure, Sci-Fi']]",2
+tt10542800,"[['Drama, History, Romance'], ['Drama, Romance, War']]",2
+tt10524746,"[['Animation, Adventure, Comedy'], ['Animation, Adventure']]",2
+tt0455829,"[['Action, Crime, Thriller'], ['Action, Crime, Drama'], ['Action, Crime, Thriller'], ['Action, Crime, Thriller']]",2
+tt0432044,"[['Comedy, Drama, Romance'], ['Comedy, Drama, Family']]",2
+tt0301359,"[['Biography, Drama, History'], ['Adventure, Biography, Drama']]",2
+tt19413836,"[['Animation, Action, Comedy'], ['Animation, Action, Comedy'], ['Animation, Action, Adventure'], ['Animation, Action, Adventure']]",2
+tt20192230,"[['Animation, Action, Adventure'], ['Animation, Adventure, Sci-Fi'], ['Animation, Adventure, Sci-Fi']]",2
+tt20864716,"[['Animation, Family'], ['Animation, Family, Musical']]",2
+tt21153446,"[['Comedy, Drama, Romance'], ['Drama, Mystery, Thriller'], ['Drama, Mystery, Thriller']]",2
+tt9515914,"[['Action, Comedy, Romance'], ['Action, Comedy']]",2
+tt8353456,"[['Action, Adventure, Romance'], ['Action, Romance']]",2
+tt8353170,"[['Action, Comedy, Romance'], ['Action, Comedy']]",2
+tt8344320,"[['Action, Adventure, Romance'], ['Action, Romance']]",2
+tt7947604,"[['Drama, Romance, Sport'], ['Drama, Sport']]",2
+tt6578292,"[['Action, Drama, Romance'], ['Action']]",2
+tt6573736,"[['Action, Comedy, Romance'], ['Action, Comedy']]",2
+tt5879998,"[['Drama, Mystery, Romance'], ['Drama, Mystery']]",2
+tt4197476,"[['Action, Comedy, Romance'], ['Action']]",2
+tt3726682,"[['Animation, Drama, Fantasy'], ['Animation, Fantasy']]",2
+tt3477950,"[['Action, Crime, Drama'], ['Action, Drama']]",2
+tt3145768,"[['Drama, History'], ['Biography, Drama, History']]",2
+tt3079538,"[['Action, Comedy, Romance'], ['Action, Comedy']]",2
+tt2982036,"[['Action, Crime, Romance'], ['Action, Thriller'], ['Action, Thriller']]",2
+tt2690596,"[['Action, Drama, Romance'], ['Action, Drama']]",2
+tt2653132,"[['Action, Comedy, Romance'], ['Action, Comedy']]",2
+tt26475416,"[['Animation, Action, Adventure'], ['Animation, Adventure, Action'], ['Animation, Adventure, Action']]",2
+tt25049058,"[['Biography, Drama, History'], ['Adventure, Biography, History']]",2
+tt23985630,"[['Drama, Romance, Thriller'], ['Thriller']]",2
+tt21881904,"[['Romance, Thriller'], ['Thriller']]",2
+tt21879688,"[['Action, Romance, Thriller'], ['Action']]",2
+tt21434430,"[['Drama, History, Musical'], ['Crime, Drama, History'], ['Drama, History, Musical']]",2
+tt21205440,"[['Drama, Romance, Sci-Fi'], ['Drama, Sci-Fi']]",2
+tt0280637,"[['Horror, Romance, Thriller'], ['Drama, Horror, Mystery'], ['Horror, Romance, Thriller']]",2
+tt0277943,"[['Drama, Fantasy, Romance'], ['Fantasy, Romance']]",2
+tt0273676,"[['Drama, Family, Romance'], ['Family, Drama']]",2
+tt0045123,"[['Action, Drama, Romance'], ['Action, Romance, Western']]",2
+tt0043262,"[['Adventure, Drama, Romance'], ['Adventure, Romance, Western']]",2
+tt0041981,"[['Adventure, Drama, Romance'], ['Adventure, Romance, Western']]",2
+tt0038981,"[['Action, Drama, Music'], ['Action, Music, Romance']]",2
+tt0037241,"[['Action, Drama, Music'], ['Action, Music, Romance']]",2
+tt0036724,"[['Action, Drama, Music'], ['Action, Music, Romance'], ['Action, Music, Romance']]",2
+tt0032970,"[['Action, Drama, Music'], ['Action, Music, Romance']]",2
+tt0032923,"[['Action, Drama, Music'], ['Action, Music, Romance']]",2
+tt0031450,"[['Comedy, Crime, Film-Noir'], ['Comedy, Crime, Drama'], ['Comedy, Crime, Film-Noir']]",2
+tt0031220,"[['Action, Drama, Romance'], ['Action, Romance, Western']]",2
+tt0031190,"[['Action, Adventure, Drama'], ['Action, Adventure, Music'], ['Action, Adventure, Music']]",2
+tt0031110,"[['Action, Drama, Music'], ['Action, Music, Romance']]",2
+tt0030655,"[['Action, Drama, Music'], ['Action, Music, Romance'], ['Action, Music, Romance']]",2
+tt0030409,"[['Action, Drama, Music'], ['Action, Music, Romance']]",2
+tt0030147,"[['Action, Drama, Music'], ['Action, Music, Romance']]",2
+tt0029669,"[['Action, Drama, Romance'], ['Action, Romance, Western']]",2
+tt0029498,"[['Action, Comedy, Drama'], ['Action, Comedy, Music']]",2
+tt0029125,"[['Action, Drama, Romance'], ['Action, Romance, Western']]",2
+tt0026952,"[['Action, Adventure, Drama'], ['Action, Adventure, Music'], ['Action, Adventure, Music']]",2
+tt0026867,"[['Drama, Family, Music'], ['Family, Music, Romance'], ['Family, Music, Romance']]",2
+tt0025303,"[['Action, Drama, Music'], ['Action, Music, Romance']]",2
+tt0019711,"[['Action, Drama, Music'], ['Action, Music, Romance']]",2
+tt0016641,"[['Action, Adventure, Drama'], ['Adventure, Drama, Romance']]",2
+tt0016491,"[['Drama, Mystery, Romance'], ['Comedy, Drama, Family'], ['Comedy, Drama, Family'], ['Comedy, Drama, Family']]",2
+tt0044669,"[['Action, Adventure, Drama'], ['Action, Adventure, Mystery'], ['Action, Adventure, Mystery'], ['Action, Adventure, Mystery']]",2
+tt0045316,"[['Action, Adventure, Drama'], ['Action, Adventure, Romance'], ['Action, Adventure, Romance']]",2
+tt0271719,"[['Family, Adventure, Animation'], ['Animation, Adventure, Comedy'], ['Family, Adventure, Animation']]",2
+tt0046198,"[['History, Romance, Western'], ['Drama, History, Romance']]",2
+tt0235978,"[['Drama, Family, Romance'], ['Family, Drama']]",2
+tt0186997,"[['Comedy, Crime, Romance'], ['Action, Comedy, Romance']]",2
+tt0169607,"[['Action, Drama, Music'], ['Action, Music, Romance']]",2
+tt0122581,"[['Drama, Family, Romance'], ['Family']]",2
+tt0112609,"[['Comedy, Crime, Drama'], ['Adult, Comedy, Crime']]",2
+tt0108602,"[['Drama, History'], ['Crime, Drama, History']]",2
+tt0108333,"[['Action, Adventure, Romance'], ['Action, Adventure, Comedy'], ['Action, Adventure, Comedy'], ['Action, Adventure, Comedy']]",2
+tt0108069,"[['Animation, Adventure, Drama'], ['Animation, Adventure, Sci-Fi'], ['Animation, Adventure, Sci-Fi']]",2
+tt0102718,"[['Drama, Fantasy, Romance'], ['Mystery, Romance']]",2
+tt0098287,"[['Drama, History'], ['Biography, Drama, History']]",2
+tt0098194,"[['Action, Adventure, Romance'], ['Action, Adventure, Comedy'], ['Action, Adventure, Comedy']]",2
+tt0095619,"[['Biography, History'], ['Biography, Drama, History']]",2
+tt0095428,"[['Crime, Drama, Romance'], ['Adult, Crime, Drama'], ['Crime, Drama, Romance']]",2
+tt0093779,"[['Adventure, Comedy, Family'], ['Adventure, Family, Fantasy'], ['Adventure, Family, Fantasy'], ['Adventure, Family, Fantasy']]",2
+tt0060048,"[['Adventure, Drama, Romance'], ['Adventure, Romance, Western']]",2
+tt0053441,"[['Action, Drama, Romance'], ['Action, Romance, War'], ['Action, Romance, War']]",2
+tt0051438,"[['Crime, Romance, Western'], ['Crime, Drama, Romance']]",2
+tt0049933,"[['Biography, History, Western'], ['Biography, Drama, History']]",2
+tt0048056,"[['History, Romance, Western'], ['Drama, History, Romance']]",2
+tt0047400,"[['Action, Drama, Musical'], ['Action, Music, Romance']]",2
+tt0046547,"[['Action, Adventure, Drama'], ['Action, Adventure, Romance'], ['Action, Adventure, Romance']]",2
+tt0046532,"[['Drama, Romance, War'], ['Romance, War, Western']]",2
+tt0046294,"[['Adventure, Drama, Music'], ['Adventure, Music, Romance']]",2
+tt9815124,"[['Comedy, Family, Romance'], ['Comedy, Family']]",2
