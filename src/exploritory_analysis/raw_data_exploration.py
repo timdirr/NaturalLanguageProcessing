@@ -62,14 +62,14 @@ def plot_description_length(df: pd.DataFrame):
 
 def analyse_data(raw_data: pd.DataFrame):
     log.info('------------------------------------')
-    # check_valid_duplicates(raw_data, 'movie_id', 'genre')
-    # check_valid_duplicates(raw_data, 'movie_id', 'description')
-    # check_valid_duplicates(raw_data, 'movie_name', 'genre')
-    # check_valid_duplicates(raw_data, 'movie_name', 'description')
-    # check_valid_duplicates(raw_data, 'movie_name', 'movie_id')
+    check_valid_duplicates(raw_data, 'movie_id', 'genre')
+    check_valid_duplicates(raw_data, 'movie_id', 'description')
+    check_valid_duplicates(raw_data, 'movie_name', 'genre')
+    check_valid_duplicates(raw_data, 'movie_name', 'description')
+    check_valid_duplicates(raw_data, 'movie_name', 'movie_id')
 
     log.info(
         f'Number of rows with "See full summary" in description: {raw_data[raw_data['description'].str.contains(
             'See full summary')].shape[0]}')
 
-    # plot_description_length(raw_data)
+    plot_description_length(raw_data)
