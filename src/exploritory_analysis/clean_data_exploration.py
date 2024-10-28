@@ -6,7 +6,8 @@ import os
 
 
 def plot_genre_distribution(df: pd.DataFrame):
-    pass
+    log.info("Plotting genre distribution...")
+    genre_count = df['genre'].apply(lambda x: len(x))
 
 
 def analyse_data(df: pd.DataFrame):

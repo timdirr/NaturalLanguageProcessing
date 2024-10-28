@@ -27,7 +27,7 @@ def clean_data(df):
     })
 
     df_merged['genre'] = df_merged['genre'].apply(
-        lambda x: list(set(x.split(", "))))
+        lambda x: list(set([s.strip() for s in x.split(", ")])))
 
     log.info('Number of movies with more than 1 description: %s',
              df_merged[df_merged["description"].str.contains(';;')].shape[0])
@@ -37,11 +37,7 @@ def clean_data(df):
     log.info('Empty description rows: \n%s', empty_description_rows)
     df_merged.drop(empty_description_rows.index, inplace=True)
 
-    genres = np.array(list(itertools.chain(
-        *[genre.split(',') for genre in df_clean["genre"].unique()])))
-    strip = np.vectorize(lambda x: x.strip(' '))
-
-    genres = np.unique(strip(genres))
+    genres = np.sort(df_merged['genre'].explode().unique())
 
     def __encode_genres(genre):
         return np.isin(genres, genre).astype(int)
