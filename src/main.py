@@ -1,6 +1,6 @@
 from preprocess.dataloader import load_raw_data
 from preprocess.dataclean import clean_data
-from exploritory_analysis.explore import analyse_data
+import exploritory_analysis.raw_data_exploration as raw_data_exploration
 import logging
 
 
@@ -11,7 +11,7 @@ def main():
 
     df = load_raw_data()
     df_clean = clean_data(df)
-    analyse_data(df, df_clean)
+    raw_data_exploration.analyse_data(df)
     del df
 
 

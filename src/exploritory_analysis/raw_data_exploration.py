@@ -35,34 +35,41 @@ def check_valid_duplicates(df_og: pd.DataFrame, group_by: str, target: str):
         logging.info(f'No duplicate {group_by} with different {target} found.')
 
 
-def analyse_data(raw_data: pd.DataFrame, clean_data: pd.DataFrame):
-    logging.info('------------------------------------')
-    check_valid_duplicates(raw_data, 'movie_id', 'genre')
-    check_valid_duplicates(raw_data, 'movie_id', 'description')
-    check_valid_duplicates(raw_data, 'movie_name', 'genre')
-    check_valid_duplicates(raw_data, 'movie_name', 'description')
-    check_valid_duplicates(raw_data, 'movie_name', 'movie_id')
-
-    df = raw_data[raw_data['description'].str.contains(
-        'See full summary')].copy()
-    print(df.head())
-    print(df.shape)
-
-    raw_data['description_length'] = raw_data['description'].apply(
+def plot_description_length(df: pd.DataFrame):
+    logging.info('Plotting description length distribution...')
+    df['description_length'] = df['description'].apply(
         lambda x: len(x.split()))
     plt.figure(figsize=(12, 6))
-    plt.hist(raw_data['description_length'], bins=50, color='blue')
+    plt.hist(df['description_length'], bins=50, color='blue')
     plt.xlabel('Description Length (in words)')
     plt.ylabel('Frequency')
     plt.title('Description Length Distribution')
     plt.savefig(os.path.join('export', 'description_length_distribution.png'))
 
-    raw_data['description_length_char'] = raw_data['description'].apply(
+    df['description_length_char'] = df['description'].apply(
         lambda x: len(x))
     plt.figure(figsize=(12, 6))
-    plt.hist(raw_data['description_length_char'], bins=100, color='blue')
+    plt.hist(df['description_length_char'], bins=100, color='blue')
     plt.xlabel('Description Length (in characters)')
     plt.ylabel('Frequency')
     plt.title('Description Length Distribution')
     plt.savefig(os.path.join(
         'export', 'description_length_char_distribution.png'))
+
+    logging.info(
+        'Description length distribution plotted and saved in export folder.')
+
+
+def analyse_data(raw_data: pd.DataFrame):
+    logging.info('------------------------------------')
+    # check_valid_duplicates(raw_data, 'movie_id', 'genre')
+    # check_valid_duplicates(raw_data, 'movie_id', 'description')
+    # check_valid_duplicates(raw_data, 'movie_name', 'genre')
+    # check_valid_duplicates(raw_data, 'movie_name', 'description')
+    # check_valid_duplicates(raw_data, 'movie_name', 'movie_id')
+
+    logging.info(
+        f'Number of rows with "See full summary" in description: {raw_data[raw_data['description'].str.contains(
+            'See full summary')].shape[0]}')
+
+    # plot_description_length(raw_data)

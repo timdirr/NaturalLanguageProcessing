@@ -4,6 +4,16 @@ import logging
 
 USED_COLS = ["movie_id", "movie_name", "description", "genre"]
 
+counter = 0
+
+
+def description_cleaner(x):
+    x = set(x)
+    z = [d for d in x if d != 'Add a Plot']
+    if len(z) == 0:
+        return 'Add a Plot'
+    return ';;'.join(z)
+
 
 def clean_data(df):
     df_clean = df.copy()
@@ -13,11 +23,16 @@ def clean_data(df):
 
     df_merged = df_clean.groupby(["movie_id", "movie_name"], as_index=False).agg({
         "genre": lambda x: ', '.join(x.unique()),
-        "description": "first"
+        "description": lambda x: description_cleaner(x)
     })
 
-    df_merged.drop(df_merged[df_merged["description"]
-                   == 'Add a Plot'].index, inplace=True)
+    logging.info('Number of movies with more than 1 description: %s',
+                 df_merged[df_merged["description"].str.contains(';;')].shape[0])
+
+    empty_description_rows = df_merged[df_merged["description"]
+                                       == 'Add a Plot']
+    logging.info('Empty description rows: \n%s', empty_description_rows)
+    df_merged.drop(empty_description_rows.index, inplace=True)
 
     genres = np.array(list(itertools.chain(
         *[genre.split(',') for genre in df_clean["genre"].unique()])))
