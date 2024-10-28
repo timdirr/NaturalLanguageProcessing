@@ -1,7 +1,7 @@
 import glob
 import pandas as pd
 import os
-import logging
+import logging as log
 
 DATA_PATH = "data"
 
@@ -12,7 +12,7 @@ def __load_csv(filename):
 
 def load_raw_data():
     path = os.path.join(DATA_PATH, 'raw', "*.csv")
-    logging.info('Loading raw data from %s', path)
+    log.info('Loading raw data from %s', path)
 
     df = None
     for filename in glob.glob(path):
@@ -21,5 +21,5 @@ def load_raw_data():
         else:
             df = pd.concat([df, __load_csv(filename)],
                            axis=0, ignore_index=True)
-    logging.info('Raw data loaded: %s', df.shape)
+    log.info('Raw data loaded: %s', df.shape)
     return df

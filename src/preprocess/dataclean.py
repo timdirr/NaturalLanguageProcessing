@@ -1,6 +1,6 @@
 import itertools
 import numpy as np
-import logging
+import logging as log
 
 USED_COLS = ["movie_id", "movie_name", "description", "genre"]
 
@@ -26,12 +26,12 @@ def clean_data(df):
         "description": lambda x: description_cleaner(x)
     })
 
-    logging.info('Number of movies with more than 1 description: %s',
-                 df_merged[df_merged["description"].str.contains(';;')].shape[0])
+    log.info('Number of movies with more than 1 description: %s',
+             df_merged[df_merged["description"].str.contains(';;')].shape[0])
 
     empty_description_rows = df_merged[df_merged["description"]
                                        == 'Add a Plot']
-    logging.info('Empty description rows: \n%s', empty_description_rows)
+    log.info('Empty description rows: \n%s', empty_description_rows)
     df_merged.drop(empty_description_rows.index, inplace=True)
 
     genres = np.array(list(itertools.chain(
@@ -46,8 +46,8 @@ def clean_data(df):
     df_merged["encoded_genre"] = df_merged.apply(
         lambda x: __encode_genres(x["genre"]), axis=1)
 
-    logging.info('Genres: \n%s', genres)
-    logging.info('Shape: %s', df_clean.shape)
-    logging.info('Cleaned data: \n%s', df_clean.head())
+    log.info('Genres: \n%s', genres)
+    log.info('Shape: %s', df_clean.shape)
+    log.info('Cleaned data: \n%s', df_clean.head())
 
     return df_merged
