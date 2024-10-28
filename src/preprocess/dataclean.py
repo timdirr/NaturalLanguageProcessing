@@ -26,6 +26,9 @@ def clean_data(df):
         "description": lambda x: description_cleaner(x)
     })
 
+    df_merged['genre'] = df_merged['genre'].apply(
+        lambda x: list(set(x.split(", "))))
+
     log.info('Number of movies with more than 1 description: %s',
              df_merged[df_merged["description"].str.contains(';;')].shape[0])
 
