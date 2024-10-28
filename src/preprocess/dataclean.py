@@ -16,7 +16,8 @@ def clean_data(df):
         "description": "first"
     })
 
-    df_merged.drop(df[df["description"] == 'Add a Plot'].index, inplace=True)
+    df_merged.drop(df_merged[df_merged["description"]
+                   == 'Add a Plot'].index, inplace=True)
 
     genres = np.array(list(itertools.chain(
         *[genre.split(',') for genre in df_clean["genre"].unique()])))
