@@ -9,9 +9,11 @@ def main():
     log.basicConfig(level=log.INFO,
                     format='%(asctime)s: %(levelname)s: %(message)s',
                     datefmt='%Y-%m-%d %H:%M:%S')
-
+    output_path = "data/clean_data.csv"
     df_raw = load_raw_data()
     df_clean = clean_data(df_raw)
+    df_clean.to_csv(output_path, index=False, quoting=1)
+    log.info(f"Cleaned data saved to {output_path}")
     raw_data_exploration.analyse_data(df_raw)
     clean_data_exploration.analyse_data(df_clean)
     del df_raw

@@ -1,18 +1,21 @@
 import itertools
 import numpy as np
 import logging as log
+import re
 
 USED_COLS = ["movie_id", "movie_name", "description", "genre"]
 
 counter = 0
 
 
-def description_cleaner(x):
-    x = set(x)
-    z = [d for d in x if d != 'Add a Plot']
-    if len(z) == 0:
+def description_cleaner(descs):
+    # Remove duplicates, filter out 'Add a Plot', and select the longest description
+    descs = [desc for desc in set(descs) if desc != 'Add a Plot']
+    if not descs:
         return 'Add a Plot'
-    return ';;'.join(z)
+    # Select the longest description
+    longest_desc = max(descs, key=len)    
+    return longest_desc
 
 
 def clean_data(df):
@@ -37,6 +40,11 @@ def clean_data(df):
     log.info('Empty description rows: \n%s', empty_description_rows)
     df_merged.drop(empty_description_rows.index, inplace=True)
 
+    # Clean up descriptions in one go
+    df_merged['description'] = df_merged['description'].str.replace(
+        r'\.{3,} *See full (summary|synopsis) »$', '', regex=True
+    ).str.strip()
+    
     genres = np.sort(df_merged['genre'].explode().unique())
 
     def __encode_genres(genre):
