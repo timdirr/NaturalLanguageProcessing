@@ -8,7 +8,7 @@ from tqdm import tqdm
 from src.preprocess.imdb_crawler import IMDBCrawler
 
 
-USED_COLS = ["movie_id", "movie_name", "description", "genre"]
+USED_COLS = ["movie_id", "movie_name", "description", "genre", "year"]
 TEXT_LEN_CUTOFF = 25
 PATTERNS = [
     r'Add a Plot',
@@ -19,9 +19,11 @@ PATTERNS = [
     r'^no plot',
     r'\bTBA\b',
     r'^coming soon',
-    r'not available',
+    r'^(not available)|((plot|outline|details|story).*not available)',
+    r'^(not disclosed)|((plot|outline|details|story).*not disclosed)',
     r'(plot|story|synopsis).*unavailable'
 ]
+
 
 def description_separator(descs):
     # Remove duplicates, filter out 'Add a Plot', and select the longest description
@@ -36,13 +38,16 @@ def description_separator(descs):
 
 def description_cleaner(df, pattern):
     # Count matches
-    count_matches = df['description'].str.contains(pattern, na=False, case=False).sum()
+    count_matches = df['description'].str.contains(
+        pattern, na=False, case=False).sum()
 
     # Filter out matching rows
-    df_filtered = df[~df['description'].str.contains(pattern, na=False, case=False)]
+    df_filtered = df[~df['description'].str.contains(
+        pattern, na=False, case=False)]
 
     # Log the count of matches
-    log.info('Matched descriptions for pattern "%s": %d', pattern, count_matches)
+    log.info('Matched descriptions for pattern "%s": %d',
+             pattern, count_matches)
 
     return df_filtered, count_matches
 
@@ -56,6 +61,7 @@ def clean_data(df, save_intermediate=False):
     tqdm.pandas()
 
     df_merged = df_clean.groupby(["movie_id", "movie_name"], as_index=False).agg({
+        "year": "first",
         "genre": lambda x: ', '.join(x.unique()),
         "description": lambda x: description_separator(x)
     })
