@@ -1,6 +1,5 @@
 from preprocess.dataloader import load_raw_data
 from preprocess.dataclean import clean_data
-
 import exploritory_analysis.raw_data_exploration as raw_data_exploration
 import exploritory_analysis.clean_data_exploration as clean_data_exploration
 import logging as log
@@ -27,4 +26,4 @@ def main():
 if __name__ == '__main__':
     main()
 
-#%%
+# %%
