@@ -2,6 +2,11 @@ import itertools
 import numpy as np
 import logging as log
 
+from tqdm import tqdm
+
+from src.preprocess.imdb_crawler import IMDBCrawler
+
+
 USED_COLS = ["movie_id", "movie_name", "description", "genre"]
 
 counter = 0
@@ -15,22 +20,31 @@ def description_cleaner(x):
     return ';;'.join(z)
 
 
-def clean_data(df):
+def clean_data(df, save_intermediate=False):
     df_clean = df.copy()
 
     df_clean = df_clean[USED_COLS]
     df_clean.dropna(inplace=True)
+
+    tqdm.pandas()
 
     df_merged = df_clean.groupby(["movie_id", "movie_name"], as_index=False).agg({
         "genre": lambda x: ', '.join(x.unique()),
         "description": lambda x: description_cleaner(x)
     })
 
-    df_merged['genre'] = df_merged['genre'].apply(
+    df_merged['genre'] = df_merged['genre'].progress_apply(
         lambda x: np.sort(list(set([s.strip() for s in x.split(", ")]))))
 
     log.info('Number of movies with more than 1 description: %s',
              df_merged[df_merged["description"].str.contains(';;')].shape[0])
+
+    if save_intermediate:
+        # TODO: implement save of merged file which is needed for crawler
+        pass
+
+    # TODO: add method that merged crawled data with df_merged
+    # call_method_that_does_this_inplace()
 
     empty_description_rows = df_merged[df_merged["description"]
                                        == 'Add a Plot']

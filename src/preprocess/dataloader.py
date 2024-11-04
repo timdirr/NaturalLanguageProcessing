@@ -3,7 +3,7 @@ import pandas as pd
 import os
 import logging as log
 
-DATA_PATH = "data"
+DATA_PATH = "../data"
 
 
 def __load_csv(filename):
