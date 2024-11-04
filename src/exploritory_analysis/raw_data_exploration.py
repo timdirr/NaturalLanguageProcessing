@@ -6,7 +6,8 @@ import os
 
 
 def check_valid_duplicates(df_og: pd.DataFrame, group_by: str, target: str):
-    log.info(f'Checking duplicates for {group_by} with different {target}...')
+    log.info(f"""Checking duplicates for {
+        group_by} with different {target}...""")
 
     df = df_og.copy()
     df.set_index(group_by, inplace=True)
@@ -67,6 +68,8 @@ def analyse_data(raw_data: pd.DataFrame):
     check_valid_duplicates(raw_data, 'movie_name', 'description')
     check_valid_duplicates(raw_data, 'movie_name', 'movie_id')
 
-    log.info(f'Number of rows with "See full summary" in description: {raw_data[raw_data["description"].str.contains("See full summary")].shape[0]}')
+    log.info(
+        f"""Number of rows with "See full summary" in description: {raw_data[raw_data['description'].str.contains(
+            'See full summary')].shape[0]}""")
 
     plot_description_length(raw_data)
