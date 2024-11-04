@@ -4,47 +4,71 @@ import logging as log
 import re
 
 USED_COLS = ["movie_id", "movie_name", "description", "genre"]
+TEXT_LEN_CUTOFF = 25
+PATTERNS = [
+    r'Add a Plot',
+    r'\bunder wrap',
+    r'plot.*unknown',
+    r'plot.*undisclosed',
+    r'in development',
+    r'^no plot',
+    r'\bTBA\b',
+    r'^coming soon',
+    r'not available',
+    r'(plot|story|synopsis).*unavailable'
+]
 
-counter = 0
-
-
-def description_cleaner(descs):
+def description_separator(descs):
     # Remove duplicates, filter out 'Add a Plot', and select the longest description
     descs = [desc for desc in set(descs) if desc != 'Add a Plot']
     if not descs:
         return 'Add a Plot'
+
     # Select the longest description
-    longest_desc = max(descs, key=len)    
+    longest_desc = max(descs, key=len)
     return longest_desc
+
+
+def description_cleaner(df, pattern):
+    # Count matches
+    count_matches = df['description'].str.contains(pattern, na=False, case=False).sum()
+    
+    # Filter out matching rows
+    df_filtered = df[~df['description'].str.contains(pattern, na=False, case=False)]
+    
+    # Log the count of matches
+    log.info('Matched descriptions for pattern "%s": %d', pattern, count_matches)
+    
+    return df_filtered, count_matches
 
 
 def clean_data(df):
     df_clean = df.copy()
 
     df_clean = df_clean[USED_COLS]
-    df_clean.dropna(inplace=True)
+    # df_clean.dropna(inplace=True)
 
     df_merged = df_clean.groupby(["movie_id", "movie_name"], as_index=False).agg({
         "genre": lambda x: ', '.join(x.unique()),
-        "description": lambda x: description_cleaner(x)
+        "description": lambda x: description_separator(x)
     })
 
     df_merged['genre'] = df_merged['genre'].apply(
         lambda x: np.sort(list(set([s.strip() for s in x.split(", ")]))))
 
-    log.info('Number of movies with more than 1 description: %s',
-             df_merged[df_merged["description"].str.contains(';;')].shape[0])
+    total_missing_count = 0
+    # Get rid of incomplete or unwanted descriptions
+    for pattern in PATTERNS:
+        df_merged, count = description_cleaner(df_merged, pattern)
+        total_missing_count += count
 
-    empty_description_rows = df_merged[df_merged["description"]
-                                       == 'Add a Plot']
-    log.info('Empty description rows: \n%s', empty_description_rows)
-    df_merged.drop(empty_description_rows.index, inplace=True)
+    log.info('Missing description rows: \n%s', total_missing_count)
 
-    # Clean up descriptions in one go
+    # Clean up the end of descriptions in one go
     df_merged['description'] = df_merged['description'].str.replace(
         r'\.{3,} *See full (summary|synopsis) »$', '', regex=True
     ).str.strip()
-    
+
     genres = np.sort(df_merged['genre'].explode().unique())
 
     def __encode_genres(genre):
