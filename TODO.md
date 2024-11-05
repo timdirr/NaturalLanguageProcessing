@@ -12,7 +12,7 @@
 
 -   [x] Analyse after preprocessing: Word Count? Are there some description with only a few words? Stuff like this. (Sebastian)
 
-- [ ] add wordcloud
+-   [ ] add wordcloud
 
 -   [ ] Description in README of what has been done (at the end, in the final meeting, which also be kick-up for Milestone 2)
 
