@@ -3,7 +3,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import logging as log
 import os
-import matplotlib
+
+from exploritory_analysis.description_exploration import plot_description_length
 
 
 def plot_genre_distribution(df: pd.DataFrame):
@@ -23,9 +24,6 @@ def plot_genre_distribution(df: pd.DataFrame):
 
     plt.savefig(os.path.join('export', 'genre_distribution.png'))
     log.info("Genre distribution plotted and saved in export folder.")
-
-    log.info("Genre count:")
-    log.info(genre_count)
 
 
 def plot_cooccurrence_matrix(df: pd.DataFrame):
@@ -52,9 +50,6 @@ def plot_cooccurrence_matrix(df: pd.DataFrame):
     plt.title("Genre Co-occurrence Matrix")
     plt.savefig(os.path.join('export', 'cooccurrence_matrix.png'))
     log.info("Co-occurrence matrix plotted and saved in export folder.")
-
-    log.info("Co-occurrence matrix:")
-    log.info(cooccurrence_matrix)
 
 
 def plot_most_frequent_combinations(df: pd.DataFrame):
@@ -87,3 +82,4 @@ def analyse_data(df: pd.DataFrame):
     plot_genre_distribution(df)
     plot_cooccurrence_matrix(df)
     plot_most_frequent_combinations(df)
+    plot_description_length(df, True)

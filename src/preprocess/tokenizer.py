@@ -6,13 +6,14 @@ import nltk
 import re
 import os
 
-OUTPUT_FILE = "data/conllu_data.conllu"
+DATA_PTH = "data"
+OUTPUT_FILE = os.path.join(DATA_PTH, "conllu_data.conllu")
 N = 1000
 BATCH_SIZE = 1000
 
 
 def tokenize():
-    df = pd.read_csv("data/clean_data.csv")
+    df = pd.read_csv(os.path.join(DATA_PTH, "clean_data.csv"))
     nlp = stanza.Pipeline('en', processors='tokenize,lemma,pos', verbose=False)
     # Download stopwords from nltk if not already downloaded
     nltk.download('stopwords')
@@ -69,12 +70,12 @@ def tokenize():
         conllu_batch.append(conllu_str)
 
         if i % BATCH_SIZE == 0:
-            with open("data/conllu_data.conllu", "a") as f:
+            with open(OUTPUT_FILE, "a") as f:
                 f.writelines(conllu_batch)
 
             conllu_batch = []
 
     # Remaining rows if the final batch was less than 1k
     if conllu_batch:
-        with open("data/conllu_data.conllu", "a") as f:
+        with open(OUTPUT_FILE, "a") as f:
             f.writelines(conllu_batch)
