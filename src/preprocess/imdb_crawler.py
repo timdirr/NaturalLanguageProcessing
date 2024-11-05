@@ -11,7 +11,9 @@ from tqdm import tqdm
 from imdb import Cinemagoer
 
 # TODO: revert to crawl/ after debugging
-CRAWL_FOLDER = "../crawl/"
+CRAWL_FOLDER = "crawl/"
+
+
 class IMDBCrawler():
     def __init__(self, df):
         self.ids = self.__filter_crawl_ids(df)
@@ -19,7 +21,8 @@ class IMDBCrawler():
         self.lock = threading.Lock()
 
     def __filter_crawl_ids(self, df):
-        ids = df[df["description"].str.contains("See full summary") | df["description"].str.contains("Add a Plot")]["movie_id"].unique()
+        ids = df[df["description"].str.contains(
+            "See full summary") | df["description"].str.contains("Add a Plot")]["movie_id"].unique()
         return ids
 
     def __find_current_file(self):
@@ -57,11 +60,13 @@ class IMDBCrawler():
                 crawled_movies = self.__find_current_file()
                 crawled_df = pd.read_csv(f'{CRAWL_FOLDER}{crawled_movies}')
 
-                missing_ids = np.setdiff1d(np.array(self.ids), crawled_df[~pd.isna(crawled_df["plots"])]['ids'].unique(), assume_unique=True)
+                missing_ids = np.setdiff1d(np.array(self.ids), crawled_df[~pd.isna(
+                    crawled_df["plots"])]['ids'].unique(), assume_unique=True)
                 current_crawl += 1
         else:
             crawled_df = pd.read_csv('../crawl/' + file)
-            missing_ids = np.setdiff1d(np.array(self.ids), crawled_df[~pd.isna(crawled_df["plots"])]['ids'].unique(), assume_unique=True)
+            missing_ids = np.setdiff1d(np.array(self.ids), crawled_df[~pd.isna(
+                crawled_df["plots"])]['ids'].unique(), assume_unique=True)
 
             current_crawl = 1
             while len(missing_ids) > 0 or max_crawl_iter < current_crawl:
@@ -71,9 +76,9 @@ class IMDBCrawler():
                 crawled_movies = self.__find_current_file()
                 crawled_df = pd.read_csv(f'{CRAWL_FOLDER}{crawled_movies}')
 
-                missing_ids = np.setdiff1d(np.array(self.ids), crawled_df[~pd.isna(crawled_df["plots"])]['ids'].unique(), assume_unique=True)
+                missing_ids = np.setdiff1d(np.array(self.ids), crawled_df[~pd.isna(
+                    crawled_df["plots"])]['ids'].unique(), assume_unique=True)
                 current_crawl += 1
-
 
     def __crawl(self, missing_ids, dir):
         # Shared lists to store results
@@ -93,17 +98,17 @@ class IMDBCrawler():
 
                     if len(ids) % 1000 == 0:
                         df = pd.DataFrame({'ids': ids, 'plots': plots})
-                        df.to_csv(os.path.join(os.getcwd(), f'{dir}crawled{len(ids)}.csv'), index=False)
+                        df.to_csv(os.path.join(os.getcwd(), f'{
+                                  dir}crawled{len(ids)}.csv'), index=False)
             except Exception:
                 pass
 
         with concurrent.futures.ThreadPoolExecutor(max_workers=3) as executor:
-            list(tqdm(executor.map(process_movie, missing_ids), total=len(missing_ids), desc="Crawling movies"))
+            list(tqdm(executor.map(process_movie, missing_ids),
+                 total=len(missing_ids), desc="Crawling movies"))
 
         df_final = pd.DataFrame({'ids': ids, 'plots': plots})
-        df_final.to_csv(os.path.join(os.getcwd(), f'{dir}crawled_complete.csv'), index=False)
+        df_final.to_csv(os.path.join(
+            os.getcwd(), f'{dir}crawled_complete.csv'), index=False)
 
         return df_final
-
-
-

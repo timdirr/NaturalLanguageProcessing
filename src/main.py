@@ -3,6 +3,7 @@ from preprocess.dataclean import clean_data
 import exploritory_analysis.raw_data_exploration as raw_data_exploration
 import exploritory_analysis.clean_data_exploration as clean_data_exploration
 import logging as log
+import os
 
 
 def main():
@@ -10,7 +11,7 @@ def main():
                     format='%(asctime)s: %(levelname)s: %(message)s',
                     datefmt='%Y-%m-%d %H:%M:%S')
 
-    output_path = "data/clean_data.csv"
+    output_path = os.path.join("data", "clean_data.csv")
     # TODO: add command line arguments to main to enable crawling of IMDB api
     # TODO: add command line arguments to main to enable storage of intermediate files needed crawler.
     df_raw = load_raw_data()
@@ -25,5 +26,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-# %%
