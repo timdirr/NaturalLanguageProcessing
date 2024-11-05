@@ -10,8 +10,7 @@ import numpy as np
 from tqdm import tqdm
 from imdb import Cinemagoer
 
-# TODO: revert to crawl/ after debugging
-CRAWL_FOLDER = "crawl/"
+CRAWL_FOLDER = "crawl"
 
 
 class IMDBCrawler():
@@ -26,8 +25,9 @@ class IMDBCrawler():
         return ids
 
     def __find_current_file(self):
-        if os.path.exists(f"{CRAWL_FOLDER}crawled_complete.csv"):
-            return f"{CRAWL_FOLDER}crawled_complete.csv"
+        path = os.path.join(CRAWL_FOLDER, "crawled_complete.csv")
+        if os.path.exists(path):
+            return path
 
         # TODO: find the highest file in the highest crawl iter/ folder
         pattern = re.compile(r"crawled(\d+)\.csv")
@@ -35,7 +35,7 @@ class IMDBCrawler():
         largest_file = None
 
         # TODO: remove after debugging
-        for file_path in glob.glob(f"../crawl/crawled*.csv"):
+        for file_path in glob.glob(os.path.join("crawl", "crawled*.csv")):
             file_name = os.path.basename(file_path)
             match = pattern.match(file_name)
             if match:
@@ -54,11 +54,12 @@ class IMDBCrawler():
             missing_ids = self.ids
             current_crawl = 1
             while len(missing_ids) > 0 or max_crawl_iter < current_crawl:
-                os.mkdir(f"crawl/iter{current_crawl}")
-                crawl_dir = f"crawl/iter{current_crawl}/"
+                crawl_dir = os.path.join("crawl", "iter{current_crawl}")
+                os.mkdir(crawl_dir)
                 self.__crawl(missing_ids, crawl_dir)
                 crawled_movies = self.__find_current_file()
-                crawled_df = pd.read_csv(f'{CRAWL_FOLDER}{crawled_movies}')
+                crawled_df = pd.read_csv(
+                    os.path.join(CRAWL_FOLDER, crawled_movies))
 
                 missing_ids = np.setdiff1d(np.array(self.ids), crawled_df[~pd.isna(
                     crawled_df["plots"])]['ids'].unique(), assume_unique=True)
@@ -70,11 +71,12 @@ class IMDBCrawler():
 
             current_crawl = 1
             while len(missing_ids) > 0 or max_crawl_iter < current_crawl:
-                crawl_dir = f"{CRAWL_FOLDER}/iter{current_crawl}/"
+                crawl_dir = os.path.join(CRAWL_FOLDER, "iter{current_crawl}")
                 os.mkdir(crawl_dir)
                 self.__crawl(missing_ids, crawl_dir)
                 crawled_movies = self.__find_current_file()
-                crawled_df = pd.read_csv(f'{CRAWL_FOLDER}{crawled_movies}')
+                crawled_df = pd.read_csv(
+                    os.path.join(CRAWL_FOLDER, crawled_movies))
 
                 missing_ids = np.setdiff1d(np.array(self.ids), crawled_df[~pd.isna(
                     crawled_df["plots"])]['ids'].unique(), assume_unique=True)
@@ -98,8 +100,8 @@ class IMDBCrawler():
 
                     if len(ids) % 1000 == 0:
                         df = pd.DataFrame({'ids': ids, 'plots': plots})
-                        df.to_csv(os.path.join(os.getcwd(), f'{
-                                  dir}crawled{len(ids)}.csv'), index=False)
+                        df.to_csv(os.path.join(os.getcwd(), dir,
+                                  f'crawled{len(ids)}.csv'), index=False)
             except Exception:
                 pass
 
@@ -109,6 +111,6 @@ class IMDBCrawler():
 
         df_final = pd.DataFrame({'ids': ids, 'plots': plots})
         df_final.to_csv(os.path.join(
-            os.getcwd(), f'{dir}crawled_complete.csv'), index=False)
+            os.getcwd(), dir, 'crawled_complete.csv'), index=False)
 
         return df_final

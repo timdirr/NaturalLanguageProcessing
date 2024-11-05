@@ -12,7 +12,8 @@ from tqdm import tqdm
 DATA_PATH = "data"
 CRAWL_DATA_PATH = os.path.join(DATA_PATH, 'crawl_data.csv')
 # Genres that have very little cardinality
-EXCLUDED_GENRES = ["Reality-TV", "News", "Adult", "Talk-Show", "Game-Show", "Short"]
+EXCLUDED_GENRES = ["Reality-TV", "News",
+                   "Adult", "Talk-Show", "Game-Show", "Short"]
 USED_COLS = ["movie_id", "movie_name", "description", "genre"]
 TEXT_LEN_CUTOFF = 25  # Remove short descriptions?
 PATTERNS = [
@@ -31,7 +32,7 @@ PATTERNS = [
 
 
 def merge_with_crawl_data(df_merged):
-    df_crawl = pd.read_csv("data/crawl_data.csv").dropna()
+    df_crawl = pd.read_csv(os.path.join("data", "crawl_data.csv")).dropna()
 
     # Merging df1 and df2 on 'movie_id' to bring in descriptions from df2
     merged_df = df_merged.merge(
@@ -79,8 +80,9 @@ def clean_data(df, save_intermediate=False):
 
     df_clean = df_clean[USED_COLS]
     df_clean.dropna(inplace=True)
-    df_clean = df_clean[~df_clean['genre'].str.contains('|'.join(EXCLUDED_GENRES), case=False, na=False)]
-    
+    df_clean = df_clean[~df_clean['genre'].str.contains(
+        '|'.join(EXCLUDED_GENRES), case=False, na=False)]
+
     tqdm.pandas()
 
     df_merged = df_clean.groupby(["movie_id", "movie_name"], as_index=False).agg({
