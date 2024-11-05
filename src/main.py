@@ -7,6 +7,7 @@ import logging as log
 import os
 
 OUTPUT_PTH = os.path.join("data", "clean_data.csv")
+DATA_EXPLORATION = True
 
 
 def main():
@@ -19,10 +20,11 @@ def main():
     df_raw = load_raw_data()
     df_clean = clean_data(df_raw)
     df_clean.to_csv(OUTPUT_PTH, index=False, quoting=1)
-
     log.info(f"Cleaned data saved to {OUTPUT_PTH}")
-    raw_data_exploration.analyse_data(df_raw)
-    clean_data_exploration.analyse_data(df_clean)
+
+    if DATA_EXPLORATION:
+        raw_data_exploration.analyse_data(df_raw)
+        clean_data_exploration.analyse_data(df_clean)
 
     del df_raw
 
