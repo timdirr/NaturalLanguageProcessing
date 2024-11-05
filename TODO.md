@@ -8,10 +8,12 @@
 
 -   [ ] Preprocessing: tokenization, "normalization": Stopword removal, lemmatization (Daniel)
 
--   [ ] Save processed data in CoNLL-U format (Daniel/Sebastian)
+-   [x] Save processed data in CoNLL-U format (Daniel/Sebastian)
 
--   [ ] Analyse after preprocessing: Word Count? Wordcloud per genre? Are there some description with only a few words? Stuff like this. (Sebastian)
+-   [x] Analyse after preprocessing: Word Count? Are there some description with only a few words? Stuff like this. (Sebastian)
+
+- [ ] add wordcloud
 
 -   [ ] Description in README of what has been done (at the end, in the final meeting, which also be kick-up for Milestone 2)
 
--   [ ] MORE COMMENTS (All)
+-   [x] MORE COMMENTS (All)
