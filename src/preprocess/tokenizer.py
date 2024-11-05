@@ -4,6 +4,7 @@ from nltk.corpus import stopwords
 from collections import Counter
 import nltk
 import re
+from tqdm import tqdm
 import os
 
 DATA_PTH = "data"
@@ -13,8 +14,10 @@ BATCH_SIZE = 1000
 
 
 def tokenize():
+    stanza.download('en')
     df = pd.read_csv(os.path.join(DATA_PTH, "clean_data.csv"))
-    nlp = stanza.Pipeline('en', processors='tokenize,lemma,pos', verbose=False)
+    nlp = stanza.Pipeline(
+        'en', processors='tokenize,lemma,pos', verbose=True, use_gpu=True)
     # Download stopwords from nltk if not already downloaded
     nltk.download('stopwords')
     stanza.download('en')
@@ -26,13 +29,13 @@ def tokenize():
     # Tokenize and lemmatize descriptions, and gather words for stopword extension
     all_words = []
 
-    for desc in df_first_N['description']:
+    for desc in tqdm(df_first_N['description']):
         doc = nlp(desc)
         # Collect lemmas of all words
         all_words.extend(
             word.lemma.lower()
             for sentence in doc.sentences for word in sentence.words
-            if re.match('\w', word.lemma)  # Only words (no punctuation)
+            if re.match('\\w', word.lemma)  # Only words (no punctuation)
         )
 
     # n most common words to add to stopwords
@@ -58,7 +61,7 @@ def tokenize():
     if os.path.exists(OUTPUT_FILE):
         os.remove(OUTPUT_FILE)
 
-    for i, row in enumerate(df_first_N.itertuples(index=True, name='Row'), start=1):
+    for i, row in tqdm(enumerate(df_first_N.itertuples(index=True, name='Row'), start=1)):
         doc = nlp(row.description)
 
         # Create the CoNLL-U formatted header for the row
