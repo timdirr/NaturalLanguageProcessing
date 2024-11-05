@@ -4,7 +4,7 @@
 
 -   [x] Movies that have two descriptions and one of them is "Add a plot": need to choose the other one
 
--   [ ] Analyse the dataset AFTER the merge: What is the distribution of genres? How are the co-occurances between genres distributed? Do we have severe class imbalance in genres? What is the distribution in length of the descriptions? (Filip + Tim)
+-   [x] Analyse the dataset AFTER the merge: What is the distribution of genres? How are the co-occurances between genres distributed? Do we have severe class imbalance in genres? What is the distribution in length of the descriptions? (Filip + Tim)
 
 -   [ ] Preprocessing: tokenization, "normalization": Stopword removal, lemmatization (Daniel)
 
