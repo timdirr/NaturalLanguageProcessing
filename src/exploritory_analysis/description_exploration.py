@@ -16,12 +16,13 @@ def plot_description_length(df: pd.DataFrame, cleaned: bool = False):
     plt.hist(df['description_length'], bins=80, color='blue', range=(0, 400))
     plt.xlabel('Description Length (in words)')
     plt.ylabel('Frequency')
-    plt.title('Description Length Distribution')
 
     if cleaned:
+        plt.title('Description Length Distribution (Cleaned)')
         plt.savefig(os.path.join(
             'export', 'description_length_distribution_cleaned.png'))
     else:
+        plt.title('Description Length Distribution (Raw)')
         plt.savefig(os.path.join(
             'export', 'description_length_distribution_raw.png'))
 
@@ -32,17 +33,16 @@ def plot_description_length(df: pd.DataFrame, cleaned: bool = False):
              bins=200, color='blue', range=(0, 2000))
     plt.xlabel('Description Length (in characters)')
     plt.ylabel('Frequency')
-    plt.title('Description Length Distribution')
-    if cleaned:
-        plt.savefig(os.path.join(
-            'export', 'description_length_char_distribution_cleaned.png'))
-    else:
-        plt.savefig(os.path.join(
-            'export', 'description_length_char_distribution_raw.png'))
 
     if cleaned:
+        plt.title('Description Length Distribution (Cleaned)')
+        plt.savefig(os.path.join(
+            'export', 'description_length_char_distribution_cleaned.png'))
         log.info(
             'Cleaned description length distribution plotted and saved in export folder.')
     else:
+        plt.savefig(os.path.join(
+            'export', 'description_length_char_distribution_raw.png'))
+        plt.title('Description Length Distribution (Raw)')
         log.info(
             'Raw description length distribution plotted and saved in export folder.')
