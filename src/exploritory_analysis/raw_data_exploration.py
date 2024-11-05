@@ -3,6 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import logging as log
 import os
+from exploritory_analysis.description_exploration import plot_description_length
 
 
 def check_valid_duplicates(df_og: pd.DataFrame, group_by: str, target: str):
@@ -24,40 +25,13 @@ def check_valid_duplicates(df_og: pd.DataFrame, group_by: str, target: str):
         by='number_different_values', ascending=False, inplace=True)
 
     if len(error_duplicates) > 0:
-        log.info(f'Duplicate {group_by} with different {target}:')
-        log.info(f'\n {error_duplicates}')
-        log.info(f'Total: {len(error_duplicates)}')
         # export dataframe to csv
         error_duplicates.to_csv(
             os.path.join('export', f'error_duplicates_{group_by}_{target}.csv'), index=True)
-
+        log.info(f'Error duplicates found and saved in export folder (Length: {
+                 len(error_duplicates)}).')
     else:
         log.info(f'No duplicate {group_by} with different {target} found.')
-
-
-def plot_description_length(df: pd.DataFrame):
-    log.info('Plotting description length distribution...')
-    df['description_length'] = df['description'].apply(
-        lambda x: len(x.split()))
-    plt.figure(figsize=(12, 6))
-    plt.hist(df['description_length'], bins=50, color='blue')
-    plt.xlabel('Description Length (in words)')
-    plt.ylabel('Frequency')
-    plt.title('Description Length Distribution')
-    plt.savefig(os.path.join('export', 'description_length_distribution.png'))
-
-    df['description_length_char'] = df['description'].apply(
-        lambda x: len(x))
-    plt.figure(figsize=(12, 6))
-    plt.hist(df['description_length_char'], bins=100, color='blue')
-    plt.xlabel('Description Length (in characters)')
-    plt.ylabel('Frequency')
-    plt.title('Description Length Distribution')
-    plt.savefig(os.path.join(
-        'export', 'description_length_char_distribution.png'))
-
-    log.info(
-        'Description length distribution plotted and saved in export folder.')
 
 
 def analyse_data(raw_data: pd.DataFrame):
