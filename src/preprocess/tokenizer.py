@@ -13,7 +13,7 @@ BATCH_SIZE = 1000
 
 
 def tokenize():
-    df = pd.read_csv(DATA_PTH, "clean_data.csv")
+    df = pd.read_csv(os.path.join(DATA_PTH, "clean_data.csv"))
     nlp = stanza.Pipeline('en', processors='tokenize,lemma,pos', verbose=False)
     # Download stopwords from nltk if not already downloaded
     nltk.download('stopwords')
