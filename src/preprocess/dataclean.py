@@ -31,11 +31,18 @@ PATTERNS = [
 ]
 
 
-def merge_with_crawl_data(df_merged):
-    df_crawl = pd.read_csv(os.path.join("data", "crawl_data.csv")).dropna()
+def merge_with_crawl_data(df: pd.DataFrame) -> pd.DataFrame:
+    log.info('Merging with crawl data')
+    log.info('Crawl data path: %s', CRAWL_DATA_PATH)
+    log.info('Original data shape: %s', df.shape)
+    df_crawl = pd.read_csv(os.path.join("data", "crawl_data.csv")).dropna(
+    ).drop_duplicates(subset='ids', keep='first')
+    log.info('Crawl data shape: %s', df_crawl.shape)
+    df_crawl.rename(columns={'ids': 'movie_id',
+                    'plots': 'description_new'}, inplace=True)
 
     # Merging df1 and df2 on 'movie_id' to bring in descriptions from df2
-    merged_df = df_merged.merge(
+    merged_df = df.merge(
         df_crawl, on='movie_id', how='left', suffixes=('', '_new'))
 
     # Replacing 'description' in df1 with 'description_new' from df2 where it exists
@@ -45,6 +52,7 @@ def merge_with_crawl_data(df_merged):
     # Dropping the temporary 'description_new' column
     merged_df = merged_df.drop(columns=['description_new'])
 
+    log.info('Merged data shape: %s', merged_df.shape)
     return merged_df
 
 
