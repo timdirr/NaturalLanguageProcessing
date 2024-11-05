@@ -16,6 +16,7 @@ def tokenize():
     nlp = stanza.Pipeline('en', processors='tokenize,lemma,pos', verbose=False)
     # Download stopwords from nltk if not already downloaded
     nltk.download('stopwords')
+    stanza.download('en')
     stop_words = set(stopwords.words('english'))
 
     conllu_batch = []
