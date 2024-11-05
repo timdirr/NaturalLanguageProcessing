@@ -12,7 +12,8 @@ from tqdm import tqdm
 DATA_PATH = "data"
 CRAWL_DATA_PATH = os.path.join(DATA_PATH, 'crawl_data.csv')
 # Genres that have very little cardinality
-EXCLUDED_GENRES = ["Reality-TV", "News", "Adult", "Talk-Show", "Game-Show", "Short"]
+EXCLUDED_GENRES = ["Reality-TV", "News",
+                   "Adult", "Talk-Show", "Game-Show", "Short"]
 USED_COLS = ["movie_id", "movie_name", "description", "genre"]
 TEXT_LEN_CUTOFF = 25  # Remove short descriptions?
 PATTERNS = [
@@ -30,11 +31,18 @@ PATTERNS = [
 ]
 
 
-def merge_with_crawl_data(df_merged):
-    df_crawl = pd.read_csv("data/crawl_data.csv").dropna()
+def merge_with_crawl_data(df: pd.DataFrame) -> pd.DataFrame:
+    log.info('Merging with crawl data')
+    log.info('Crawl data path: %s', CRAWL_DATA_PATH)
+    log.info('Original data shape: %s', df.shape)
+    df_crawl = pd.read_csv(os.path.join("data", "crawl_data.csv")).dropna(
+    ).drop_duplicates(subset='ids', keep='first')
+    log.info('Crawl data shape: %s', df_crawl.shape)
+    df_crawl.rename(columns={'ids': 'movie_id',
+                    'plots': 'description_new'}, inplace=True)
 
     # Merging df1 and df2 on 'movie_id' to bring in descriptions from df2
-    merged_df = df_merged.merge(
+    merged_df = df.merge(
         df_crawl, on='movie_id', how='left', suffixes=('', '_new'))
 
     # Replacing 'description' in df1 with 'description_new' from df2 where it exists
@@ -44,6 +52,7 @@ def merge_with_crawl_data(df_merged):
     # Dropping the temporary 'description_new' column
     merged_df = merged_df.drop(columns=['description_new'])
 
+    log.info('Merged data shape: %s', merged_df.shape)
     return merged_df
 
 
@@ -79,8 +88,9 @@ def clean_data(df, save_intermediate=False):
 
     df_clean = df_clean[USED_COLS]
     df_clean.dropna(inplace=True)
-    df_clean = df_clean[~df_clean['genre'].str.contains('|'.join(EXCLUDED_GENRES), case=False, na=False)]
-    
+    df_clean = df_clean[~df_clean['genre'].str.contains(
+        '|'.join(EXCLUDED_GENRES), case=False, na=False)]
+
     tqdm.pandas()
 
     df_merged = df_clean.groupby(["movie_id", "movie_name"], as_index=False).agg({
