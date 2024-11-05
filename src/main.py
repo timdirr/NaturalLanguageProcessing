@@ -1,5 +1,6 @@
 from preprocess.dataloader import load_raw_data
 from preprocess.dataclean import clean_data
+from preprocess.tokenizer import tokenize
 import exploritory_analysis.raw_data_exploration as raw_data_exploration
 import exploritory_analysis.clean_data_exploration as clean_data_exploration
 import logging as log
@@ -21,6 +22,7 @@ def main():
     log.info(f"Cleaned data saved to {output_path}")
     raw_data_exploration.analyse_data(df_raw)
     clean_data_exploration.analyse_data(df_clean)
+    tokenize()
     del df_raw
 
 
