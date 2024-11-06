@@ -72,11 +72,12 @@ def common_words_finder(df_N):
     # stop_words.update(stop_words_ext)
     # TODO: remove stopwords after/before lemmatization?
 
-    log.info(f"Top {n} most common words (to add to stopwords):",
-             potential_stop_words)
+    log.info(
+        f"Top {n} most common words (to add to stopwords): {potential_stop_words}")
 
 
 def merge_with_crawl_data(df: pd.DataFrame) -> pd.DataFrame:
+    # Merging with crawled data because of incomplete desriptions
     log.info('Merging with crawl data')
     log.info('Crawl data path: %s', CRAWL_DATA_PATH)
     log.info('Original data shape: %s', df.shape)
@@ -84,7 +85,7 @@ def merge_with_crawl_data(df: pd.DataFrame) -> pd.DataFrame:
     ).drop_duplicates(subset='ids', keep='first')
     log.info('Crawl data shape: %s', df_crawl.shape)
     df_crawl.rename(columns={'ids': 'movie_id',
-                    'plots': 'description_new'}, inplace=True)
+                    'plots': 'description'}, inplace=True)
 
     # Merging df1 and df2 on 'movie_id' to bring in descriptions from df2
     merged_df = df.merge(

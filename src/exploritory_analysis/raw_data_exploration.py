@@ -28,8 +28,8 @@ def check_valid_duplicates(df_og: pd.DataFrame, group_by: str, target: str):
         # export dataframe to csv
         error_duplicates.to_csv(
             os.path.join('export', f'error_duplicates_{group_by}_{target}.csv'), index=True)
-        log.info(f'Error duplicates found and saved in export folder (Length: {
-                 len(error_duplicates)}).')
+        log.info(f"""Error duplicates found and saved in export folder (Length: {
+                 len(error_duplicates)}).""")
     else:
         log.info(f'No duplicate {group_by} with different {target} found.')
 
