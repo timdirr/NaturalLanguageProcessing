@@ -4,6 +4,10 @@ import logging as log
 import re
 import os
 import pandas as pd
+from collections import Counter
+import stanza
+import nltk
+from nltk.corpus import stopwords
 
 from tqdm import tqdm
 
@@ -11,11 +15,12 @@ from tqdm import tqdm
 
 DATA_PATH = "data"
 CRAWL_DATA_PATH = os.path.join(DATA_PATH, 'crawl_data.csv')
-# Genres that have very little cardinality
+# Genres that have very low cardinality
 EXCLUDED_GENRES = ["Reality-TV", "News",
                    "Adult", "Talk-Show", "Game-Show", "Short"]
 USED_COLS = ["movie_id", "movie_name", "description", "genre"]
 TEXT_LEN_CUTOFF = 25  # Remove short descriptions?
+N = 10000  # Number of rows to count common words
 PATTERNS = [
     r'Add a Plot',  # Some missing data crawled through IMDb API
     r'\bunder wrap',
@@ -29,6 +34,46 @@ PATTERNS = [
     r'^(?:not disclosed)|(?:(?:plot|outline|details|story).*not disclosed)',
     r'(?:plot|story|synopsis).*unavailable'
 ]
+
+
+def common_words_finder(df_N):
+    nltk.download('stopwords')
+    stop_words = set(stopwords.words('english'))
+    nlp = stanza.Pipeline(
+        'en', processors='tokenize,lemma', use_gpu=True)
+
+    # Tokenize and lemmatize descriptions, and gather common words
+    all_words = []
+
+    log.info(f'Counting common words')
+    for desc in tqdm(df_N['description']):
+        doc = nlp(desc)
+        # Collect lemmas of all words
+        all_words.extend(
+            word.lemma.lower()
+            for sentence in doc.sentences for word in sentence.words
+            if re.match('\\w', word.lemma)  # Only words (no punctuation)
+        )
+
+    # n most common words
+    n = 20
+    common_words = [word for word in all_words if word.lower()
+                    not in stop_words]
+    potential_stop_words = Counter(common_words).most_common(n)
+
+    # Top 20 most common words from first 10k rows
+    # ('love', 2702), ('man', 2216), ('find', 2088), ('young', 1909), ('take', 1702),
+    # ('get', 1698), ('girl', 1591), ('marry', 1541), ('fall', 1517), ('go', 1514),
+    # ('father', 1490), ('one', 1321), ('become', 1257), ('daughter', 1247), ('woman', 1243),
+    # ('life', 1208), ('make', 1176), ('murder', 1151), ('new', 1149), ('two', 1083)
+
+    # Lets only take words that are neutral
+    # stop_words_ext = ["get", "take", "go", "make", "become", "one", "two"]
+    # stop_words.update(stop_words_ext)
+    # TODO: remove stopwords after/before lemmatization?
+
+    log.info(f"Top {n} most common words (to add to stopwords):",
+             potential_stop_words)
 
 
 def merge_with_crawl_data(df: pd.DataFrame) -> pd.DataFrame:
@@ -57,12 +102,11 @@ def merge_with_crawl_data(df: pd.DataFrame) -> pd.DataFrame:
 
 
 def description_separator(descs):
-    # Remove duplicates, filter out 'Add a Plot', and select the longest description
+    # Filter duplicates and select the longest description
     descs = [desc for desc in set(descs) if desc != 'Add a Plot']
     if not descs:
         return 'Add a Plot'
 
-    # Select the longest description
     longest_desc = max(descs, key=len)
     return longest_desc
 
@@ -76,7 +120,6 @@ def description_cleaner(df, pattern):
     df_filtered = df[~df['description'].str.contains(
         pattern, na=False, case=False)]
 
-    # Log the count of matches
     log.info('Matched descriptions for pattern "%s": %d',
              pattern, count_matches)
 
@@ -145,6 +188,10 @@ def clean_data(df, save_intermediate=False):
     df_merged = df_merged.drop_duplicates(subset='description', keep='first')
     df_merged = df_merged.drop_duplicates(subset='movie_id', keep='first')
     # df_merged[df_merged['description'] >= TEXT_LEN_CUTOFF]
+
+    data_len = len(df_merged)
+    jump = int(data_len/N)
+    common_words_finder(df_merged[::jump])
 
     log.info('Genres: \n%s', genres)
     log.info('Shape: %s', df_clean.shape)

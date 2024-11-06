@@ -8,7 +8,8 @@ import os
 
 OUTPUT_PTH = os.path.join("data", "clean_data.csv")
 DATA_EXPLORATION = True
-
+# number of rows of the dataset to preprocess and save as conllu
+ROWS = 1000
 
 def main():
     log.basicConfig(level=log.INFO,
@@ -28,7 +29,7 @@ def main():
 
     del df_raw
 
-    tokenize()
+    tokenize(ROWS, stopword_removal=False)
 
 
 if __name__ == '__main__':
