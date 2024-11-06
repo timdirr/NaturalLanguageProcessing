@@ -5,14 +5,21 @@ import exploritory_analysis.raw_data_exploration as raw_data_exploration
 import exploritory_analysis.clean_data_exploration as clean_data_exploration
 import logging as log
 import os
+import argparse
+
 from globals import DATA_PATH, EXPORT_PATH, LOGGING, DATA_EXPLORATION
 
 OUTPUT_PATH = os.path.join(DATA_PATH, "clean_data.csv")
 # number of rows of the dataset to preprocess and save as conllu
-ROWS = 1000
 
 
 def main():
+
+    #parser = argparse.ArgumentParser()
+
+    #parser.add_argument('--crawl', type=str, default=DATA_EXPLORATION['input_file'])
+
+
     if LOGGING:
         log.basicConfig(level=log.INFO,
                         format='%(asctime)s: %(levelname)s: %(message)s',
@@ -34,7 +41,7 @@ def main():
 
     del df_raw
 
-    tokenize(ROWS, stopword_removal=False)
+    tokenize()
 
 
 if __name__ == '__main__':

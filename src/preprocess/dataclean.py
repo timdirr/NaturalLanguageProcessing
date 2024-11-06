@@ -143,6 +143,10 @@ def clean_data(df, save_intermediate=False):
     df_merged['genre'] = df_merged['genre'].progress_apply(
         lambda x: np.sort(list(set([s.strip() for s in x.split(", ")]))))
 
+    if save_intermediate:
+        # TODO: implement save of merged file which is needed for crawler
+        pass
+
     if os.path.isfile(CRAWL_DATA_PATH):
         df_merged = merge_with_crawl_data(df_merged)
 
@@ -155,9 +159,6 @@ def clean_data(df, save_intermediate=False):
     if save_intermediate:
         # TODO: implement save of merged file which is needed for crawler
         pass
-
-    # TODO: add method that merged crawled data with df_merged
-    # call_method_that_does_this_inplace()
 
     log.info('Missing description rows: %s', total_missing_count)
 
@@ -190,7 +191,7 @@ def clean_data(df, save_intermediate=False):
 
     data_len = len(df_merged)
     jump = int(data_len/N)
-    common_words_finder(df_merged[::jump])
+    # common_words_finder(df_merged[::jump])
 
     log.info('Genres: \n%s', genres)
     log.info('Shape: %s', df_clean.shape)
