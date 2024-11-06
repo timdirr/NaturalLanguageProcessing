@@ -5,10 +5,11 @@ import nltk
 import re
 from tqdm import tqdm
 import os
+from globals import DATA_PATH, EXPORT_PATH
 
-DATA_PATH = "data"
-OUTPUT_FILE = os.path.join(DATA_PATH, "conllu_data.conllu")
+
 BATCH_SIZE = 1000
+OUTPUT_FILE = os.path.join(DATA_PATH, "conllu_data.conllu")
 
 
 def remove_stopwords(df):

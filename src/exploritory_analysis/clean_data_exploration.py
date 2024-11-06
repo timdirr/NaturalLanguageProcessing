@@ -3,6 +3,7 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import logging as log
 import os
+from globals import EXPORT_PATH, DATA_PATH
 
 from exploritory_analysis.description_exploration import plot_description_length
 
@@ -22,7 +23,7 @@ def plot_genre_distribution(df: pd.DataFrame):
     for i, v in enumerate(genre_count):
         plt.text(i, v + 200, str(v), ha='center', rotation=90)
 
-    plt.savefig(os.path.join('export', 'genre_distribution.png'))
+    plt.savefig(os.path.join(EXPORT_PATH, 'genre_distribution.png'))
     log.info("Genre distribution plotted and saved in export folder.")
 
 
@@ -48,7 +49,7 @@ def plot_cooccurrence_matrix(df: pd.DataFrame):
     plt.xticks(np.arange(len(genres)), genres, rotation=90)
     plt.yticks(np.arange(len(genres)), genres)
     plt.title("Genre Co-occurrence Matrix")
-    plt.savefig(os.path.join('export', 'cooccurrence_matrix.png'))
+    plt.savefig(os.path.join(EXPORT_PATH, 'cooccurrence_matrix.png'))
     log.info("Co-occurrence matrix plotted and saved in export folder.")
 
 
@@ -69,7 +70,8 @@ def plot_most_frequent_combinations(df: pd.DataFrame):
     for i, v in enumerate(genre_combinations.head(20)):
         plt.text(i, v + 200, str(v), ha='center', rotation=90)
 
-    plt.savefig(os.path.join('export', 'most_frequent_genre_combinations.png'))
+    plt.savefig(os.path.join(
+        EXPORT_PATH, 'most_frequent_genre_combinations.png'))
     log.info("Most frequent genre combinations plotted and saved in export folder.")
 
     log.info("Most frequent genre combinations:")

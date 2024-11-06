@@ -2,6 +2,7 @@ import logging as log
 import os
 import pandas as pd
 import matplotlib.pyplot as plt
+from globals import EXPORT_PATH, DATA_PATH
 
 
 def plot_description_length(df: pd.DataFrame, cleaned: bool = False):
@@ -20,11 +21,11 @@ def plot_description_length(df: pd.DataFrame, cleaned: bool = False):
     if cleaned:
         plt.title('Description Length Distribution (Cleaned)')
         plt.savefig(os.path.join(
-            'export', 'description_length_distribution_cleaned.png'))
+            EXPORT_PATH, 'description_length_distribution_cleaned.png'))
     else:
         plt.title('Description Length Distribution (Raw)')
         plt.savefig(os.path.join(
-            'export', 'description_length_distribution_raw.png'))
+            EXPORT_PATH, 'description_length_distribution_raw.png'))
 
     df['description_length_char'] = df['description'].apply(
         lambda x: len(x))
@@ -37,12 +38,12 @@ def plot_description_length(df: pd.DataFrame, cleaned: bool = False):
     if cleaned:
         plt.title('Description Length Distribution (Cleaned)')
         plt.savefig(os.path.join(
-            'export', 'description_length_char_distribution_cleaned.png'))
+            EXPORT_PATH, 'description_length_char_distribution_cleaned.png'))
         log.info(
             'Cleaned description length distribution plotted and saved in export folder.')
     else:
         plt.savefig(os.path.join(
-            'export', 'description_length_char_distribution_raw.png'))
+            EXPORT_PATH, 'description_length_char_distribution_raw.png'))
         plt.title('Description Length Distribution (Raw)')
         log.info(
             'Raw description length distribution plotted and saved in export folder.')

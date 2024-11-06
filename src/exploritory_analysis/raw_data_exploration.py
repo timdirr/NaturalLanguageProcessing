@@ -3,6 +3,8 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import logging as log
 import os
+from globals import DATA_PATH, EXPORT_PATH
+
 from exploritory_analysis.description_exploration import plot_description_length
 
 
@@ -27,7 +29,7 @@ def check_valid_duplicates(df_og: pd.DataFrame, group_by: str, target: str):
     if len(error_duplicates) > 0:
         # export dataframe to csv
         error_duplicates.to_csv(
-            os.path.join('export', f'error_duplicates_{group_by}_{target}.csv'), index=True)
+            os.path.join(EXPORT_PATH, f'error_duplicates_{group_by}_{target}.csv'), index=True)
         log.info(f"""Error duplicates found and saved in export folder (Length: {
                  len(error_duplicates)}).""")
     else:

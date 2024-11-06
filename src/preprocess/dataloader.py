@@ -2,8 +2,7 @@ import glob
 import pandas as pd
 import os
 import logging as log
-
-DATA_PATH = "data"  # BITTE SO LASSEN SEBASTIAN DANKE <3
+from globals import DATA_PATH, EXPORT_PATH
 
 
 def __load_csv(filename):

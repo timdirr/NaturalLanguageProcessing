@@ -8,12 +8,10 @@ from collections import Counter
 import stanza
 import nltk
 from nltk.corpus import stopwords
-
+from globals import DATA_PATH, EXPORT_PATH
 from tqdm import tqdm
-
 # from src.preprocess.imdb_crawler import IMDBCrawler
 
-DATA_PATH = "data"
 CRAWL_DATA_PATH = os.path.join(DATA_PATH, 'crawl_data.csv')
 # Genres that have very low cardinality
 EXCLUDED_GENRES = ["Reality-TV", "News",
@@ -81,7 +79,7 @@ def merge_with_crawl_data(df: pd.DataFrame) -> pd.DataFrame:
     log.info('Merging with crawl data')
     log.info('Crawl data path: %s', CRAWL_DATA_PATH)
     log.info('Original data shape: %s', df.shape)
-    df_crawl = pd.read_csv(os.path.join("data", "crawl_data.csv")).dropna(
+    df_crawl = pd.read_csv(CRAWL_DATA_PATH).dropna(
     ).drop_duplicates(subset='ids', keep='first')
     log.info('Crawl data shape: %s', df_crawl.shape)
     df_crawl.rename(columns={'ids': 'movie_id',

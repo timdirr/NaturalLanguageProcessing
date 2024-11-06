@@ -9,8 +9,7 @@ import numpy as np
 
 from tqdm import tqdm
 from imdb import Cinemagoer
-
-CRAWL_FOLDER = "crawl"
+from globals import CRAWL_FOLDER
 
 
 class IMDBCrawler():
@@ -35,7 +34,7 @@ class IMDBCrawler():
         largest_file = None
 
         # TODO: remove after debugging
-        for file_path in glob.glob(os.path.join("crawl", "crawled*.csv")):
+        for file_path in glob.glob(os.path.join(CRAWL_FOLDER, "crawled*.csv")):
             file_name = os.path.basename(file_path)
             match = pattern.match(file_name)
             if match:
@@ -54,7 +53,7 @@ class IMDBCrawler():
             missing_ids = self.ids
             current_crawl = 1
             while len(missing_ids) > 0 or max_crawl_iter < current_crawl:
-                crawl_dir = os.path.join("crawl", "iter{current_crawl}")
+                crawl_dir = os.path.join(CRAWL_FOLDER, "iter{current_crawl}")
                 os.mkdir(crawl_dir)
                 self.__crawl(missing_ids, crawl_dir)
                 crawled_movies = self.__find_current_file()
