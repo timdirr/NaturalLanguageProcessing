@@ -38,6 +38,8 @@ def check_valid_duplicates(df_og: pd.DataFrame, group_by: str, target: str):
 
 def analyse_data(raw_data: pd.DataFrame):
     log.info('------------------------------------')
+
+
     check_valid_duplicates(raw_data, 'movie_id', 'genre')
     check_valid_duplicates(raw_data, 'movie_id', 'description')
     check_valid_duplicates(raw_data, 'movie_name', 'genre')

@@ -3,8 +3,16 @@ import pandas as pd
 import matplotlib.pyplot as plt
 import logging as log
 import os
-from globals import EXPORT_PATH, DATA_PATH
+import nltk
+from concurrent.futures import ThreadPoolExecutor
+from tqdm import tqdm
+import threading
+import re
 
+from nltk.corpus import stopwords
+from wordcloud import WordCloud
+from collections import Counter
+from globals import EXPORT_PATH, DATA_PATH
 from exploritory_analysis.description_exploration import plot_description_length
 
 
@@ -78,10 +86,54 @@ def plot_most_frequent_combinations(df: pd.DataFrame):
     log.info(genre_combinations.head(20))
 
 
+def plot_wordcloud(df):
+    log.info("Plotting wordclouds per genre...")
+    nltk.download('punkt_tab')
+    stop_words = set(stopwords.words('english'))
+    lock = threading.Lock()
+
+    def preprocess_text(text):
+        text = re.sub(r'[^a-zA-Z0-9\s]', '', text)
+        tokens = nltk.word_tokenize(text.lower())
+        tokens = [word for word in tokens if word not in stop_words]
+        return tokens
+
+    genre_word_counts = {}
+
+    def word_counter(row):
+        genres = row.genre
+        description = row.description
+        tokens = preprocess_text(description)
+        with lock:
+            for genre in genres:
+                if genre not in genre_word_counts:
+                    genre_word_counts[genre] = Counter()
+                genre_word_counts[genre].update(tokens)
+
+    with ThreadPoolExecutor() as executor:
+        list(tqdm(executor.map(word_counter, df.itertuples(index=False)), total=len(df)))
+
+    for genre, word_count in genre_word_counts.items():
+        top_words = dict(word_count.most_common(20))
+
+        wordcloud = WordCloud(width=800, height=400, background_color='white').generate_from_frequencies(top_words)
+        plt.figure(figsize=(10, 5))
+        plt.imshow(wordcloud, interpolation="bilinear")
+        plt.axis("off")
+        plt.title(f"Word Cloud for {genre} Movies")
+        plt.tight_layout()
+        plt.savefig(os.path.join(EXPORT_PATH, f"wordcloud_{genre}.png"))
+        plt.close()
+    log.info("WordClouds per genre plotted and saved in export folder.")
+
+
 def analyse_data(df: pd.DataFrame):
-    print(df.head())
+
+    if not os.path.exists(EXPORT_PATH):
+        os.makedirs(EXPORT_PATH)
 
     plot_genre_distribution(df)
     plot_cooccurrence_matrix(df)
     plot_most_frequent_combinations(df)
     plot_description_length(df, True)
+    plot_wordcloud(df)

@@ -4,23 +4,44 @@ from preprocess.tokenizer import tokenize
 import exploritory_analysis.raw_data_exploration as raw_data_exploration
 import exploritory_analysis.clean_data_exploration as clean_data_exploration
 import logging as log
+import pandas as pd
 import os
 import argparse
+import re
 
 from globals import DATA_PATH, EXPORT_PATH, LOGGING, DATA_EXPLORATION
 
 OUTPUT_PATH = os.path.join(DATA_PATH, "clean_data.csv")
-# number of rows of the dataset to preprocess and save as conllu
+RAW_PATH = os.path.join(DATA_PATH, "raw_data.csv")
+
+def check_file_exists(file_path, description):
+    if os.path.exists(file_path):
+        return True
+    else:
+        print(f"{description} is not available.")
+        return False
 
 
 def main():
 
-    #parser = argparse.ArgumentParser()
+    #df_clean = pd.read_csv(OUTPUT_PATH, converters={"genre": lambda x: re.sub(r"[\[\]']", '', x).split(' ')})
+    #clean_data_exploration.analyse_data(df_clean)
 
-    #parser.add_argument('--crawl', type=str, default=DATA_EXPLORATION['input_file'])
+    parser = argparse.ArgumentParser()
 
+    parser.add_argument("--tokenize", action="store_true")
 
-    if LOGGING:
+    explore_parser = parser.add_argument_group("explore options")
+    explore_parser.add_argument("--explore", choices=["raw", "clean"])
+
+    parser.add_argument("--preprocess", action="store_true")
+
+    parser.add_argument("--store_intermediate", action="store_true")
+    parser.add_argument("--verbose", action="store_true")
+
+    args = parser.parse_args()
+
+    if args.verbose:
         log.basicConfig(level=log.INFO,
                         format='%(asctime)s: %(levelname)s: %(message)s',
                         datefmt='%Y-%m-%d %H:%M:%S')
@@ -28,20 +49,28 @@ def main():
         log.basicConfig(format='%(asctime)s: %(levelname)s: %(message)s',
                         datefmt='%Y-%m-%d %H:%M:%S')
 
-    # TODO: add command line arguments to main to enable crawling of IMDB api
-    # TODO: add command line arguments to main to enable storage of intermediate files needed crawler.
-    df_raw = load_raw_data()
-    df_clean = clean_data(df_raw)
-    df_clean.to_csv(OUTPUT_PATH, index=False, quoting=1)
-    log.info(f"Cleaned data saved to {OUTPUT_PATH}")
+    if args.preprocess:
+        df_raw = load_raw_data()
+        df_raw.to_csv(RAW_PATH, index=False, quoting=1)
+        if args.store_intermediate:
+            df_clean = clean_data(df_raw, save_intermediate=True)
+        else:
+            df_clean = clean_data(df_raw)
+        df_clean.to_csv(OUTPUT_PATH, index=False, quoting=1)
 
-    if DATA_EXPLORATION:
-        raw_data_exploration.analyse_data(df_raw)
-        clean_data_exploration.analyse_data(df_clean)
+        log.info(f"Cleaned data saved to {OUTPUT_PATH}")
 
-    del df_raw
+    if args.explore:
+        if args.explore == "raw" and check_file_exists(RAW_PATH, "Raw data"):
+            df_raw = pd.read_csv(RAW_PATH)
+            raw_data_exploration.analyse_data(df_raw)
+        elif args.explore == "clean" and check_file_exists(OUTPUT_PATH, "Cleaned data"):
+            df_clean = pd.read_csv(OUTPUT_PATH, converters={"genre": lambda x: re.sub(r"[\[\]']", '', x).split(' ')})
+            clean_data_exploration.analyse_data(df_clean)
 
-    tokenize()
+    if args.tokenize:
+        if check_file_exists(OUTPUT_PATH, "Clean data"):
+            tokenize()
 
 
 if __name__ == '__main__':
