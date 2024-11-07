@@ -36,19 +36,20 @@ def main():
         assert tokenize in [True, False], "Invalid value for tokenize"
 
         explore = config['explore']
-        assert explore in ["raw", "clean", "full", False, "None", None], "Invalid value for explore"
+        assert explore in ["raw", "clean", "full", False,
+                           "None", None], "Invalid value for explore"
 
         preprocess = config['preprocess']
         assert preprocess in [True, False], "Invalid value for preprocess"
 
         store_intermediate = config['store_intermediate']
-        assert store_intermediate in [True, False], "Invalid value for store_intermediate"
+        assert store_intermediate in [
+            True, False], "Invalid value for store_intermediate"
 
         verbose = config['verbose']
         assert verbose in [True, False], "Invalid value for verbose"
     else:
         raise FileNotFoundError("Config file not found")
-
 
     if verbose:
         log.basicConfig(level=log.INFO,
@@ -73,7 +74,7 @@ def main():
         if (explore == "raw" or explore == "full") and check_file_exists(RAW_PATH, "Raw data"):
             df_raw = pd.read_csv(RAW_PATH)
             raw_data_exploration.analyse_data(df_raw)
-        elif (explore == "raw" or explore == "full") and check_file_exists(OUTPUT_PATH, "Cleaned data"):
+        if (explore == "clean" or explore == "full") and check_file_exists(OUTPUT_PATH, "Cleaned data"):
             df_clean = pd.read_csv(OUTPUT_PATH, converters={
                                    "genre": lambda x: re.sub(r"[\[\]']", '', x).split(' ')})
             clean_data_exploration.analyse_data(df_clean)
