@@ -14,6 +14,7 @@ from globals import DATA_PATH, EXPORT_PATH, LOGGING, DATA_EXPLORATION
 OUTPUT_PATH = os.path.join(DATA_PATH, "clean_data.csv")
 RAW_PATH = os.path.join(DATA_PATH, "raw_data.csv")
 
+
 def check_file_exists(file_path, description):
     if os.path.exists(file_path):
         return True
@@ -23,16 +24,12 @@ def check_file_exists(file_path, description):
 
 
 def main():
-
-    #df_clean = pd.read_csv(OUTPUT_PATH, converters={"genre": lambda x: re.sub(r"[\[\]']", '', x).split(' ')})
-    #clean_data_exploration.analyse_data(df_clean)
-
     parser = argparse.ArgumentParser()
 
     parser.add_argument("--tokenize", action="store_true")
 
     explore_parser = parser.add_argument_group("explore options")
-    explore_parser.add_argument("--explore", choices=["raw", "clean"])
+    explore_parser.add_argument("--explore", choices=["raw", "clean", "full"])
 
     parser.add_argument("--preprocess", action="store_true")
 
@@ -61,11 +58,12 @@ def main():
         log.info(f"Cleaned data saved to {OUTPUT_PATH}")
 
     if args.explore:
-        if args.explore == "raw" and check_file_exists(RAW_PATH, "Raw data"):
+        if (args.explore == "raw" or args.explore == "full") and check_file_exists(RAW_PATH, "Raw data"):
             df_raw = pd.read_csv(RAW_PATH)
             raw_data_exploration.analyse_data(df_raw)
-        elif args.explore == "clean" and check_file_exists(OUTPUT_PATH, "Cleaned data"):
-            df_clean = pd.read_csv(OUTPUT_PATH, converters={"genre": lambda x: re.sub(r"[\[\]']", '', x).split(' ')})
+        elif (args.explore == "raw" or args.explore == "full") and check_file_exists(OUTPUT_PATH, "Cleaned data"):
+            df_clean = pd.read_csv(OUTPUT_PATH, converters={
+                                   "genre": lambda x: re.sub(r"[\[\]']", '', x).split(' ')})
             clean_data_exploration.analyse_data(df_clean)
 
     if args.tokenize:
