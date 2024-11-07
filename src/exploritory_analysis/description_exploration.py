@@ -14,7 +14,7 @@ def plot_description_length(df: pd.DataFrame, cleaned: bool = False):
     df['description_length'] = df['description'].apply(
         lambda x: len(x.split()))
     plt.figure(figsize=(12, 6))
-    plt.hist(df['description_length'], bins=80, color='blue', range=(0, 100))
+    plt.hist(df['description_length'], bins=80, color='blue', range=(0, 60))
     plt.xlabel('Description Length (in words)')
     plt.ylabel('Frequency')
 
@@ -31,7 +31,7 @@ def plot_description_length(df: pd.DataFrame, cleaned: bool = False):
         lambda x: len(x))
     plt.figure(figsize=(12, 6))
     plt.hist(df['description_length_char'],
-             bins=200, color='blue', range=(0, 2000))
+             bins=200, color='blue', range=(0, 300))
     plt.xlabel('Description Length (in characters)')
     plt.ylabel('Frequency')
 
@@ -42,8 +42,8 @@ def plot_description_length(df: pd.DataFrame, cleaned: bool = False):
         log.info(
             'Cleaned description length distribution plotted and saved in export folder.')
     else:
+        plt.title('Description Length Distribution (Raw)')
         plt.savefig(os.path.join(
             EXPORT_PATH, 'description_length_char_distribution_raw.png'))
-        plt.title('Description Length Distribution (Raw)')
         log.info(
             'Raw description length distribution plotted and saved in export folder.')
