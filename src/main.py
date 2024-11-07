@@ -36,7 +36,7 @@ def main():
         assert tokenize in [True, False], "Invalid value for tokenize"
 
         explore = config['explore']
-        assert explore in ["raw", "clean", "full"], "Invalid value for explore"
+        assert explore in ["raw", "clean", "full", False, "None", None], "Invalid value for explore"
 
         preprocess = config['preprocess']
         assert preprocess in [True, False], "Invalid value for preprocess"
@@ -50,20 +50,6 @@ def main():
         raise FileNotFoundError("Config file not found")
 
 
-    parser = argparse.ArgumentParser()
-
-    parser.add_argument("--tokenize", action="store_true")
-
-    explore_parser = parser.add_argument_group("explore options")
-    explore_parser.add_argument("--explore", choices=["raw", "clean", "full"])
-
-    parser.add_argument("--preprocess", action="store_true")
-
-    parser.add_argument("--store_intermediate", action="store_true")
-    parser.add_argument("--verbose", action="store_true")
-
-    args = parser.parse_args()
-
     if verbose:
         log.basicConfig(level=log.INFO,
                         format='%(asctime)s: %(levelname)s: %(message)s',
@@ -75,7 +61,7 @@ def main():
     if preprocess:
         df_raw = load_raw_data()
         df_raw.to_csv(RAW_PATH, index=False, quoting=1)
-        if args.store_intermediate:
+        if store_intermediate:
             df_clean = clean_data(df_raw, save_intermediate=True)
         else:
             df_clean = clean_data(df_raw)
@@ -83,11 +69,11 @@ def main():
 
         log.info(f"Cleaned data saved to {OUTPUT_PATH}")
 
-    if explore:
-        if (args.explore == "raw" or args.explore == "full") and check_file_exists(RAW_PATH, "Raw data"):
+    if explore or explore != "None":
+        if (explore == "raw" or explore == "full") and check_file_exists(RAW_PATH, "Raw data"):
             df_raw = pd.read_csv(RAW_PATH)
             raw_data_exploration.analyse_data(df_raw)
-        elif (args.explore == "raw" or args.explore == "full") and check_file_exists(OUTPUT_PATH, "Cleaned data"):
+        elif (explore == "raw" or explore == "full") and check_file_exists(OUTPUT_PATH, "Cleaned data"):
             df_clean = pd.read_csv(OUTPUT_PATH, converters={
                                    "genre": lambda x: re.sub(r"[\[\]']", '', x).split(' ')})
             clean_data_exploration.analyse_data(df_clean)
