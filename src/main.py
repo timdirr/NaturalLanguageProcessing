@@ -33,6 +33,8 @@ def main():
             config = json.load(f)
 
         tokenize = config['tokenize']
+        assert tokenize in [True, False], "Invalid value for tokenize"
+
         explore = config['explore']
         assert explore in ["raw", "clean", "full"], "Invalid value for explore"
 
@@ -44,6 +46,8 @@ def main():
 
         verbose = config['verbose']
         assert verbose in [True, False], "Invalid value for verbose"
+    else:
+        raise FileNotFoundError("Config file not found")
 
 
     parser = argparse.ArgumentParser()
@@ -60,7 +64,7 @@ def main():
 
     args = parser.parse_args()
 
-    if args.verbose:
+    if verbose:
         log.basicConfig(level=log.INFO,
                         format='%(asctime)s: %(levelname)s: %(message)s',
                         datefmt='%Y-%m-%d %H:%M:%S')
@@ -68,7 +72,7 @@ def main():
         log.basicConfig(format='%(asctime)s: %(levelname)s: %(message)s',
                         datefmt='%Y-%m-%d %H:%M:%S')
 
-    if args.preprocess:
+    if preprocess:
         df_raw = load_raw_data()
         df_raw.to_csv(RAW_PATH, index=False, quoting=1)
         if args.store_intermediate:
@@ -79,7 +83,7 @@ def main():
 
         log.info(f"Cleaned data saved to {OUTPUT_PATH}")
 
-    if args.explore:
+    if explore:
         if (args.explore == "raw" or args.explore == "full") and check_file_exists(RAW_PATH, "Raw data"):
             df_raw = pd.read_csv(RAW_PATH)
             raw_data_exploration.analyse_data(df_raw)
@@ -88,7 +92,7 @@ def main():
                                    "genre": lambda x: re.sub(r"[\[\]']", '', x).split(' ')})
             clean_data_exploration.analyse_data(df_clean)
 
-    if args.tokenize:
+    if tokenize:
         if check_file_exists(OUTPUT_PATH, "Clean data"):
             tokenize()
 
