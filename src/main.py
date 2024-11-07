@@ -8,8 +8,9 @@ import pandas as pd
 import os
 import argparse
 import re
+import json
 
-from globals import DATA_PATH, EXPORT_PATH, LOGGING, DATA_EXPLORATION
+from globals import DATA_PATH, EXPORT_PATH, LOGGING, DATA_EXPLORATION, CONFIG_PATH
 
 OUTPUT_PATH = os.path.join(DATA_PATH, "clean_data.csv")
 RAW_PATH = os.path.join(DATA_PATH, "raw_data.csv")
@@ -24,6 +25,27 @@ def check_file_exists(file_path, description):
 
 
 def main():
+
+    # check if path exeists
+
+    if os.path.exists(CONFIG_PATH):
+        with open(CONFIG_PATH, 'r') as f:
+            config = json.load(f)
+
+        tokenize = config['tokenize']
+        explore = config['explore']
+        assert explore in ["raw", "clean", "full"], "Invalid value for explore"
+
+        preprocess = config['preprocess']
+        assert preprocess in [True, False], "Invalid value for preprocess"
+
+        store_intermediate = config['store_intermediate']
+        assert store_intermediate in [True, False], "Invalid value for store_intermediate"
+
+        verbose = config['verbose']
+        assert verbose in [True, False], "Invalid value for verbose"
+
+
     parser = argparse.ArgumentParser()
 
     parser.add_argument("--tokenize", action="store_true")

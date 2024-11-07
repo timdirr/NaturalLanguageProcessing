@@ -14,7 +14,7 @@ def plot_description_length(df: pd.DataFrame, cleaned: bool = False):
     df['description_length'] = df['description'].apply(
         lambda x: len(x.split()))
     plt.figure(figsize=(12, 6))
-    plt.hist(df['description_length'], bins=80, color='blue', range=(0, 400))
+    plt.hist(df['description_length'], bins=80, color='blue', range=(0, 100))
     plt.xlabel('Description Length (in words)')
     plt.ylabel('Frequency')
 
