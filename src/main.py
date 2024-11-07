@@ -62,10 +62,7 @@ def main():
     if preprocess:
         df_raw = load_raw_data()
         df_raw.to_csv(RAW_PATH, index=False, quoting=1)
-        if store_intermediate:
-            df_clean = clean_data(df_raw, save_intermediate=True)
-        else:
-            df_clean = clean_data(df_raw)
+        df_clean = clean_data(df_raw, save_intermediate=store_intermediate)
         df_clean.to_csv(OUTPUT_PATH, index=False, quoting=1)
 
         log.info(f"Cleaned data saved to {OUTPUT_PATH}")
