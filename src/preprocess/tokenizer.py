@@ -21,9 +21,10 @@ def remove_stopwords(df):
     pass
 
 
-def tokenize(rows=-1, stopword_removal=False):
+def tokenize(rows=None, stopword_removal=False):
     df = pd.read_csv(os.path.join(DATA_PATH, "clean_data.csv"))
-    df_first_N = df.iloc[:rows]
+    df_first_N = df if rows is None else df.iloc[:rows]
+
     tokenize_pretokenized = False
 
     if stopword_removal:
