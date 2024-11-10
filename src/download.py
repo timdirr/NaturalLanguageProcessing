@@ -11,7 +11,7 @@ drive_folder_id = "1NpchamspqFInPZXbv9xPR33luxRVldsO"
 drive_file_urls = {
     "clean_data.csv": "https://drive.google.com/uc?id=12pSL_4PxiyqGTQm8mfomHGEbB3Il1yZG",
     "crawl_data.csv": "https://drive.google.com/uc?id=1HAARdniVyolwvwfYjhXTy5EUzd9kYSkE",
-    "conllu_data.conllu": "https://drive.google.com/uc?id=1hN0KffOC_GX0SEthafgBEth6bNhFBL1R"
+    "conllu_data.conllu": "https://drive.google.com/file/d/1cyjpL7dXFr_2WhLIlbNPO-PyHeEZBpHI"
 }
 
 # Define paths
