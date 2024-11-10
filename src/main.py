@@ -26,7 +26,7 @@ def check_file_exists(file_path, description):
 
 def main():
 
-    # check if path exeists
+    # check if path exists
 
     if os.path.exists(CONFIG_PATH):
         with open(CONFIG_PATH, 'r') as f:
