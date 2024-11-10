@@ -15,7 +15,7 @@ drive_file_urls = {
 }
 
 # Define paths
-kaggle_path = f"{DATA_PATH}/raw"
+kaggle_path = os.path.join(DATA_PATH, "raw")
 zip_path = os.path.join(kaggle_path, "archive.zip")
 
 # Ensure base path exists
