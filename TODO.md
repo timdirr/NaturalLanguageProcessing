@@ -20,4 +20,53 @@
 
 -   [x] MORE COMMENTS (All)
 
-## Milestone 2
+## Milestone 2 
+
+#### 20-25.11 Review meeting
+
+#### 29.11 Deadline except for DL-approaches
+
+#### 10.12 Internal Deadline
+
+#### 15.12 Deadline
+
+-   [ ] Conllu Dataloader (Daniel)
+
+-   [ ] Spitting Data -> train.csv, test.csv, dev.csv (Daniel et.al.)
+    - Stratified Split the data into train, test (90/10), fix and save split to file
+    - Stratified Split Dev Set for experimentation (10% of train), fix and save split to file
+    - Iterative / Combination of Labels
+    - Fixed seed for fitting and evaluation (CV): 42069
+
+    - https://github.com/trent-b/iterative-stratification
+    - http://scikit.ml/api/skmultilearn.model_selection.iterative_stratification.html
+
+-   [ ] Text Modelling (Filip + Tim)
+    - Bag-of-Words  
+        - Unnormalized, tf-idf
+    - Word2Vec, GloVe, FastText
+    - 1, 2, 3 - grams
+    - modelling.py
+        - class TextModelling (SuperClass)
+            - class BOF
+            - class Word2Vec
+            - class GloVe
+            - class FastText
+            - class N-grams
+
+-  [ ] Classifier (Sebastian)
+    - Naive Bayes, KNN, SVC
+    - sklearn.multiclass.OneVsRestClassifier
+    - https://towardsdatascience.com/multi-label-text-classification-with-scikit-learn-30714b7819c5
+
+-   [ ] Evaluation Script (Tim)
+    - General
+    - Classifier specific evaluation
+
+-   [ ] Build Pipeline (Tim)
+    - Text Modelling
+    - Classifier
+    - Evaluation
+
+-   [ ] Deep Learning Approach (Lecture on 22.11) (Daniel)
+
