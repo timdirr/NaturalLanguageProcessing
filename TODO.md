@@ -48,7 +48,7 @@
     - 1, 2, 3 - grams
     - modelling.py
         - class TextModelling (SuperClass)
-            - class BOF
+            - class BOW
             - class Word2Vec
             - class GloVe
             - class FastText

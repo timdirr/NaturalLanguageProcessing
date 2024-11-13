@@ -8,3 +8,5 @@ requests==2.31.0
 stanza==1.9.2
 tqdm==4.66.6
 wordcloud==1.9.3
+scikit-learn==1.5.2
+gensim==4.3.3
