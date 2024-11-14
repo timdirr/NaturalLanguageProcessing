@@ -101,9 +101,10 @@ class WordEmbeddingModel(BaseEstimator, TransformerMixin):
     Superclass for word embedding models.
     '''
 
-    def __init__(self, **kwargs):
+    def __init__(self, train_embeddings=True, **kwargs):
         self.kwargs = kwargs
         self.model = None
+        self.train_embeddings = train_embeddings
 
     def fit(self, X, y=None):
         '''
@@ -113,6 +114,13 @@ class WordEmbeddingModel(BaseEstimator, TransformerMixin):
         X : list of str or list of list of str
             List of descriptions.
         '''
+        if not self.train_embeddings:
+            log.info("Not training embeddings as train_embeddings=False")
+            if self.model is None:
+                raise ValueError(
+                    "Model is not loaded. Please provide a pretrained model.")
+            return self
+
         log.info("Fitting Word2Vec model")
         if isinstance(X[0], list):
             X_input = X
@@ -176,6 +184,15 @@ class WordEmbeddingModel(BaseEstimator, TransformerMixin):
         self.model.save(path)
         log.info("Model saved")
 
+    def load_model(self, model):
+        if os.path.exists(model):
+            self.model = self.load_from_path(model)
+        else:
+            self.model = self.load_pretrained(model)
+
+    def load_from_path(self, path):
+        pass
+
     def load_pretrained(self, model_name):
         '''
         Load pretrained model
@@ -200,9 +217,12 @@ class Word2VecModel(WordEmbeddingModel):
             Ignores all words with total frequency lower than this.
     '''
 
-    def __init__(self, **kwargs):
-        super().__init__(**kwargs)
-        self.model = Word2Vec(**kwargs)
+    def __init__(self, model=None, train_embeddings=True, **kwargs):
+        super().__init__(train_embeddings=train_embeddings, **kwargs)
+        if model:
+            self.load_model(model)
+        else:
+            self.model = Word2Vec(**kwargs)
 
     def load_from_path(self, path):
         '''
