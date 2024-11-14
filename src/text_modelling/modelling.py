@@ -176,6 +176,12 @@ class WordEmbeddingModel(BaseEstimator, TransformerMixin):
         self.model.save(path)
         log.info("Model saved")
 
+    def load_pretrained(self, model_name):
+        '''
+        Load pretrained model
+        '''
+        self.model.wv = gensim.downloader.load(model_name)
+
     def available_models(self):
         return list(gensim.downloader.info()['models'].keys())
 
