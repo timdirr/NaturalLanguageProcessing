@@ -4,10 +4,13 @@ from sklearn.base import BaseEstimator, TransformerMixin
 from sklearn.feature_extraction.text import CountVectorizer, TfidfVectorizer
 
 import gensim
-from gensim.models import Word2Vec
+from gensim.models import Word2Vec, FastText
 import gensim.downloader
+from gensim.test.utils import datapath
+from gensim.models.fasttext import load_facebook_model
 
-from globals import MODEL_PATH
+
+from globals import MODEL_PATH, WORD_EMBEDDING_PATH
 
 import logging as log
 import gzip
@@ -63,7 +66,7 @@ class BagOfWords(BaseEstimator, TransformerMixin):
         Parameters:
         ----------
         vectorizer_name : str
-            Name of the vectorizer to use. Supported values are 'count' and 'tf-idf'. 
+            Name of the vectorizer to use. Supported values are 'count' and 'tf-idf'.
         kwargs : dict
             Arguments to pass to the vectorizer.
         '''
@@ -93,18 +96,9 @@ class BagOfWords(BaseEstimator, TransformerMixin):
         return self.model.get_feature_names_out()
 
 
-class Word2VecModel(BaseEstimator, TransformerMixin):
+class WordEmbeddingModel(BaseEstimator, TransformerMixin):
     '''
-    Computes word embeddings for each description.
-
-    Parameters:
-    ----------
-    vector_size : int, optional
-            Dimensionality of the word vectors.
-        window : int, optional
-            Maximum distance between the current and predicted word within a sentence.
-        min_count : int, optional
-            Ignores all words with total frequency lower than this.
+    Superclass for word embedding models.
     '''
 
     def __init__(self, **kwargs):
@@ -125,16 +119,25 @@ class Word2VecModel(BaseEstimator, TransformerMixin):
         else:
             X_input = [x.split() for x in X]
 
-        self.model = Word2Vec(X_input, **self.kwargs)
+        # check if vocab already exists
+        if self.model.wv.index_to_key != []:
+            log.info("Vocabulary already exists, updating model")
+            self.model.build_vocab(X_input, update=True)
+            self.model.train(X_input, total_examples=len(
+                X_input), epochs=self.model.epochs)
+        else:
+            self.model.build_vocab(X_input)
+            self.model.train(X_input, total_examples=len(
+                X_input), epochs=self.model.epochs)
 
         return self
 
     def transform(self, X):
         '''
         Transforms data to word embeddings.
-        Inputs: 
+        Inputs:
         ----------
-        X : list of str 
+        X : list of str
             List of descriptions.
 
         '''
@@ -142,10 +145,6 @@ class Word2VecModel(BaseEstimator, TransformerMixin):
             return np.array([self.vectorize(" ".join(sentence))
                              for sentence in X])
         return np.array([self.vectorize(sentence) for sentence in X])
-
-    def fit_transform(self, X, y=None):
-        self.fit(X)
-        return self.transform(X)
 
     def vectorize(self, sentence):
         words = sentence.split()
@@ -159,6 +158,52 @@ class Word2VecModel(BaseEstimator, TransformerMixin):
     def aggregate_vectors(self, word_vectors):
         # Implement different affregation strategies
         return word_vectors.mean(axis=0)
+
+    def save_model(self, path):
+        '''
+        Save model to path
+        '''
+        dir_path = os.path.dirname(path)
+
+        assert dir_path.startswith(
+            WORD_EMBEDDING_PATH), f"Model path must be in WORD_EMBEDDING_PATH: {WORD_EMBEDDING_PATH}"
+        if not os.path.exists(dir_path):
+            log.info(f"Directory {dir_path} does not exist")
+            os.makedirs(dir_path)
+            log.info(f"Directory {dir_path} created")
+
+        log.info(f"Saving model to {path}")
+        self.model.save(path)
+        log.info("Model saved")
+
+    def available_models(self):
+        return list(gensim.downloader.info()['models'].keys())
+
+
+class Word2VecModel(WordEmbeddingModel):
+    '''
+    Computes word embeddings for each description.
+
+    Parameters:
+    ----------
+    vector_size : int, optional
+            Dimensionality of the word vectors.
+        window : int, optional
+            Maximum distance between the current and predicted word within a sentence.
+        min_count : int, optional
+            Ignores all words with total frequency lower than this.
+    '''
+
+    def __init__(self, **kwargs):
+        super().__init__(**kwargs)
+        self.model = Word2Vec(**kwargs)
+
+    def load_from_path(self, path):
+        '''
+        Load model from path
+        '''
+        print("self.model type", type(self.model))
+        self.model = Word2Vec.load(path)
 
     def load_model(self, model='word2vec-google-news-300'):
         '''
@@ -181,20 +226,14 @@ class Word2VecModel(BaseEstimator, TransformerMixin):
                 print("Pretrained model not found")
                 return None
 
-    def save_model(self, path):
+
+class FastTextModel(WordEmbeddingModel):
+    def __init__(self, **kwargs):
+        self.kwargs = kwargs
+        self.model = FastText(**kwargs)
+
+    def load_from_path(self, path):
         '''
-        Saves model to WORD2VEC_MODEL_PATH
+        Load model from path
         '''
-
-        dir_path = os.path.dirname(path)
-        file_name = os.path.basename(path)
-
-        assert dir_path.startswith(
-            MODEL_PATH), "Model path must be in MODEL_PATH"
-        assert os.path.exists(dir_path), f"Directory {dir_path} does not exist"
-        log.info(f"Saving model to {path}")
-        self.model.wv.save(path)
-        log.info("Model saved")
-
-    def available_models(self):
-        return list(gensim.downloader.info()['models'].keys())
+        self.model = FastText.load(path)
