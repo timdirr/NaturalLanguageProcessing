@@ -13,28 +13,9 @@ from gensim.models.fasttext import load_facebook_model
 from globals import MODEL_PATH, WORD_EMBEDDING_PATH
 
 import logging as log
-import gzip
 
 
-def get_text_model(model_name: str = 'CountVectorizer', **kwargs):
-    '''
-    Returns a text model
-    Inputs:
-    model_name: str
-        name of the model to use, supported values are 'CountVectorizer', 'TfidfVectorizer', 'Word2Vec'
-    kwargs: dict
-        parameters for the model
-    '''
-    models = {
-        'CountVectorizer': BagOfWords('count', **kwargs),
-        'TfidfVectorizer': BagOfWords('tf-idf', **kwargs),
-        'Word2Vec': Word2VecModel(**kwargs),
-    }
-    log.info(f"Using {model_name} model as text model")
-    return models[model_name]
-
-
-def download_w2v_model(model_name: str, save_dir: os.path = os.path.join(MODEL_PATH, "word2vec")):
+def download_word_embedding(model_name: str, save_dir: os.path = WORD_EMBEDDING_PATH):
     '''
     Downloads a pretrained Word2Vec model using Gensim's downloader.
 
@@ -122,7 +103,7 @@ class WordEmbeddingModel(BaseEstimator, TransformerMixin):
                     "Model is not loaded. Please provide a pretrained model.")
             return self
 
-        log.info("Fitting Word2Vec model")
+        log.info(f"Fitting model")
         if isinstance(X[0], list):
             X_input = X
         else:
@@ -131,11 +112,15 @@ class WordEmbeddingModel(BaseEstimator, TransformerMixin):
         # check if vocab already exists
         if self.model.wv.index_to_key != []:
             log.info("Vocabulary already exists, updating model")
+            log.info("Building vocabulary")
             self.model.build_vocab(X_input, update=True)
+            log.info("Training model")
             self.model.train(X_input, total_examples=len(
                 X_input), epochs=self.model.epochs)
         else:
+            log.info("Building vocabulary")
             self.model.build_vocab(X_input)
+            log.info("Training model")
             self.model.train(X_input, total_examples=len(
                 X_input), epochs=self.model.epochs)
 
@@ -156,13 +141,14 @@ class WordEmbeddingModel(BaseEstimator, TransformerMixin):
         return np.array([self.vectorize(sentence) for sentence in X])
 
     def vectorize(self, sentence):
-        words = sentence.split()
-        word_vectors = np.array([self.model.wv[word]
-                                 for word in words if word in self.model.wv]
-                                )
-        if len(word_vectors) == 0:
-            return np.zeros(100)
-        return self.aggregate_vectors(word_vectors)
+        '''
+        Computes the word embeddings for a single description.
+        Inputs:
+        ----------
+        sentence : str
+            Description to vectorize.
+        '''
+        raise NotImplementedError("Subclasses must implement this method")
 
     def aggregate_vectors(self, word_vectors):
         # Implement different affregation strategies
@@ -184,26 +170,6 @@ class WordEmbeddingModel(BaseEstimator, TransformerMixin):
         log.info(f"Saving model to {path}")
         self.model.save(path)
         log.info("Model saved")
-
-    def load_model(self, model):
-        if os.path.exists(model):
-            self.load_from_path(model)
-        else:
-            self.load_pretrained(model)
-
-    def load_from_path(self, path):
-        '''
-        Load model from path
-        '''
-        log.info(f"Loading model from path: {path}")
-        self.model = Word2Vec.load(path)
-        log.info(f"Loaded model: {self.model}")
-
-    def load_pretrained(self, model_name):
-        '''
-        Load pretrained model
-        '''
-        self.model.wv = gensim.downloader.load(model_name)
 
     def available_models(self):
         return list(gensim.downloader.info()['models'].keys())
@@ -231,6 +197,30 @@ class Word2VecModel(WordEmbeddingModel):
             self.model = Word2Vec(**kwargs)
         self.kwargs = kwargs
 
+    def vectorize(self, sentence):
+        words = sentence.split()
+        word_vectors = np.array([self.model.wv.get_vector(word)
+                                for word in words if word in self.model.wv])
+        if len(word_vectors) == 0:
+            return np.zeros(self.get_vector_size())
+        return self.aggregate_vectors(word_vectors)
+
+    def load_model(self, model):
+        if os.path.exists(model):
+            self.load_from_path(model)
+        else:
+            self.load_pretrained(model)
+
+    def load_from_path(self, path):
+        log.info(f"Loading Word2Vec model from path: {path}")
+        self.model = Word2Vec.load(path)
+        log.info(f"Loaded Word2Vec model: {self.model}")
+
+    def load_pretrained(self, model_name):
+        log.info(f"Loading pretrained Word2Vec model: {model_name}")
+        self.model.wv = gensim.downloader.load(model_name)
+        log.info(f"Loaded pretrained Word2Vec model: {self.model}")
+
 
 class FastTextModel(WordEmbeddingModel):
     def __init__(self, model=None, train_embeddings=True, **kwargs):
@@ -238,5 +228,29 @@ class FastTextModel(WordEmbeddingModel):
         if model:
             self.load_model(model)
         else:
-            self.model = Word2Vec(**kwargs)
+            self.model = FastText(**kwargs)
         self.kwargs = kwargs
+
+    def vectorize(self, sentence):
+        words = sentence.split()
+        word_vectors = np.array([self.model.wv.get_vector(word)
+                                for word in words])
+        if len(word_vectors) == 0:
+            return np.zeros(self.get_vector_size())
+        return self.aggregate_vectors(word_vectors)
+
+    def load_model(self, model):
+        if os.path.exists(model):
+            self.load_from_path(model)
+        else:
+            self.load_pretrained(model)
+
+    def load_from_path(self, path):
+        log.info(f"Loading FastText model from path: {path}")
+        self.model = FastText.load(path)
+        log.info(f"Loaded FastText model: {self.model}")
+
+    def load_pretrained(self, model_name):
+        log.info(f"Loading pretrained FastText model: {model_name}")
+        self.model.wv = gensim.downloader.load(model_name)
+        log.info(f"Loaded pretrained FastText model: {self.model}")
