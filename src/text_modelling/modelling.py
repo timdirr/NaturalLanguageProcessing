@@ -116,6 +116,7 @@ class WordEmbeddingModel(BaseEstimator, TransformerMixin):
         '''
         if not self.train_embeddings:
             log.info("Not training embeddings as train_embeddings=False")
+            log.info(self.model)
             if self.model is None:
                 raise ValueError(
                     "Model is not loaded. Please provide a pretrained model.")
@@ -186,12 +187,17 @@ class WordEmbeddingModel(BaseEstimator, TransformerMixin):
 
     def load_model(self, model):
         if os.path.exists(model):
-            self.model = self.load_from_path(model)
+            self.load_from_path(model)
         else:
-            self.model = self.load_pretrained(model)
+            self.load_pretrained(model)
 
     def load_from_path(self, path):
-        pass
+        '''
+        Load model from path
+        '''
+        log.info(f"Loading model from path: {path}")
+        self.model = Word2Vec.load(path)
+        log.info(f"Loaded model: {self.model}")
 
     def load_pretrained(self, model_name):
         '''
@@ -223,43 +229,14 @@ class Word2VecModel(WordEmbeddingModel):
             self.load_model(model)
         else:
             self.model = Word2Vec(**kwargs)
-
-    def load_from_path(self, path):
-        '''
-        Load model from path
-        '''
-        print("self.model type", type(self.model))
-        self.model = Word2Vec.load(path)
-
-    def load_model(self, model='word2vec-google-news-300'):
-        '''
-        Load pretrained embeddings
-        '''
-        if os.path.exists(model):
-            if model.endswith('.gz'):
-                with gzip.open(model, 'rt', encoding='utf-8') as f:
-                    self.model = gensim.models.KeyedVectors.load_word2vec_format(
-                        f, binary=False)
-            else:
-                self.model = gensim.models.KeyedVectors.load_word2vec_format(
-                    model, binary=True)
-        else:
-            log.info("No model path found, loading from gensim")
-            try:
-                self.model = gensim.downloader.load(model)
-                log.info("Pretrained model loaded")
-            except ValueError:
-                print("Pretrained model not found")
-                return None
+        self.kwargs = kwargs
 
 
 class FastTextModel(WordEmbeddingModel):
-    def __init__(self, **kwargs):
+    def __init__(self, model=None, train_embeddings=True, **kwargs):
+        super().__init__(train_embeddings=train_embeddings, **kwargs)
+        if model:
+            self.load_model(model)
+        else:
+            self.model = Word2Vec(**kwargs)
         self.kwargs = kwargs
-        self.model = FastText(**kwargs)
-
-    def load_from_path(self, path):
-        '''
-        Load model from path
-        '''
-        self.model = FastText.load(path)
