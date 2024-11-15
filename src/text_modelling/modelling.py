@@ -1,3 +1,4 @@
+from abc import ABC, abstractmethod
 import numpy as np
 import os
 from sklearn.base import BaseEstimator, TransformerMixin
@@ -30,6 +31,8 @@ class BagOfWords(BaseEstimator, TransformerMixin):
                 The lower and upper boundary of the range of n-values for different n-grams to be extracted.
 
         '''
+        if vectorizer_name not in ['count', 'tf-idf']:
+            raise ValueError("Vectorizer not supported")
         self.vectorizer_name = vectorizer_name
         self.kwargs = kwargs
         self.model = self.set_vectorizer(vectorizer_name)
@@ -47,16 +50,14 @@ class BagOfWords(BaseEstimator, TransformerMixin):
     def set_vectorizer(self, vectorizer_name):
         if vectorizer_name == 'count':
             return CountVectorizer(**self.kwargs)
-        elif vectorizer_name == 'tf-idf':
-            return TfidfVectorizer(**self.kwargs)
         else:
-            raise ValueError("Vectorizer not supported")
+            return TfidfVectorizer(**self.kwargs)
 
     def get_feature_names_out(self):
         return self.model.get_feature_names_out()
 
 
-class WordEmbeddingModel(BaseEstimator, TransformerMixin):
+class WordEmbeddingModel(ABC, BaseEstimator, TransformerMixin):
     '''
     Superclass for word embedding models.
     Pretrained models are not supposed to be retrained:
@@ -69,8 +70,8 @@ class WordEmbeddingModel(BaseEstimator, TransformerMixin):
 
     def __init__(self, train_embeddings=True, **kwargs):
         self.kwargs = kwargs
-        self.model = None
         self.train_embeddings = train_embeddings
+        self.model: Word2Vec = None
 
     def fit(self, X, y=None):
         '''
@@ -80,12 +81,12 @@ class WordEmbeddingModel(BaseEstimator, TransformerMixin):
         X : list of str or list of list of str
             List of descriptions.
         '''
+        if self.model is None:
+            raise ValueError(
+                "Model is not loaded. Please provide a pretrained model.")
+
         if not self.train_embeddings:
             log.info("Not training embeddings as train_embeddings=False")
-            log.info(self.model)
-            if self.model is None:
-                raise ValueError(
-                    "Model is not loaded. Please provide a pretrained model.")
             return self
 
         log.info(f"Fitting model")
@@ -108,6 +109,30 @@ class WordEmbeddingModel(BaseEstimator, TransformerMixin):
 
         return self
 
+    def load_model(self, model: str):
+        '''
+        Loads the model.
+        Inputs:
+        ----------
+        model : str
+            Path to the model or name of the pretrained model.
+        '''
+        if os.path.exists(model):
+            self.load_from_path(model)
+        else:
+            self.load_pretrained(model)
+
+    @abstractmethod
+    def load_from_path(self, path: str):
+        '''
+        Loads the model from path.
+        Inputs:
+        ----------
+        path : str
+            Path of the model.
+        '''
+        pass
+
     def transform(self, X):
         '''
         Transforms data to word embeddings.
@@ -122,7 +147,7 @@ class WordEmbeddingModel(BaseEstimator, TransformerMixin):
                              for sentence in X])
         return np.array([self.vectorize(sentence) for sentence in X])
 
-    def vectorize(self, sentence):
+    def vectorize(self, sentence: str):
         '''
         Computes the word embeddings for a single description.
         Inputs:
@@ -130,15 +155,31 @@ class WordEmbeddingModel(BaseEstimator, TransformerMixin):
         sentence : str
             Description to vectorize.
         '''
-        raise NotImplementedError("Subclasses must implement this method")
+        words = sentence.split()
+        word_vectors = np.array([self.model.wv.get_vector(word)
+                                for word in words if word in self.model.wv])
+        if len(word_vectors) == 0:
+            return np.zeros(self.get_vector_size())
+        return self.aggregate_vectors(word_vectors)
 
-    def aggregate_vectors(self, word_vectors):
-        # Implement different affregation strategies
+    def aggregate_vectors(self, word_vectors: np.ndarray):
+        '''
+        Aggregates word vectors to a single vector.
+        Inputs:
+        ----------
+        word_vectors : np.ndarray
+            Array of word vectors.
+        '''
+        # TODO: Implement different aggregation strategies?
         return word_vectors.mean(axis=0)
 
-    def save_vectors(self, path):
+    def save_vectors(self, path: str):
         '''
         Save vectors to path
+        Inputs:
+        ----------
+        path : str
+            Save path.
         '''
         dir_path = os.path.dirname(path)
 
@@ -154,9 +195,13 @@ class WordEmbeddingModel(BaseEstimator, TransformerMixin):
         word_vectors.save(path)
         log.info("Vectors saved")
 
-    def save(self, path):
+    def save(self, path: str):
         '''
         Save model to path
+        Inputs:
+        ----------
+        path : str
+            Save path.
         '''
         dir_path = os.path.dirname(path)
 
@@ -171,30 +216,27 @@ class WordEmbeddingModel(BaseEstimator, TransformerMixin):
         self.model.save(path)
         log.info("Model saved")
 
-    def load_pretrained(self, model_name):
-        log.info(f"Loading pretrained Word2Vec model: {model_name}")
+    def load_pretrained(self, model_name: str):
+        '''
+        Loads pretrained model.
+        Inputs:
+        ----------
+        model_name : str
+            Name of the pretrained model.
+        '''
+        log.info(f"Loading pretrained model: {model_name}")
         self.model.wv = gensim.downloader.load(model_name)
-        log.info(f"Loaded pretrained Word2Vec model: {self.model}")
+        log.info(f"Loaded pretrained {model_name} model: {self.model}")
         self.train_embeddings = False
 
     def available_models(self):
+        '''
+        Returns available pretrained models.
+        '''
         return list(gensim.downloader.info()['models'].keys())
 
 
 class Word2VecModel(WordEmbeddingModel):
-    '''
-    Computes word embeddings for each description.
-
-    Parameters:
-    ----------
-    vector_size : int, optional
-            Dimensionality of the word vectors.
-        window : int, optional
-            Maximum distance between the current and predicted word within a sentence.
-        min_count : int, optional
-            Ignores all words with total frequency lower than this.
-    '''
-
     def __init__(self, model=None, train_embeddings=True, **kwargs):
         super().__init__(train_embeddings=train_embeddings, **kwargs)
         if model:
@@ -203,21 +245,14 @@ class Word2VecModel(WordEmbeddingModel):
             self.model = Word2Vec(**kwargs)
         self.kwargs = kwargs
 
-    def vectorize(self, sentence):
-        words = sentence.split()
-        word_vectors = np.array([self.model.wv.get_vector(word)
-                                for word in words if word in self.model.wv])
-        if len(word_vectors) == 0:
-            return np.zeros(self.get_vector_size())
-        return self.aggregate_vectors(word_vectors)
-
-    def load_model(self, model):
-        if os.path.exists(model):
-            self.load_from_path(model)
-        else:
-            self.load_pretrained(model)
-
-    def load_from_path(self, path):
+    def load_from_path(self, path: str):
+        '''
+        Loads the model from path.
+        Inputs:
+        ----------
+        path : str
+            Path of the model.
+        '''
         log.info(f"Loading Word2Vec model from path: {path}")
         self.model = Word2Vec.load(path)
         log.info(f"Loaded Word2Vec model: {self.model}")
@@ -232,21 +267,14 @@ class FastTextModel(WordEmbeddingModel):
             self.model = FastText(**kwargs)
         self.kwargs = kwargs
 
-    def vectorize(self, sentence):
-        words = sentence.split()
-        word_vectors = np.array([self.model.wv.get_vector(word)
-                                for word in words if word in self.model.wv])
-        if len(word_vectors) == 0:
-            return np.zeros(self.get_vector_size())
-        return self.aggregate_vectors(word_vectors)
-
-    def load_model(self, model):
-        if os.path.exists(model):
-            self.load_from_path(model)
-        else:
-            self.load_pretrained(model)
-
     def load_from_path(self, path):
+        '''
+        Loads the model from path.
+        Inputs:
+        ----------
+        path : str
+            Path of the model.
+        '''
         log.info(f"Loading FastText model from path: {path}")
         self.model = FastText.load(path)
         log.info(f"Loaded FastText model: {self.model}")

@@ -10,7 +10,7 @@ import argparse
 import re
 import json
 
-from globals import DATA_PATH, EXPORT_PATH, LOGGING, DATA_EXPLORATION, CONFIG_PATH
+from globals import DATA_PATH, EXPORT_PATH, CONFIG_PATH
 
 OUTPUT_PATH = os.path.join(DATA_PATH, "clean_data.csv")
 RAW_PATH = os.path.join(DATA_PATH, "raw_data.csv")
