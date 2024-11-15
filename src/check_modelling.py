@@ -1,18 +1,15 @@
-import numpy as np
-import os
 from text_modelling.modelling import BagOfWords, Word2VecModel, FastTextModel
-
-from gensim.models import Word2Vec
-from globals import MODEL_PATH, WORD_EMBEDDING_PATH, SEED
+from globals import WORD_EMBEDDING_PATH, SEED
+import os
+import numpy as np
 import logging as log
-
 from sklearn.linear_model import LogisticRegression
 from sklearn.naive_bayes import MultinomialNB as NaiveBayes
 from sklearn.pipeline import make_pipeline
 from sklearn.model_selection import train_test_split
-from sklearn.metrics import classification_report, confusion_matrix
-
+from sklearn.metrics import classification_report
 import time
+
 
 log.basicConfig(level=log.INFO,
                 format='%(asctime)s: %(levelname)s: %(message)s',
