@@ -15,30 +15,6 @@ from globals import MODEL_PATH, WORD_EMBEDDING_PATH
 import logging as log
 
 
-def download_word_embedding(model_name: str, save_dir: os.path = WORD_EMBEDDING_PATH):
-    '''
-    Downloads a pretrained Word2Vec model using Gensim's downloader.
-
-    Parameters:
-    ----------
-    model_name : str
-        The name of the model to download (as recognized by Gensim).
-    save_dir : str
-        The directory where the model should be saved.
-    '''
-    assert os.path.exists(save_dir), f"Directory {save_dir} does not exist"
-    original_base_dir = gensim.downloader.BASE_DIR
-    gensim.downloader.BASE_DIR = save_dir  # Set the download directory
-    try:
-        path = gensim.downloader.load(model_name, return_path=True)
-        log.info(f"Model downloaded to {path}")
-    except ValueError as e:
-        log.error(f"Model '{model_name}' not found. Available models: {
-                  gensim.downloader.info()['models'].keys()}")
-    finally:
-        gensim.downloader.BASE_DIR = original_base_dir  # Reset to original directory
-
-
 class BagOfWords(BaseEstimator, TransformerMixin):
     def __init__(self, vectorizer_name, **kwargs):
         '''
@@ -178,7 +154,7 @@ class WordEmbeddingModel(BaseEstimator, TransformerMixin):
         word_vectors.save(path)
         log.info("Vectors saved")
 
-    def save_model(self, path):
+    def save(self, path):
         '''
         Save model to path
         '''

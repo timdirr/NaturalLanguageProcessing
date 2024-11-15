@@ -1,6 +1,6 @@
 import numpy as np
 import os
-from text_modelling.modelling import download_word_embedding, BagOfWords, Word2VecModel, FastTextModel
+from text_modelling.modelling import BagOfWords, Word2VecModel, FastTextModel
 
 from gensim.models import Word2Vec
 from globals import MODEL_PATH, WORD_EMBEDDING_PATH, SEED
@@ -12,6 +12,7 @@ from sklearn.pipeline import make_pipeline
 from sklearn.model_selection import train_test_split
 from sklearn.metrics import classification_report, confusion_matrix
 
+import time
 
 log.basicConfig(level=log.INFO,
                 format='%(asctime)s: %(levelname)s: %(message)s',
@@ -128,89 +129,6 @@ X_train, X_test, y_train, y_test = train_test_split(
     X, y, test_size=0.2, stratify=y)
 
 
-def test_word_embeddings():
-
-    # load example dataset from sklearn
-    # from sklearn.datasets import fetch_20newsgroups
-    # newsgroups_train = fetch_20newsgroups(subset='train')
-    # X = newsgroups_train.data
-
-    log.info("Testing Word2Vec")
-
-    model = Word2VecModel(
-        min_count=1)
-    model.fit(X_train)
-
-    log.info(f"Vocabulary: {model.model.wv.index_to_key}")
-    features = model.transform(X_train)
-    log.info(f"Feature shape: {features.shape}")
-    test_features = model.transform(X_test)
-    log.info(f"Test Feature shape: {test_features.shape}")
-
-    model.save_model(os.path.join(WORD_EMBEDDING_PATH, "test_modelw2v"))
-    model.load_from_path(os.path.join(
-        WORD_EMBEDDING_PATH, "test_model_fasttext", "test_model_fasttext"))
-    log.info(f"Feature shape: {features.shape}")
-
-    if np.allclose(features, model.transform(X_train)):
-        log.info("Model loaded successfully and features are the same")
-
-    log.info("Loading pretrained model from Gensim")
-    model.load_pretrained("glove-wiki-gigaword-50")
-    features = model.transform(X)
-    log.info(f"Feature shape: {features.shape}")
-
-    if np.allclose(features, model.transform(X_train)):
-        log.info("Model loaded successfully and features are the same")
-
-    log.info(f"Available models for Word2Vec: {model.available_models()}")
-
-    ########################################################
-
-    log.info("Testing FastText model")
-
-    model = FastTextModel(vector_size=100, window=5,
-                          min_count=1, min_n=3, max_n=6)
-    model.fit(X)
-
-    log.info(f"Vocabulary: {model.model.wv.index_to_key}")
-    features = model.transform(X_train)
-    log.info(f"Feature shape: {features.shape}")
-    test_features = model.transform(X_test)
-    log.info(f"Test Feature shape: {test_features.shape}")
-    model.save_model(os.path.join(
-        WORD_EMBEDDING_PATH, "test_model_fasttext", "test_model_fasttext"))
-
-    model.load_from_path(os.path.join(
-        WORD_EMBEDDING_PATH, "test_model_fasttext", "test_model_fasttext"))
-    log.info(f"Feature shape: {features.shape}")
-
-    if np.allclose(features, model.transform(X)):
-        log.info("Model loaded successfully and features are the same")
-
-    log.info("Loading pretrained model from Gensim")
-    model.load_pretrained("glove-wiki-gigaword-50")
-    features = model.transform(X)
-    log.info(f"Feature shape: {features.shape}")
-
-    log.info(f"Available models for FastText: {model.available_models()}")
-    log.info("TESTING SIMPLE PIPELINE")
-
-    clf = make_pipeline(
-        FastTextModel(model=os.path.join(WORD_EMBEDDING_PATH, "test_model_fasttext",
-                      "test_model_fasttext"), train_embeddings=True, min_count=1),
-        LogisticRegression()
-    )
-    clf.fit(X, y)
-    y_pred = clf.predict(X_test)
-    log.info(f"Predictions: {y_pred}")
-
-    ########################################################
-    log.info("TEST DOWNLOAD MODELS AND LOADING")
-
-    download_word_embedding("glove-wiki-gigaword-50")
-
-
 def test_word_embeddings(model, pretrained=None):
     log.info(f"Testing {model.__class__.__name__}")
 
@@ -224,8 +142,8 @@ def test_word_embeddings(model, pretrained=None):
     test_features = model.transform(X_test)
     log.info(f"Test Feature shape: {test_features.shape}")
 
-    model.save_model(os.path.join(WORD_EMBEDDING_PATH,
-                     f"test_model_{model.__class__.__name__}"))
+    model.save(os.path.join(WORD_EMBEDDING_PATH,
+                            f"test_model_{model.__class__.__name__}"))
     model.load_from_path(os.path.join(WORD_EMBEDDING_PATH,
                                       f"test_model_{model.__class__.__name__}"))
 
@@ -269,10 +187,40 @@ def run_tests_word_embeddings():
     ft_feats, ft_feats_pretrained = test_word_embeddings(FastTextModel(vector_size=100, window=5,
                                                                        min_count=1, min_n=3, max_n=6),
                                                          pretrained="glove-wiki-gigaword-50")
+    if np.allclose(w2v_feats, ft_feats):
+        log.info("Fitted w2v and ft models generate same features")
+    else:
+        log.info("Fitted w2v and ft models generate different features")
+
     if np.allclose(w2v_feats_pretrained, ft_feats_pretrained):
         log.info("Pretrained w2v and ft models generate same features")
     else:
-        log.info("Fitted w2v and ft models generate different features")
+        log.info("Pretrained w2v and ft models generate different features")
+
+    log.info("Loading pretrained model from Gensim and saveing to path")
+
+    model = Word2VecModel(min_count=1)
+    start = time.time()
+    model.load_pretrained('word2vec-google-news-300')
+    log.info(f"Time taken to load pretrained model: {time.time()-start}")
+    google_features = model.transform(X_train)
+    model.save(os.path.join(
+        WORD_EMBEDDING_PATH, "word2vec-google-news-300"))
+    # model.save_vectors(os.path.join(WORD_EMBEDDING_PATH,
+    #                   "word2vec-google-news-300_vectors"))
+
+    # Load vectors into new model
+    model = Word2VecModel(min_count=1)
+
+    model.load_from_path(os.path.join(
+        WORD_EMBEDDING_PATH, "word2vec-google-news-300"))
+
+    log.info(f"Loaded model: {model.model}")
+    google_features2 = model.transform(X_train)
+
+    if np.allclose(google_features, google_features2):
+        log.info(
+            "Loaded model from path generates same features as loaded model from Gensim")
 
 
 def test_bag_of_words(model_name, **kwargs):
