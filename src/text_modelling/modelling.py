@@ -30,6 +30,8 @@ class BagOfWords(BaseEstimator, TransformerMixin):
                 The lower and upper boundary of the range of n-values for different n-grams to be extracted.
 
         '''
+        if vectorizer_name not in ['count', 'tf-idf']:
+            raise ValueError("Vectorizer not supported")
         self.vectorizer_name = vectorizer_name
         self.kwargs = kwargs
         self.model = self.set_vectorizer(vectorizer_name)
@@ -47,10 +49,8 @@ class BagOfWords(BaseEstimator, TransformerMixin):
     def set_vectorizer(self, vectorizer_name):
         if vectorizer_name == 'count':
             return CountVectorizer(**self.kwargs)
-        elif vectorizer_name == 'tf-idf':
-            return TfidfVectorizer(**self.kwargs)
         else:
-            raise ValueError("Vectorizer not supported")
+            return TfidfVectorizer(**self.kwargs)
 
     def get_feature_names_out(self):
         return self.model.get_feature_names_out()
