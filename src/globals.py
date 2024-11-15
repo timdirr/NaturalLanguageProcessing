@@ -13,3 +13,5 @@ DATA_EXPLORATION = False
 
 # Verbose logging
 LOGGING = True
+
+SEED = 42069
