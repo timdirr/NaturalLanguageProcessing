@@ -58,4 +58,5 @@ def conllu2df(filename):
                     "description": " ".join(current_description)
                 }
 
+    log.info(f"Converting conllu file {filename} to a dataframe...")
     return pd.DataFrame(movie_entry_generator())
