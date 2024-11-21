@@ -7,18 +7,36 @@ from scipy.sparse import csr_matrix
 
 import numpy as np
 from sklearn.svm import SVC
+import logging as log
+
+from globals import SEED
 
 
 class MultiLabelClassifier(BaseEstimator, ClassifierMixin):
     def __init__(self, estimator_name, **kwargs):
+        log.info(f"Creating multilabel classifier {estimator_name}")
         if estimator_name == "knn":
-            self.base_estimator = KNeighborsClassifier(**kwargs)
+            if not kwargs:
+                log.info(f"no kwargs found for {estimator_name}, using default kwargs n_neighbors=15, weights='distance', algorithm='auto', metric='minkowski', p=3, n_jobs=-1")
+                self.base_estimator = KNeighborsClassifier(n_neighbors=15, weights='distance', algorithm='auto', metric='euclidean', n_jobs=-1)
+            else:
+                self.base_estimator = KNeighborsClassifier(**kwargs)
+
         elif estimator_name == "svm":
-            self.base_estimator = SVC(**kwargs)
+            if not kwargs:
+                log.info(f"no kwargs found for {estimator_name}, C=1, kernel='rbf', gamma='scale', class_weight='balanced', max_iter=-1, random_state={SEED}")
+                self.base_estimator = SVC(C=1, kernel='rbf', gamma='scale', class_weight='balanced', max_iter=-1, random_state=SEED)
+            else:
+                self.base_estimator = SVC(**kwargs)
         elif estimator_name == "bayes":
-            self.base_estimator = MultinomialNB(**kwargs)
+            if not kwargs:
+                log.info(f"no kwargs found for {estimator_name}, alpha=1.0, fit_prior=True")
+                self.base_estimator = MultinomialNB(alpha=1.0, fit_prior=True)
+            else:
+                self.base_estimator = MultinomialNB(**kwargs)
         else:
             raise ValueError("base_estimator must be knn. Nothing else supported yet")
+
         self.multi_output_clf_ = MultiOutputClassifier(self.base_estimator)
 
     def fit(self, X, y):

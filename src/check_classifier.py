@@ -1,47 +1,63 @@
 from classifier.base import MultiLabelClassifier
+from preprocess.dataloader import load_stratified_data
 import pandas as pd
 import os
 
-from globals import DATA_PATH
-from sklearn.model_selection import train_test_split
+from globals import SEED
 from text_modelling.modelling import BagOfWords
 from sklearn.metrics import jaccard_score
-import re
+import numpy as np
+
+import logging as log
+
+from skmultilearn.model_selection import IterativeStratification
+
+log.basicConfig(level=log.INFO,
+                format='%(asctime)s: %(levelname)s: %(message)s',
+                datefmt='%Y-%m-%d %H:%M:%S')
 
 
-def load_data():
-    df = pd.read_csv(os.path.join('data', 'clean_data.csv'), converters={
-        "encoded_genre": lambda x: re.sub(r"[\[\]']", '', x).split(' ')})
-    sampled_df = df.sample(n=5000, random_state=42)
+def test_model(model, classifier, train, test):
+    X_train, y_train = train.drop(["genre"], axis=1), train["genre"]
+    X_test, y_test = test.drop(["genre"], axis=1), test["genre"]
 
-    train_df, test_df = train_test_split(sampled_df, test_size=0.2, random_state=42)
-    return train_df["description"], train_df["encoded_genre"], test_df["description"], test_df["encoded_genre"]
+    transformed_data = model.fit_transform(X_train)
+    classifier = classifier.fit(transformed_data, y_train)
+
+    jaccard = jaccard_score(classifier.compute_target_matrix(y_test),
+                            classifier.predict(model.transform(X_test)), average='samples')
+    return jaccard
 
 
 def main():
-    X_train, y_train, X_test, y_test = load_data()
-    model = BagOfWords("tf-idf")
-    transformed_data = model.fit_transform(X_train)
-    classifier = MultiLabelClassifier("knn", n_neighbors=20, weights='distance')
-    classifier = classifier.fit(transformed_data, y_train)
+    train, test, dev = load_stratified_data()
+    X_train, y_train = train.drop(columns='genre'), train['genre']
+    X_test, y_test = test.drop(columns='genre'), test['genre']
+    X_dev, y_dev = dev.drop(columns='genre'), dev['genre']
 
-    jaccard = jaccard_score(classifier.compute_target_matrix(y_test), classifier.predict(model.transform(X_test)), average='samples')
-    print(jaccard)
+    k_fold = IterativeStratification(n_splits=5, order=1, random_state=SEED)
+    jaccard_scores = []
+    log.info(f"Performing 5-fold cross-validation for count with KNN")
+    for train, test in k_fold.split(X_dev, y_dev):
+        jaccard_scores.append(test_model(BagOfWords("count", ngram_range=(1,1)), MultiLabelClassifier("knn"), train, test))
 
-    classifier = MultiLabelClassifier("svm", C=2.0, kernel='rbf')
-    classifier = classifier.fit(transformed_data, y_train)
+    log.info(f"Mean-Jaccard score: {np.mean(jaccard_scores)}")
 
-    jaccard = jaccard_score(classifier.compute_target_matrix(y_test), classifier.predict(model.transform(X_test)), average='samples')
-    print(jaccard)
+    k_fold = IterativeStratification(n_splits=5, order=1, random_state=SEED)
+    jaccard_scores = []
+    log.info(f"Performing 5-fold cross-validation for tf-idf with KNN")
+    for train, test in k_fold.split(X_dev, y_dev):
+        jaccard_scores.append(test_model(BagOfWords("tf-idf", ngram_range=(1,1)), MultiLabelClassifier("knn"), train, test))
 
-    classifier = MultiLabelClassifier("bayes")
-    classifier = classifier.fit(transformed_data, y_train)
+    log.info(f"Mean-Jaccard score: {np.mean(jaccard_scores)}")
 
-    jaccard = jaccard_score(classifier.compute_target_matrix(y_test), classifier.predict(model.transform(X_test)), average='samples')
-    print(jaccard)
+    k_fold = IterativeStratification(n_splits=5, order=1, random_state=SEED)
+    jaccard_scores = []
+    log.info(f"Performing 5-fold cross-validation for tf-idf with KNN")
+    for train, test in k_fold.split(X_dev, y_dev):
+        jaccard_scores.append(test_model(BagOfWords("tf-idf", ngram_range=(1,1)), MultiLabelClassifier("knn"), train, test))
 
-
-
+    log.info(f"Mean-Jaccard score: {np.mean(jaccard_scores)}")
 
 
 if __name__ == "__main__":
