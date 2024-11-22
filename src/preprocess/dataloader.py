@@ -68,8 +68,11 @@ def load_stratified_data():
     dev = pd.DataFrame(X_dev, columns=df.drop(["genre"], axis=1).columns)
 
     test["genre"] = y_test.tolist()
+    log.info(f"Test set: \n{test.head()}")
     dev["genre"] = y_dev.tolist()
+    log.info(f"Dev set: \n{dev.head()}")
     train["genre"] = y_train.tolist()
+    log.info(f"Train set: \n{train.head()}")
 
     __save_csv(TEST_FILE_PATH, test)
     __save_csv(TRAIN_FILE_PATH, train)
