@@ -2,6 +2,8 @@ import gdown
 import os
 import requests
 import zipfile
+import logging as log
+
 
 from globals import DATA_PATH
 
@@ -14,36 +16,41 @@ drive_file_urls = {
     "conllu_data.conllu": "https://drive.google.com/uc?id=1cyjpL7dXFr_2WhLIlbNPO-PyHeEZBpHI"
 }
 
-# Define paths
-kaggle_path = os.path.join(DATA_PATH, "raw")
-zip_path = os.path.join(kaggle_path, "archive.zip")
 
-# Ensure base path exists
-os.makedirs(kaggle_path, exist_ok=True)
-print(f"Folder {kaggle_path} created.")
+def download():
+    # Define paths
+    kaggle_path = os.path.join(DATA_PATH, "raw")
+    zip_path = os.path.join(kaggle_path, "archive.zip")
 
-# Download from Kaggle if archive.zip doesn't exist
-response = requests.get(kaggle_url, stream=True)
-response.raise_for_status()  # Check for download errors
+    # Download Kaggle dataset if it doesn't already exist
+    if not os.path.isdir(kaggle_path):
+        os.makedirs(kaggle_path, exist_ok=True)
 
-with open(zip_path, "wb") as file:
-    for chunk in response.iter_content(chunk_size=8192):
-        file.write(chunk)
-print("Kaggle dataset download complete.")
+        response = requests.get(kaggle_url, stream=True)
+        response.raise_for_status()  # Check for download errors
 
-# Unzip the downloaded file
-with zipfile.ZipFile(zip_path, 'r') as zip_ref:
-    zip_ref.extractall(kaggle_path)
-print("Extraction complete.")
+        with open(zip_path, "wb") as file:
+            for chunk in response.iter_content(chunk_size=8192):
+                file.write(chunk)
 
-os.remove(zip_path)
-print("Zip file deleted.")
+        # Unzip the downloaded file
+        with zipfile.ZipFile(zip_path, 'r') as zip_ref:
+            zip_ref.extractall(kaggle_path)
+        os.remove(zip_path)
+        log.info("Kaggle dataset downloaded and extracted.")
 
-# Download files from Google Drive if they don't already exist
-for file_name, file_url in drive_file_urls.items():
-    file_path = os.path.join(DATA_PATH, file_name)
-    if not os.path.isfile(file_path):
-        gdown.download(file_url, file_path, quiet=False)
-        print(f"{file_name} downloaded.")
-    else:
-        print(f"{file_name} already exists. Skipping download.")
+    # Download files from Google Drive if they don't already exist
+    for file_name, file_url in drive_file_urls.items():
+        file_path = os.path.join(DATA_PATH, file_name)
+        if not os.path.isfile(file_path):
+            gdown.download(file_url, file_path, quiet=False)
+            log.info(f"{file_name} downloaded.")
+
+    log.info("All files downloaded.")
+
+
+if __name__ == "__main__":
+    log.basicConfig(level=log.INFO,
+                    format='%(asctime)s: %(levelname)s: %(message)s',
+                    datefmt='%Y-%m-%d %H:%M:%S')
+    download()

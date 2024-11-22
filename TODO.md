@@ -74,3 +74,4 @@
     -   Evaluation
 
 -   [ ] Deep Learning Approach (Lecture on 22.11) (Daniel)
+    -   [ ] Simple MLP on TextModelling
