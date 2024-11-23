@@ -75,3 +75,5 @@
 
 -   [ ] Deep Learning Approach (Lecture on 22.11) (Daniel)
     -   [ ] Simple MLP on TextModelling
+
+-   [ ] Remove stop variable from start split load (just for testing so we dont need to split the whole data)
