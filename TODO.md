@@ -30,9 +30,9 @@
 
 #### 15.12 Deadline
 
--   [ ] Conllu Dataloader (Daniel)
+-   [x] Conllu Dataloader (Daniel)
 
--   [ ] Spitting Data -> train.csv, test.csv, dev.csv (Daniel et.al.)
+-   [x] Spitting Data -> train.csv, test.csv, dev.csv (Daniel et.al.)
 
     -   Stratified Split the data into train, test (90/10), fix and save split to file
     -   Stratified Split Dev Set for experimentation (10% of train), fix and save split to file
