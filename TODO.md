@@ -56,7 +56,7 @@
             -   [x] class FastText
             -   [x] class N-grams
 
--   [ ] Classifier (Sebastian)
+-   [x] Classifier (Sebastian)
 
     -   Naive Bayes, KNN, SVC
     -   sklearn.multiclass.OneVsRestClassifier
@@ -65,8 +65,8 @@
             -   [x] Naive Bayes
             -   [x] KNN
             -   [x] SVC
-            -   [ ] Random Forest
-            -   [ ] MLP
+            -   [x] Random Forest
+            -   [x] MLP
 
 -   [ ] Evaluation Script (Tim)
 
