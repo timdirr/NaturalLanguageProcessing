@@ -10,6 +10,7 @@ import nltk
 from nltk.corpus import stopwords
 from globals import DATA_PATH, EXPORT_PATH
 from tqdm import tqdm
+import json
 # from src.preprocess.imdb_crawler import IMDBCrawler
 
 CRAWL_DATA_PATH = os.path.join(DATA_PATH, 'crawl_data.csv')
@@ -125,6 +126,18 @@ def description_cleaner(df, pattern):
     return df_filtered, count_matches
 
 
+def encode_genres(genre):
+    with open(os.path.join(DATA_PATH, 'genres.json'), 'r') as f:
+        genres = json.load(f)
+    return np.isin(genres, genre).astype(int)
+
+
+def decode_genres(encoded_genre):
+    with open(os.path.join(DATA_PATH, 'genres.json'), 'r') as f:
+        genres = json.load(f)
+    return genres[np.where(encoded_genre == 1)[0]]
+
+
 def clean_data(df, save_intermediate=False):
     df_clean = df.copy()
 
@@ -134,6 +147,11 @@ def clean_data(df, save_intermediate=False):
         '|'.join(EXCLUDED_GENRES), case=False, na=False)]
 
     tqdm.pandas()
+
+    print(df_clean)
+    print(df_clean['genre'])
+    print(df_clean['genre'][0])
+    print(type(df_clean['genre'][0]))
 
     df_merged = df_clean.groupby(["movie_id", "movie_name"], as_index=False).agg({
         "genre": lambda x: ', '.join(x.unique()),
@@ -179,14 +197,12 @@ def clean_data(df, save_intermediate=False):
 
     genres = np.sort(df_merged['genre'].explode().unique())
 
-    def __encode_genres(genre):
-        return np.isin(genres, genre).astype(int)
-
-    def _decode_genres(encoded_genre):
-        return genres[np.where(encoded_genre == 1)[0]]
+    # save list of genres as json
+    with open(os.path.join(DATA_PATH, 'genres.json'), 'w') as f:
+        json.dump(genres.tolist(), f)
 
     df_merged["encoded_genre"] = df_merged.apply(
-        lambda x: __encode_genres(x["genre"]), axis=1)
+        lambda x: encode_genres(x["genre"]), axis=1)
 
     df_merged = df_merged.drop_duplicates(subset='description', keep='first')
     df_merged = df_merged.drop_duplicates(subset='movie_id', keep='first')

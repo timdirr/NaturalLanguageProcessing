@@ -10,3 +10,4 @@ tqdm==4.66.6
 wordcloud==1.9.3
 scikit-learn==1.5.2
 gensim==4.3.3
+iterative-stratification
