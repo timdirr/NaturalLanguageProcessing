@@ -182,6 +182,9 @@ def clean_data(df, save_intermediate=False):
     def __encode_genres(genre):
         return np.isin(genres, genre).astype(int)
 
+    def _decode_genres(encoded_genre):
+        return genres[np.where(encoded_genre == 1)[0]]
+
     df_merged["encoded_genre"] = df_merged.apply(
         lambda x: __encode_genres(x["genre"]), axis=1)
 

@@ -120,3 +120,4 @@ def conllu2df(filename, stop=None):
 
     log.info(f"Converting conllu file {filename} to a dataframe...")
     return pd.DataFrame(itertools.islice(movie_entry_generator(), stop))
+
