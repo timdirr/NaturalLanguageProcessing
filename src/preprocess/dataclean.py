@@ -133,9 +133,15 @@ def encode_genres(genre):
 
 
 def decode_genres(encoded_genre):
+    '''
+    Takes an encoded genre and return the correspondind genres as a list of strings.
+    '''
     with open(os.path.join(DATA_PATH, 'genres.json'), 'r') as f:
         genres = json.load(f)
-    return genres[np.where(encoded_genre == 1)[0]]
+    indices = np.where(encoded_genre == 1)[0]
+    if len(indices) == 0:
+        return []
+    return [genres[i] for i in indices]
 
 
 def clean_data(df, save_intermediate=False):
