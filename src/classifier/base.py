@@ -8,8 +8,9 @@ from scipy.sparse import csr_matrix
 import numpy as np
 from sklearn.svm import SVC
 import logging as log
-
+import pandas as pd
 from globals import SEED
+import helper
 
 
 class MultiLabelClassifier(BaseEstimator, ClassifierMixin):
@@ -43,13 +44,10 @@ class MultiLabelClassifier(BaseEstimator, ClassifierMixin):
         self.multi_output_clf_ = MultiOutputClassifier(self.base_estimator)
 
     def fit(self, X, y):
-        y_matrix = self.compute_target_matrix(y)
-        self.multi_output_clf_.fit(X, y_matrix)
+        if isinstance(y, pd.Series):
+            y = helper.pandas_ndarray_series_to_numpy(y)
+        self.multi_output_clf_.fit(X, y)
         return self
-
-    def compute_target_matrix(self, y):
-        y = np.array(y.tolist()).astype(int)
-        return y
 
     def predict(self, X):
         return self.multi_output_clf_.predict(X)

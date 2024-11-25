@@ -61,6 +61,12 @@
     -   Naive Bayes, KNN, SVC
     -   sklearn.multiclass.OneVsRestClassifier
     -   https://towardsdatascience.com/multi-label-text-classification-with-scikit-learn-30714b7819c5
+        -   class MultiLabelClassifier (SuperClass)
+            -   [x] Naive Bayes
+            -   [x] KNN
+            -   [x] SVC
+            -   [ ] Random Forest
+            -   [ ] MLP
 
 -   [ ] Evaluation Script (Tim)
 

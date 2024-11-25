@@ -44,7 +44,7 @@ def load_stratified_data(stop=None):
 
     if os.path.exists(SPLIT_FOLDER_PATH) and os.path.isfile(TEST_FILE_PATH) and os.path.isfile(TRAIN_FILE_PATH) and os.path.isfile(DEV_FILE_PATH) and stop is None:
         test = __load_csv(TEST_FILE_PATH)
-        train = __load_csv(os.path.join(DATA_PATH, SPLIT_FOLDER, TRAIN_FILE))
+        train = __load_csv(TRAIN_FILE_PATH)
         dev = __load_csv(DEV_FILE_PATH)
         log.info(f"Splits found and loaded.")
         return train, test, dev

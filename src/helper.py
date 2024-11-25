@@ -22,7 +22,7 @@ def numpy_to_pandas(X, columns):
     return pd.DataFrame(X, columns=columns)
 
 
-def pandas_ndarray_series_to_numpy(series: pd.Series):
+def pandas_ndarray_series_to_numpy(series):
     '''
     Converts a pandas Series of ndarrays to a numpy array.
 
@@ -36,8 +36,4 @@ def pandas_ndarray_series_to_numpy(series: pd.Series):
     numpy.ndarray
         The numpy array.
     '''
-    if isinstance(series.iloc[0], list):
-        return np.vstack(series)
-
-    assert isinstance(series.iloc[0], np.ndarray), "Series must contain ndarrays."
-    return np.vstack([x.tolist() for x in series.to_numpy()])
+    return np.array(series.tolist()).astype(int)

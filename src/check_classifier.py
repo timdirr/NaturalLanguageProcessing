@@ -1,8 +1,8 @@
+from sklearn.base import BaseEstimator
 from classifier.base import MultiLabelClassifier
 from preprocess.dataloader import load_stratified_data
 from iterstrat.ml_stratifiers import MultilabelStratifiedKFold
 from helper import pandas_ndarray_series_to_numpy
-
 from globals import SEED
 from text_modelling.modelling import BagOfWords
 from sklearn.metrics import jaccard_score
@@ -15,12 +15,11 @@ log.basicConfig(level=log.INFO,
                 datefmt='%Y-%m-%d %H:%M:%S')
 
 
-def test_model(model, classifier, X_train, X_test, y_train, y_test):
+def test_model(model: BaseEstimator, classifier: MultiLabelClassifier, X_train, X_test, y_train, y_test):
     transformed_data = model.fit_transform(X_train)
     classifier = classifier.fit(transformed_data, y_train)
 
-    jaccard = jaccard_score(classifier.compute_target_matrix(y_test),
-                            classifier.predict(model.transform(X_test)), average='samples')
+    jaccard = jaccard_score(y_test, classifier.predict(model.transform(X_test)), average='samples')
     return jaccard
 
 
