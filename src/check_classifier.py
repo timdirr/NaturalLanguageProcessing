@@ -31,21 +31,35 @@ def main():
 
     k_fold = MultilabelStratifiedKFold(n_splits=5, random_state=SEED, shuffle=True)
 
-    log.info(f"Performing 5-fold cross-validation for count with KNN")
+    log.info(f"Performing 5-fold cross-validation for BagOfWords (tf-idf) with MLP")
+    jaccard_scores = []
+    for train_idx, test_idx in tqdm(k_fold.split(X_dev, y_dev)):
+        X_dev_train, X_dev_test, y_dev_train, y_dev_test = X_dev[train_idx], X_dev[test_idx], y_dev[train_idx], y_dev[test_idx]
+        jaccard_scores.append(test_model(BagOfWords("tf-idf", ngram_range=(1, 1)), MultiLabelClassifier("mlp", verbose=False), X_dev_train, X_dev_test, y_dev_train, y_dev_test))
+    log.info(f"Mean-Jaccard score (MLP): {np.mean(jaccard_scores)}")
+
+    log.info(f"Performing 5-fold cross-validation for BagOfWords (tf-idf) with Random Forest")
+    jaccard_scores = []
+    for train_idx, test_idx in tqdm(k_fold.split(X_dev, y_dev)):
+        X_dev_train, X_dev_test, y_dev_train, y_dev_test = X_dev[train_idx], X_dev[test_idx], y_dev[train_idx], y_dev[test_idx]
+        jaccard_scores.append(test_model(BagOfWords("tf-idf", ngram_range=(1, 1)), MultiLabelClassifier("rf", verbose=False), X_dev_train, X_dev_test, y_dev_train, y_dev_test))
+    log.info(f"Mean-Jaccard score (Random Forest): {np.mean(jaccard_scores)}")
+
+    log.info(f"Performing 5-fold cross-validation for BagOfWords (tf-idf) with KNN")
     jaccard_scores = []
     for train_idx, test_idx in tqdm(k_fold.split(X_dev, y_dev)):
         X_dev_train, X_dev_test, y_dev_train, y_dev_test = X_dev[train_idx], X_dev[test_idx], y_dev[train_idx], y_dev[test_idx]
         jaccard_scores.append(test_model(BagOfWords("tf-idf", ngram_range=(1, 1)), MultiLabelClassifier("knn", verbose=False), X_dev_train, X_dev_test, y_dev_train, y_dev_test))
     log.info(f"Mean-Jaccard score (KNN): {np.mean(jaccard_scores)}")
 
-    log.info(f"Performing 5-fold cross-validation for count with SVM")
+    log.info(f"Performing 5-fold cross-validation for BagOfWords (tf-idf) with SVM")
     jaccard_scores = []
     for train_idx, test_idx in tqdm(k_fold.split(X_dev, y_dev)):
         X_dev_train, X_dev_test, y_dev_train, y_dev_test = X_dev[train_idx], X_dev[test_idx], y_dev[train_idx], y_dev[test_idx]
         jaccard_scores.append(test_model(BagOfWords("tf-idf", ngram_range=(1, 1)), MultiLabelClassifier("svm", verbose=False), X_dev_train, X_dev_test, y_dev_train, y_dev_test))
     log.info(f"Mean-Jaccard score (SVM): {np.mean(jaccard_scores)}")
 
-    log.info(f"Performing 5-fold cross-validation for count with Naive Bayes")
+    log.info(f"Performing 5-fold cross-validation for BagOfWords (tf-idf) with Naive Bayes")
     jaccard_scores = []
     for train_idx, test_idx in tqdm(k_fold.split(X_dev, y_dev)):
         X_dev_train, X_dev_test, y_dev_train, y_dev_test = X_dev[train_idx], X_dev[test_idx], y_dev[train_idx], y_dev[test_idx]

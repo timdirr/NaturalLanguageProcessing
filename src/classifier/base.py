@@ -1,16 +1,14 @@
 from sklearn.base import BaseEstimator, ClassifierMixin
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.multioutput import MultiOutputClassifier
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.neighbors import KNeighborsClassifier
-
-from scipy.sparse import csr_matrix
-
-import numpy as np
+from sklearn.neural_network import MLPClassifier
 from sklearn.svm import SVC
 import logging as log
 import pandas as pd
-from globals import SEED
 import helper
+from globals import SEED
 
 
 class MultiLabelClassifier(BaseEstimator, ClassifierMixin):
@@ -38,6 +36,10 @@ class MultiLabelClassifier(BaseEstimator, ClassifierMixin):
                 self.base_estimator = MultinomialNB(alpha=1.0, fit_prior=True)
             else:
                 self.base_estimator = MultinomialNB(**kwargs)
+        elif estimator_name == "rf":
+            self.base_estimator = RandomForestClassifier(**kwargs)
+        elif estimator_name == "mlp":
+            self.base_estimator = MLPClassifier(**kwargs)
         else:
             raise ValueError("base_estimator must be knn. Nothing else supported yet")
 
