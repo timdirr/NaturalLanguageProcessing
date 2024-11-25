@@ -81,6 +81,13 @@
     -   Correlation matrix per row accoress classifiers (Sebastian)
     -   Plot embeddings per description in 2D space (PCA, t-SNE), color based on classes (Daniel)
     -   Random Guess
+        -   {'jaccard': 2.635, 
+            'hamming': 0.102,
+            'accuracy': 0.0,
+            'f1': 4.294e-05,
+            'precision': 3.904e-05, 
+            'recall': 4.880e-05,
+            'at_least_one': 0.0001}
 
 
 -   [ ] Run Experiments (Tim)

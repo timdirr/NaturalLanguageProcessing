@@ -130,7 +130,6 @@ def evaluate(model: MultiLabelClassifier, text_model, y, y_pred):
     log.info(f"Evaluating model {type(model.multi_output_clf_.estimators_[0]).__name__}")
 
     metrics = get_metrics(y, y_pred)
-    print(metrics)
     log.info(f"Metrics: {metrics}")
 
     plot_feature_importance(model, text_model)
@@ -147,9 +146,9 @@ def main():
     clf.fit(X_transformed, y_dev)
     # y_pred = clf.predict(X_transformed)
 
-    y_pred = np.zeros((len(y_dev), 20), dtype=int)
+    y_pred = np.zeros((len(y_dev), 21), dtype=int)
     for i in range(3):
-        random_indices = np.random.choice(20, size=3, replace=False)
+        random_indices = np.random.choice(21, size=3, replace=False)
         y_pred[i, random_indices] = 1
 
     print(y_dev.shape)
