@@ -1,3 +1,4 @@
+import re
 import pandas as pd
 import numpy as np
 
@@ -37,3 +38,14 @@ def pandas_ndarray_series_to_numpy(series):
         The numpy array.
     '''
     return np.array(series.tolist()).astype(int)
+
+
+def get_genre_converter():
+    '''
+    Returns a dictionary that can be used to convert genres when loading from a CSV file.
+    Returns:
+    -------
+    dict
+        The dictionary that can be used to convert genres when loading from a CSV file.
+    '''
+    return {"genre": lambda x: re.sub(r"[\[\]']", '', x).split(' ')}

@@ -9,10 +9,11 @@ from download import download
 from skmultilearn.model_selection.iterative_stratification import iterative_train_test_split
 
 import re
+import helper
 
 
-def __load_csv(filename):
-    return pd.read_csv(filename, converters={"genre": lambda x: re.sub(r"[\[\]']", '', x).split(' ')})
+def __load_csv(filename, converters=None):
+    return pd.read_csv(filename, converters=converters)
 
 
 def __save_csv(filename, data):
@@ -43,9 +44,10 @@ def load_stratified_data(stop=None):
     DEV_FILE_PATH = os.path.join(SPLIT_FOLDER_PATH, DEV_FILE)
 
     if os.path.exists(SPLIT_FOLDER_PATH) and os.path.isfile(TEST_FILE_PATH) and os.path.isfile(TRAIN_FILE_PATH) and os.path.isfile(DEV_FILE_PATH) and stop is None:
-        test = __load_csv(TEST_FILE_PATH)
-        train = __load_csv(TRAIN_FILE_PATH)
-        dev = __load_csv(DEV_FILE_PATH)
+        converter = helper.get_genre_converter()
+        test = __load_csv(TEST_FILE_PATH, converters=converter)
+        train = __load_csv(TRAIN_FILE_PATH, converters=converter)
+        dev = __load_csv(DEV_FILE_PATH, converters=converter)
         log.info(f"Splits found and loaded.")
         return train, test, dev
 
@@ -120,4 +122,3 @@ def conllu2df(filename, stop=None):
 
     log.info(f"Converting conllu file {filename} to a dataframe...")
     return pd.DataFrame(itertools.islice(movie_entry_generator(), stop))
-
