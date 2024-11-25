@@ -70,8 +70,12 @@
 
 -   [ ] Evaluation Script (Tim)
 
-    -   General
-    -   Classifier specific evaluation
+    -   General Metrics
+    -   Feature Importance
+    -   Wordcloud based on Feature Importance
+    -   Sentences with colored words based on Feature Importance
+    -   Qualitative Results (high/low confidence/probability of estimation)
+    
 
 -   [ ] Build Pipeline (Tim)
 
@@ -83,3 +87,15 @@
     -   [ ] Simple MLP on TextModelling
 
 -   [ ] Remove stop variable from start split load (just for testing so we dont need to split the whole data)
+
+
+what I got from the meeting
+- that we are not bound to any dataformat
+- There should be a way to read conllu efficiently without reading all the information into memory that we dont need 
+- it is not elegant to switch between dataformats only because one contains information we do not need 
+- Analysis of system is important, not only to get one running
+- Experiments with baseline, just printing e.g. f-score useless
+- QUALITATIVE ANALYSIS!!
+- "Looking at data and thinking about it task"
+- Where are errors, with what does the model struggle -> What to do about that -> Custom Solutions
+- 2 paragraphs of analysis, (Mardown file or whatever)

@@ -235,6 +235,9 @@ class WordEmbeddingModel(ABC, BaseEstimator, TransformerMixin):
         '''
         return list(gensim.downloader.info()['models'].keys())
 
+    def get_feature_names_out(self):
+        pass
+
 
 class Word2VecModel(WordEmbeddingModel):
     def __init__(self, model=None, train_embeddings=True, **kwargs):
