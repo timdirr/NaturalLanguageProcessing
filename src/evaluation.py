@@ -17,7 +17,7 @@ log.basicConfig(level=log.INFO,
                 datefmt='%Y-%m-%d %H:%M:%S')
 
 
-def get_metrics(y, y_pred, metrics: list[str] = ['jaccard', 'hamming', 'accuracy', 'f1', 'precision', 'recall']):
+def get_metrics(y, y_pred, metrics_names: list[str] = ['jaccard', 'hamming', 'accuracy', 'f1', 'precision', 'recall', 'at_least_one']):
     '''
     Get metrics for multilabel classification
     Parameters:
@@ -30,19 +30,34 @@ def get_metrics(y, y_pred, metrics: list[str] = ['jaccard', 'hamming', 'accuracy
     '''
 
     metrics = {}
-    if 'jaccard' in metrics:
+    if 'jaccard' in metrics_names:
         metrics['jaccard'] = jaccard_score(y, y_pred, average='samples')
-    if 'hamming' in metrics:
+    if 'hamming' in metrics_names:
         metrics['hamming'] = hamming_loss(y, y_pred)
-    if 'accuracy' in metrics:
+    if 'accuracy' in metrics_names:
         metrics['accuracy'] = accuracy_score(y, y_pred)
-    if 'f1' in metrics:
+    if 'f1' in metrics_names:
         metrics['f1'] = f1_score(y, y_pred, average='samples')
-    if 'precision' in metrics:
+    if 'precision' in metrics_names:
         metrics['precision'] = precision_score(y, y_pred, average='samples')
-    if 'recall' in metrics:
+    if 'recall' in metrics_names:
         metrics['recall'] = recall_score(y, y_pred, average='samples')
+    if 'at_least_one' in metrics_names:
+        metrics['at_least_one'] = at_lest_k(y, y_pred, 1)
+
     return metrics
+
+
+def at_lest_k(y, y_pred, k: int = 1):
+    '''
+    Compute the fraction of samples for which at least one label is predicted correctly
+    Parameters:
+    y: ndarray of shape (n_samples, n_classes)
+        True labels
+    y_pred: ndarray of shape (n_samples, n_classes)
+        Predicted labels
+    '''
+    return np.mean(np.any(y & y_pred, axis=1))
 
 
 def plot_metric_per_genre(y, y_pred, metrics: list[str]):
@@ -88,12 +103,9 @@ def plot_feature_importance(model: MultiLabelClassifier, text_model: Union[BagOf
         indices = np.argsort(feat_impt)[::-1][:top_k]
         feat_names = feature_names[indices]
         importances = np.sort(feat_impt)[::-1][:top_k]
-        log.info(f"Feature names: {feat_names}")
-        log.info(f"Importances: {importances}")
 
         axs[i//3, i % 3].bar(feat_names, importances)
-        axs[i//3, i % 3].set_xlabel('Feature importance')
-        axs[i//3, i % 3].set_ylabel('Genre')
+        axs[i//3, i % 3].set_xlabel('Feature importance', fontsize=20)
         axs[i//3, i % 3].set_title(f'Feature importance for classifier {i}')
         axs[i//3, i % 3].set_title(cls)
         axs[i//3, i % 3].set_ylim(0, np.max(importances) + 0.1)
@@ -107,11 +119,18 @@ def plot_feature_importance(model: MultiLabelClassifier, text_model: Union[BagOf
 # Color words in descriptions according to importance
 
 
+def plot_qualitative_results(model, text_model, X, y, y_pred, n_samples: int = 5):
+    # Get descriptions for which predictions are very bad/ very good
+
+    pass
+
+
 def evaluate(model: MultiLabelClassifier, text_model, y, y_pred):
 
     log.info(f"Evaluating model {type(model.multi_output_clf_.estimators_[0]).__name__}")
 
     metrics = get_metrics(y, y_pred)
+    print(metrics)
     log.info(f"Metrics: {metrics}")
 
     plot_feature_importance(model, text_model)
@@ -122,12 +141,20 @@ def main():
     clf = MultiLabelClassifier("lreg")
     _, _, dev = load_stratified_data()
     X_dev, y_dev = dev["description"].to_numpy(), pandas_ndarray_series_to_numpy(dev["genre"])
-    log.info(f"X_dev: {X_dev}")
-    log.info(f"y_dev: {y_dev}")
+    print(y_dev)
 
     X_transformed = BOW.fit_transform(X_dev)
     clf.fit(X_transformed, y_dev)
-    y_pred = clf.predict(X_transformed)
+    # y_pred = clf.predict(X_transformed)
+
+    y_pred = np.zeros((len(y_dev), 20), dtype=int)
+    for i in range(3):
+        random_indices = np.random.choice(20, size=3, replace=False)
+        y_pred[i, random_indices] = 1
+
+    print(y_dev.shape)
+    print(y_pred.shape)
+
     evaluate(clf, BOW, y_dev, y_pred)
 
 

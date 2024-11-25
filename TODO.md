@@ -68,23 +68,32 @@
             -   [x] Random Forest
             -   [x] MLP
 
--   [ ] Evaluation Script (Tim)
+-   [ ] Evaluation Script 
 
-    -   General Metrics
-    -   Feature Importance
-    -   Wordcloud based on Feature Importance
-    -   Sentences with colored words based on Feature Importance
-    -   Qualitative Results (high/low confidence/probability of estimation)
-    
+    -   [x] General Metrics
+    -   [x] Bar Feature Importance (Filip)
+    -   [x] Wordcloud based on Feature Importance (Filip)
+    -   [ ] Sentences with colored words based on Feature Importance (Tim)
+    -   [ ] Qualitative Results (high/low confidence/probability of estimation) (Tim)
+        -   Completely wrong predictions (negative hits)
+        -   predict_proba() for each class
+    -   Confusion Matrix per genre (Sebastian)
+    -   Correlation matrix per row accoress classifiers (Sebastian)
+    -   Plot embeddings per description in 2D space (PCA, t-SNE), color based on classes (Daniel)
+    -   Random Guess
 
--   [ ] Build Pipeline (Tim)
 
-    -   Text Modelling
-    -   Classifier
-    -   Evaluation
+-   [ ] Run Experiments (Tim)
+    -   [ ] BOW / Word2Vec + 
+        -   [ ] Small Decision Tree (Visualize Tree)
+        -   [ ] Logistic Regression
+        -   [ ] Naive Bayes
+        -   [ ] Support Vector Machine
 
--   [ ] Deep Learning Approach (Lecture on 22.11) (Daniel)
+
+-   [ ] Deep Learning Approach (Lecture on 22.11) (Daniel, Filip)
     -   [ ] Simple MLP on TextModelling
+    -   [ ] Finetune pretrained LLM (DistilBERT from Huggingface) on RAW dataset
 
 -   [ ] Remove stop variable from start split load (just for testing so we dont need to split the whole data)
 

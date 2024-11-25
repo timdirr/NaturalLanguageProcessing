@@ -9,6 +9,7 @@ from sklearn.svm import SVC
 
 import logging as log
 import pandas as pd
+from sklearn.tree import DecisionTreeClassifier
 import helper
 from globals import SEED
 
@@ -26,6 +27,8 @@ class MultiLabelClassifier(BaseEstimator, ClassifierMixin):
             self.base_estimator = SVC(**kwargs)
         elif estimator_name == "bayes":
             self.base_estimator = MultinomialNB(**kwargs)
+        elif estimator_name == "dt":
+            self.base_estimator = DecisionTreeClassifier(random_state=SEED)
         elif estimator_name == "rf":
             self.base_estimator = RandomForestClassifier(**kwargs)
         elif estimator_name == "mlp":
