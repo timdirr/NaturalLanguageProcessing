@@ -1,16 +1,18 @@
 import os
+import json
 import numpy as np
-from sklearn.metrics import jaccard_score, hamming_loss, accuracy_score, f1_score, precision_score, recall_score
 import logging as log
 import matplotlib.pyplot as plt
+from sklearn.metrics import jaccard_score, hamming_loss, accuracy_score, f1_score, precision_score, recall_score
 from sklearn.pipeline import make_pipeline
+from typing import Union
+from wordcloud import WordCloud
 from globals import DATA_PATH, EXPORT_PATH
 from helper import pandas_ndarray_series_to_numpy
 from preprocess.dataloader import load_stratified_data
 from classifier.base import MultiLabelClassifier
 from text_modelling.modelling import BagOfWords, WordEmbeddingModel
-import json
-from typing import Union
+
 
 log.basicConfig(level=log.INFO,
                 format='%(asctime)s: %(levelname)s: %(message)s',
@@ -64,20 +66,72 @@ def plot_metric_per_genre(y, y_pred, metrics: list[str]):
     pass
 
 
-def plot_feature_importance(model: MultiLabelClassifier, text_model: Union[BagOfWords, WordEmbeddingModel], top_k: int = 10):
+def plot_wordcloud(feat_names: list[str], importances: Union[list[float], np.array], genre: str, path: str):
+    '''
+    Plots wordcloud for given feature importances and names. Saved under path/wordclouds/wordcloud_genre.png
+    Parameters:
+    feat_names: list of str
+        List of feature names
+    importances: list of float
+        List of feature importances
+    genre: str
+        Genre for which wordcloud is to be plotted
+    path: str
+        Path that should contain wouldcloud folder
+    '''
+    path = os.path.join(path, 'wordclouds')
+    if not os.path.exists(path):
+        os.makedirs(path)
+
+    importance_dict = dict(zip(feat_names, importances))
+
+    wordcloud = WordCloud(width=800, height=400, background_color="white").generate_from_frequencies(importance_dict)
+
+    plt.figure(figsize=(10, 5))
+    plt.imshow(wordcloud, interpolation="bilinear")
+    plt.axis("off")
+    plt.title(f"Word Cloud for {genre} Movies")
+    plt.tight_layout()
+    plt.savefig(os.path.join(path, f"wordcloud_{genre}.png"))
+    plt.close()
+
+
+def plot_feature_importances(feat_names: list[str], importances: Union[list[float], np.array], ymax: int, genre: str, path: str):
+    '''
+    Plots feature importances as bar plots for given feature importances and names. Saved under path/feature_importances/feature_importance_genre.png
+    Parameters:
+    feat_names: list of str
+        List of feature names
+    importances: list of float
+        List of feature importances
+    ymax: int
+        Maximum value for y-axis based on maximum feature importance accross all genres
+    genre: str
+        Genre for which wordcloud is to be plotted
+    path: str
+        Path that should contain wouldcloud folder
+    '''
+    path = os.path.join(path, 'feature_importances')
+    if not os.path.exists(path):
+        os.makedirs(path)
+
+    plt.figure(figsize=(10, 5))
+    plt.bar(feat_names, importances)
+    plt.ylim(0, ymax + 0.5)
+    plt.title(f"Feature importance for {genre} Movies")
+    plt.tight_layout()
+    plt.savefig(os.path.join(path, f"feature_importance_{genre}.png"))
+    plt.close()
+
+
+def analyse_features(model: MultiLabelClassifier, text_model: Union[BagOfWords, WordEmbeddingModel], path: str, top_k: int = 10):
+
     feat_impts = []  # contains feature importances for each classifier contained in MultiOutputClassifier
     estimators = model.multi_output_clf_.estimators_
     feature_names = text_model.get_feature_names_out()
-    log.info(f"Feature names shape: {feature_names.shape}")
-
-    log.info(f"Number of Estimators: {len(estimators)}")
 
     with open(os.path.join(DATA_PATH, 'genres.json'), 'r') as f:
         classes = json.load(f)
-
-    log.info(f"Classes: {classes}")
-    log.info(f"Classes: {type(classes)}")
-    log.info(f"Classes length: {len(classes)}")
 
     if hasattr(estimators[0], 'coef_'):
         for clf in estimators:
@@ -93,24 +147,15 @@ def plot_feature_importance(model: MultiLabelClassifier, text_model: Union[BagOf
         raise Warning(
             "Model does not have attribute for feature importance. Returning None")
 
-    fig, axs = plt.subplots(7, 3, figsize=(70, 30))
-    for i, (cls, feat_impt) in enumerate(zip(classes, feat_impts)):
-        # cls is a string
-        # feat_impt is an ndarray of shape (1, n_features)
-        # get feature names with highets improtance
+    for i, (genre, feat_impt) in enumerate(zip(classes, feat_impts)):
         feat_impt = feat_impt[0]
 
         indices = np.argsort(feat_impt)[::-1][:top_k]
         feat_names = feature_names[indices]
         importances = np.sort(feat_impt)[::-1][:top_k]
 
-        axs[i//3, i % 3].bar(feat_names, importances)
-        axs[i//3, i % 3].set_xlabel('Feature importance', fontsize=20)
-        axs[i//3, i % 3].set_title(f'Feature importance for classifier {i}')
-        axs[i//3, i % 3].set_title(cls)
-        axs[i//3, i % 3].set_ylim(0, np.max(importances) + 0.1)
-    plt.tight_layout()
-    plt.savefig(os.path.join(EXPORT_PATH, 'feature_importance_test.png'))
+        plot_feature_importances(feat_names, importances, np.max(feat_impts), genre, path)
+        plot_wordcloud(feat_names, importances, genre, path)
 
 
 # Wordclouds for each class
@@ -125,14 +170,20 @@ def plot_qualitative_results(model, text_model, X, y, y_pred, n_samples: int = 5
     pass
 
 
-def evaluate(model: MultiLabelClassifier, text_model, y, y_pred):
+def evaluate(model: MultiLabelClassifier, text_model: Union[BagOfWords, WordEmbeddingModel], y, y_pred):
+
+    clf_name = type(model.multi_output_clf_.estimators_[0]).__name__
+    text_model_name = type(text_model.model).__name__
+    dir_path = os.path.join(EXPORT_PATH, f"evluation_{clf_name}_{text_model_name}")
+    if not os.path.exists(dir_path):
+        os.makedirs(dir_path)
 
     log.info(f"Evaluating model {type(model.multi_output_clf_.estimators_[0]).__name__}")
 
     metrics = get_metrics(y, y_pred)
     log.info(f"Metrics: {metrics}")
 
-    plot_feature_importance(model, text_model)
+    analyse_features(model, text_model, dir_path)
 
 
 def main():
@@ -140,19 +191,15 @@ def main():
     clf = MultiLabelClassifier("lreg")
     _, _, dev = load_stratified_data()
     X_dev, y_dev = dev["description"].to_numpy(), pandas_ndarray_series_to_numpy(dev["genre"])
-    print(y_dev)
 
     X_transformed = BOW.fit_transform(X_dev)
     clf.fit(X_transformed, y_dev)
-    # y_pred = clf.predict(X_transformed)
+    y_pred = clf.predict(X_transformed)
 
-    y_pred = np.zeros((len(y_dev), 21), dtype=int)
-    for i in range(3):
-        random_indices = np.random.choice(21, size=3, replace=False)
-        y_pred[i, random_indices] = 1
-
-    print(y_dev.shape)
-    print(y_pred.shape)
+    # y_pred = np.zeros((len(y_dev), 21), dtype=int)
+    # for i in range(3):
+    #    random_indices = np.random.choice(21, size=3, replace=False)
+    #    y_pred[i, random_indices] = 1
 
     evaluate(clf, BOW, y_dev, y_pred)
 
