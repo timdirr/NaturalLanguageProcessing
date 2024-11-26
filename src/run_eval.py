@@ -37,8 +37,8 @@ def analyse_features(model: MultiLabelClassifier,
     '''
     Analyse features for given model and text model. Saves wordclouds and feature importances for each genre under path.
 
-    Args: 
-        model (MultiLabelClassifier): Model for which feature importances are to be computed.   
+    Args:
+        model (MultiLabelClassifier): Model for which feature importances are to be computed.
 
         text_model (Union[BagOfWords, WordEmbeddingModel]): Text model used to vectorize text data.
 
@@ -63,13 +63,13 @@ def analyse_features(model: MultiLabelClassifier,
 
 # Color words in descriptions according to importance
 
-def plot_qualitative_results(X: np.ndarray,
-                             y_true: np.ndarray,
-                             y_pred: np.ndarray,
-                             n_samples: int = 10,
-                             path: str = None):
+def plot_bad_qualitative_results(X: np.ndarray,
+                                 y_true: np.ndarray,
+                                 y_pred: np.ndarray,
+                                 n_samples: int = 10,
+                                 path: str = None):
 
-    path = os.path.join(path, "qualitative_resutls")
+    path = os.path.join(path, "qualitative_results")
     if not os.path.exists(path):
         os.makedirs(path)
     # extract predictions with very bad performance
@@ -86,9 +86,39 @@ def plot_qualitative_results(X: np.ndarray,
         "True Labels": true_genres,
         "Predicted Labels": predicted_genres,
     })
-    save_table_as_image(results, os.path.join(path, "qualitative_results.png"))
+    save_table_as_image(results, os.path.join(path, "bad_qualitative_results.png"))
     # save to csv
-    results.to_csv(os.path.join(path, "qualitative_results.csv"), index=False)
+    results.to_csv(os.path.join(path, "bad_qualitative_results.csv"), index=False)
+
+
+def plot_good_qualitative_results(X: np.ndarray,
+                                  y_true: np.ndarray,
+                                  y_pred: np.ndarray,
+
+                                  n_samples: int = 10,
+                                  path: str = None,
+                                  top_k: int = 10):
+
+    path = os.path.join(path, "qualitative_results")
+    if not os.path.exists(path):
+        os.makedirs(path)
+    # extract predictions with very good performance
+    metrics = np.array([recall_score(y_t, y_p) for y_t, y_p in zip(y_true, y_pred)])
+    good_indices = np.argsort(metrics)[-n_samples:]
+    print("Good indices: ", good_indices)
+    # get descriptions
+    descriptions = X[good_indices]
+
+    true_genres = [decode_genres(y_true[i]) for i in good_indices]
+    predicted_genres = [decode_genres(y_pred[i]) for i in good_indices]
+    results = pd.DataFrame({
+        "Description": descriptions,
+        "True Labels": true_genres,
+        "Predicted Labels": predicted_genres,
+    })
+    save_table_as_image(results, os.path.join(path, "good_qualitative_results.png"))
+    # save to csv
+    results.to_csv(os.path.join(path, "good_qualitative_results.csv"), index=False)
 
 
 def evaluate(model: MultiLabelClassifier,
@@ -109,7 +139,8 @@ def evaluate(model: MultiLabelClassifier,
     log.info(f"Metrics: {metrics}")
 
     analyse_features(model, text_model, path=dir_path)
-    plot_qualitative_results(X, y_true, y_pred, path=dir_path)
+    plot_bad_qualitative_results(X, y_true, y_pred, path=dir_path)
+    plot_good_qualitative_results(X, y_true, y_pred, path=dir_path)
 
 
 def main():
