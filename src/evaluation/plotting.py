@@ -89,7 +89,7 @@ def save_table_as_image(df, filename="table_image.png"):
     plt.close()
 
 
-def plot_wordcloud(feat_names: list[str], importances: Union[list[float], np.array], genre: str, path: str):
+def plot_wordcloud(feat_names: list, importances: Union[list, np.array], genre: str, path: str):
     '''
     Plots wordcloud for given feature importances and names. Saved under path/wordclouds/wordcloud_genre.png
     Parameters:
@@ -119,7 +119,7 @@ def plot_wordcloud(feat_names: list[str], importances: Union[list[float], np.arr
     plt.close()
 
 
-def plot_feature_importances(feat_names: list[str], importances: Union[list[float], np.array], ymax: int, genre: str, path: str):
+def plot_feature_importances(feat_names: list, importances: Union[list, np.array], ymax: int, genre: str, path: str):
     '''
     Plots feature importances as bar plots for given feature importances and names. Saved under path/feature_importances/feature_importance_genre.png
     Parameters:

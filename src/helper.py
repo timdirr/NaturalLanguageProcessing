@@ -1,6 +1,9 @@
 import re
 import pandas as pd
 import numpy as np
+import json
+import os
+from globals import DATA_PATH
 
 
 def numpy_to_pandas(X, columns):
@@ -49,3 +52,27 @@ def get_genre_converter():
         The dictionary that can be used to convert genres when loading from a CSV file.
     '''
     return {"genre": lambda x: re.sub(r"[\[\]']", '', x).split(' ')}
+
+
+def load_genres():
+    with open(os.path.join(DATA_PATH, 'genres.json'), 'r') as f:
+        genres = json.load(f)
+    return genres
+
+
+def encode_genres(genre):
+    with open(os.path.join(DATA_PATH, 'genres.json'), 'r') as f:
+        genres = json.load(f)
+    return np.isin(genres, genre).astype(int)
+
+
+def decode_genres(encoded_genre):
+    '''
+    Takes an encoded genre and return the correspondind genres as a list of strings.
+    '''
+    with open(os.path.join(DATA_PATH, 'genres.json'), 'r') as f:
+        genres = json.load(f)
+    indices = np.where(encoded_genre == 1)[0]
+    if len(indices) == 0:
+        return []
+    return [genres[i] for i in indices]

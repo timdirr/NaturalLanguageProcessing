@@ -9,6 +9,7 @@ import stanza
 import nltk
 from nltk.corpus import stopwords
 from globals import DATA_PATH, EXPORT_PATH
+from helper import encode_genres
 from tqdm import tqdm
 import json
 # from src.preprocess.imdb_crawler import IMDBCrawler
@@ -124,24 +125,6 @@ def description_cleaner(df, pattern):
              pattern, count_matches)
 
     return df_filtered, count_matches
-
-
-def encode_genres(genre):
-    with open(os.path.join(DATA_PATH, 'genres.json'), 'r') as f:
-        genres = json.load(f)
-    return np.isin(genres, genre).astype(int)
-
-
-def decode_genres(encoded_genre):
-    '''
-    Takes an encoded genre and return the correspondind genres as a list of strings.
-    '''
-    with open(os.path.join(DATA_PATH, 'genres.json'), 'r') as f:
-        genres = json.load(f)
-    indices = np.where(encoded_genre == 1)[0]
-    if len(indices) == 0:
-        return []
-    return [genres[i] for i in indices]
 
 
 def clean_data(df, save_intermediate=False):

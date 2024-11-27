@@ -2,6 +2,7 @@ from sklearn.base import BaseEstimator
 from classifier.base import MultiLabelClassifier
 from preprocess.dataloader import load_stratified_data
 from iterstrat.ml_stratifiers import MultilabelStratifiedKFold
+from tqdm import tqdm
 from helper import pandas_ndarray_series_to_numpy
 from globals import SEED
 from text_modelling.modelling import BagOfWords

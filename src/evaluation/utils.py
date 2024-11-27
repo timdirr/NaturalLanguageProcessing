@@ -13,7 +13,6 @@ from helper import pandas_ndarray_series_to_numpy
 from preprocess.dataloader import load_stratified_data
 from classifier.base import MultiLabelClassifier
 from text_modelling.modelling import BagOfWords, WordEmbeddingModel
-from preprocess.dataclean import decode_genres
 
 
 def get_feature_importances(model: MultiLabelClassifier, text_model: Union[BagOfWords, WordEmbeddingModel]):
