@@ -1,3 +1,4 @@
+import numpy as np
 from sklearn.base import BaseEstimator, ClassifierMixin
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
@@ -50,3 +51,11 @@ class MultiLabelClassifier(BaseEstimator, ClassifierMixin):
 
     def predict_proba(self, X):
         return self.multi_output_clf_.predict_proba(X)
+
+    def predict_at_least_1(self, X):
+        predictions = self.multi_output_clf_.predict(X)
+        for i in range(len(predictions)):
+            if sum(predictions[i]) == 0:
+                true_label = np.array(list(map(lambda x: x[0][1], self.predict_proba(X[i:i+1])))).argmax()
+                predictions[i][true_label] = 1
+        return predictions

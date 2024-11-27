@@ -21,68 +21,60 @@ def test_model(model: BaseEstimator, classifier: MultiLabelClassifier, X_train, 
     transformed_data = model.fit_transform(X_train)
     classifier = classifier.fit(transformed_data, y_train)
 
-    jaccard = jaccard_score(y_test, classifier.predict(
-        model.transform(X_test)), average='samples')
+    # X_test = X_test[:100]
+    # y_test = y_test[:100]
+
+    jaccard = jaccard_score(y_test, classifier.predict(model.transform(X_test)), average='samples')
+    # print(jaccard)
+    # jaccard_proba = jaccard_score(y_test, classifier.predict_at_least_1(model.transform(X_test)), average='samples')
+    # print(jaccard_proba)
     return jaccard
 
 
 def main():
     train, test, dev = load_stratified_data()
-    X_train, y_train = train["description"].to_numpy(
-    ), pandas_ndarray_series_to_numpy(train["genre"])
-    X_test, y_test = test["description"].to_numpy(
-    ), pandas_ndarray_series_to_numpy(test["genre"])
-    X_dev, y_dev = dev["description"].to_numpy(
-    ), pandas_ndarray_series_to_numpy(dev["genre"])
+    X_train, y_train = train["description"].to_numpy(), pandas_ndarray_series_to_numpy(train["genre"])
+    X_test, y_test = test["description"].to_numpy(), pandas_ndarray_series_to_numpy(test["genre"])
+    X_dev, y_dev = dev["description"].to_numpy(), pandas_ndarray_series_to_numpy(dev["genre"])
 
     k_fold = MultilabelStratifiedKFold(
         n_splits=5, random_state=SEED, shuffle=True)
 
-    log.info(
-        f"Performing 5-fold cross-validation for BagOfWords (tf-idf) with Random Forest")
-    jaccard_scores = []
-    for train_idx, test_idx in tqdm(k_fold.split(X_dev, y_dev)):
-        X_dev_train, X_dev_test, y_dev_train, y_dev_test = X_dev[
-            train_idx], X_dev[test_idx], y_dev[train_idx], y_dev[test_idx]
-        jaccard_scores.append(test_model(BagOfWords("tf-idf", ngram_range=(1, 1)), MultiLabelClassifier(
-            "rf", verbose=False), X_dev_train, X_dev_test, y_dev_train, y_dev_test))
-    log.info(f"Mean-Jaccard score (Random Forest): {np.mean(jaccard_scores)}")
-
     log.info(f"Performing 5-fold cross-validation for BagOfWords (tf-idf) with KNN")
     jaccard_scores = []
     for train_idx, test_idx in tqdm(k_fold.split(X_dev, y_dev)):
-        X_dev_train, X_dev_test, y_dev_train, y_dev_test = X_dev[
-            train_idx], X_dev[test_idx], y_dev[train_idx], y_dev[test_idx]
-        jaccard_scores.append(test_model(BagOfWords("tf-idf", ngram_range=(1, 1)), MultiLabelClassifier(
-            "knn", verbose=False), X_dev_train, X_dev_test, y_dev_train, y_dev_test))
+        X_dev_train, X_dev_test, y_dev_train, y_dev_test = X_dev[train_idx], X_dev[test_idx], y_dev[train_idx], y_dev[test_idx]
+        jaccard_scores.append(test_model(BagOfWords("tf-idf", ngram_range=(1, 1)), MultiLabelClassifier("knn", verbose=False), X_dev_train, X_dev_test, y_dev_train, y_dev_test))
     log.info(f"Mean-Jaccard score (KNN): {np.mean(jaccard_scores)}")
 
     log.info(f"Performing 5-fold cross-validation for BagOfWords (tf-idf) with SVM")
     jaccard_scores = []
     for train_idx, test_idx in tqdm(k_fold.split(X_dev, y_dev)):
-        X_dev_train, X_dev_test, y_dev_train, y_dev_test = X_dev[
-            train_idx], X_dev[test_idx], y_dev[train_idx], y_dev[test_idx]
-        jaccard_scores.append(test_model(BagOfWords("tf-idf", ngram_range=(1, 1)), MultiLabelClassifier(
-            "svm", verbose=False), X_dev_train, X_dev_test, y_dev_train, y_dev_test))
+        X_dev_train, X_dev_test, y_dev_train, y_dev_test = X_dev[train_idx], X_dev[test_idx], y_dev[train_idx], y_dev[test_idx]
+        jaccard_scores.append(test_model(BagOfWords("tf-idf", ngram_range=(1, 1)), MultiLabelClassifier("svm", verbose=False), X_dev_train, X_dev_test, y_dev_train, y_dev_test))
     log.info(f"Mean-Jaccard score (SVM): {np.mean(jaccard_scores)}")
 
     log.info(
         f"Performing 5-fold cross-validation for BagOfWords (tf-idf) with Naive Bayes")
     jaccard_scores = []
     for train_idx, test_idx in tqdm(k_fold.split(X_dev, y_dev)):
-        X_dev_train, X_dev_test, y_dev_train, y_dev_test = X_dev[
-            train_idx], X_dev[test_idx], y_dev[train_idx], y_dev[test_idx]
-        jaccard_scores.append(test_model(BagOfWords("tf-idf", ngram_range=(1, 1)), MultiLabelClassifier(
-            "bayes", verbose=False), X_dev_train, X_dev_test, y_dev_train, y_dev_test))
+        X_dev_train, X_dev_test, y_dev_train, y_dev_test = X_dev[train_idx], X_dev[test_idx], y_dev[train_idx], y_dev[test_idx]
+        jaccard_scores.append(test_model(BagOfWords("tf-idf", ngram_range=(1, 1)), MultiLabelClassifier("bayes", verbose=False), X_dev_train, X_dev_test, y_dev_train, y_dev_test))
     log.info(f"Mean-Jaccard score (Naive Bayes): {np.mean(jaccard_scores)}")
+
+    log.info(
+        f"Performing 5-fold cross-validation for BagOfWords (tf-idf) with Random Forest")
+    jaccard_scores = []
+    for train_idx, test_idx in tqdm(k_fold.split(X_dev, y_dev)):
+        X_dev_train, X_dev_test, y_dev_train, y_dev_test = X_dev[train_idx], X_dev[test_idx], y_dev[train_idx], y_dev[test_idx]
+        jaccard_scores.append(test_model(BagOfWords("tf-idf", ngram_range=(1, 1)), MultiLabelClassifier("rf", verbose=False), X_dev_train, X_dev_test, y_dev_train, y_dev_test))
+    log.info(f"Mean-Jaccard score (Random Forest): {np.mean(jaccard_scores)}")
 
     log.info(f"Performing 5-fold cross-validation for BagOfWords (tf-idf) with MLP")
     jaccard_scores = []
     for train_idx, test_idx in tqdm(k_fold.split(X_dev, y_dev)):
-        X_dev_train, X_dev_test, y_dev_train, y_dev_test = X_dev[
-            train_idx], X_dev[test_idx], y_dev[train_idx], y_dev[test_idx]
-        jaccard_scores.append(test_model(BagOfWords("tf-idf", ngram_range=(1, 1)), MultiLabelClassifier(
-            "mlp", verbose=True), X_dev_train, X_dev_test, y_dev_train, y_dev_test))
+        X_dev_train, X_dev_test, y_dev_train, y_dev_test = X_dev[train_idx], X_dev[test_idx], y_dev[train_idx], y_dev[test_idx]
+        jaccard_scores.append(test_model(BagOfWords("tf-idf", ngram_range=(1, 1)), MultiLabelClassifier("mlp", verbose=True), X_dev_train, X_dev_test, y_dev_train, y_dev_test))
     log.info(f"Mean-Jaccard score (MLP): {np.mean(jaccard_scores)}")
 
 
