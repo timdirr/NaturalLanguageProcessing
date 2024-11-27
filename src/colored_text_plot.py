@@ -15,7 +15,7 @@ from preprocess.dataloader import load_stratified_data
 from text_modelling.modelling import BagOfWords, WordEmbeddingModel
 
 
-def plot_colored_description(strings, vector, text_model: Union[BagOfWords, WordEmbeddingModel],
+def plot_colored_description(description_words, predicted_genres, vector, text_model: Union[BagOfWords, WordEmbeddingModel],
                              size=18, ax=None, **kwargs):
     """
     Take a list of *strings* and *colors* and place them next to each
@@ -41,11 +41,9 @@ def plot_colored_description(strings, vector, text_model: Union[BagOfWords, Word
         ax = plt.gca()
     t = None
     canvas = ax.figure.canvas
-    last = 0
-    first = True
-    for s in strings:
-        color = get_color_by_score(get_score_by_word(s, vector=vector, text_model=text_model))
-        text = ax.text(0, canvas.figure.bbox.bounds[3] - size, s + " ", color=color, size=size, transform=t, **kwargs)
+    for word in description_words:
+        color = get_color_by_score(get_score_by_word(word, vector=vector, text_model=text_model))
+        text = ax.text(0, canvas.figure.bbox.bounds[3] - size, word + " ", color=color, size=size, transform=t, **kwargs)
 
         # Need to draw to update the text position.
         text.draw(canvas.get_renderer())
@@ -57,12 +55,17 @@ def plot_colored_description(strings, vector, text_model: Union[BagOfWords, Word
             ...
         else:
             t = transforms.offset_copy(text.get_transform(), x=ex.width, units='dots')
-        if first:
-            firsty = ex.ymax
-            firstx = ex.xmax
-            first = False
+
         lastx = ex.xmax
-        lasty = ex.ymax
+
+    t = None
+    for genre in predicted_genres:
+        text = ax.text(0, size, genre + " ", color='black', size=size, transform=t, **kwargs)
+
+        # Need to draw to update the text position.
+        text.draw(canvas.get_renderer())
+        ex = text.get_window_extent()
+        t = transforms.offset_copy(text.get_transform(), x=ex.width, units='dots')
 
 
 def get_score_by_word(word: np.ndarray, vector,
@@ -77,19 +80,12 @@ def get_score_by_word(word: np.ndarray, vector,
     return (vector[word_index[0]] / np.max(vector))[0]
 
 
-def get_score_vector_by_genres(predicted_genres, model: MultiLabelClassifier,
-                               text_model: Union[BagOfWords, WordEmbeddingModel]):
-    feat_impts = get_feature_importances(model, text_model)
+def get_score_vector_by_genres(feat_impts, all_genres, predicted_genres):
     score_vector = np.zeros(len(feat_impts[0]))
-    with open(os.path.join(DATA_PATH, "genres.json"), 'r') as f:
-        genres = json.load(f)
 
-    for genre, feat_impt in zip(genres, feat_impts):
+    for genre, feat_impt in zip(all_genres, feat_impts):
         if genre in predicted_genres:
             score_vector += feat_impt
-
-    print(score_vector)
-    print(len(score_vector))
     return score_vector
 
 
@@ -111,27 +107,24 @@ def get_color_by_score(score):
     return plt.cm.Reds(score)
 
 
-if __name__ == '__main__':
+def save_colored_descriptions(model, clf, descriptions, predicted_genres_list, path, good_example=True):
+    feat_impts = get_feature_importances(clf, model)
+    with open(os.path.join(DATA_PATH, "genres.json"), 'r') as f:
+        all_genres = json.load(f)
 
-    BOW = BagOfWords("tf-idf", ngram_range=(1, 1))
-    clf = MultiLabelClassifier("lreg")
-    _, _, dev = load_stratified_data()
-    X_dev, y_dev = dev["description"].to_numpy(), pandas_ndarray_series_to_numpy(dev["genre"])
+    for i, (description, predicted_genres) in enumerate(zip(descriptions, predicted_genres_list)):
+        vector = get_score_vector_by_genres(feat_impts, all_genres, predicted_genres)
+        words = description.split()
+        plt.rcParams['figure.subplot.left'] = 0
+        plt.rcParams['figure.subplot.bottom'] = 0
+        plt.rcParams['figure.subplot.right'] = 1
+        plt.rcParams['figure.subplot.top'] = 1
+        plt.figure(figsize=(10, 10))
+        plot_colored_description(words, predicted_genres, size=30, vector=vector, text_model=model)
 
-    X_transformed = BOW.fit_transform(X_dev)
-    clf.fit(X_transformed, y_dev)
-    y_pred = clf.predict(X_transformed)
-
-    vector = get_score_vector_by_genres(['Horror'], clf, BOW)
-
-    words = "A year after saving her friend's life and destroying a killer, Mary Sotherland and her friends rent a lake house in upstate New York for the 4th of July. However, Mary tries hard not to let her paranoia get the best of her. When her friends start being discovered dead and mutilated, Mary has to track down the deranged killer once and for all.".split()
-
-    plt.rcParams['figure.subplot.left'] = 0
-    plt.rcParams['figure.subplot.bottom'] = 0
-    plt.rcParams['figure.subplot.right'] = 1
-    plt.rcParams['figure.subplot.top'] = 1
-    plt.figure(figsize=(10, 5))
-    plot_colored_description(words, size=30, vector=vector, text_model=BOW)
-
-    plt.axis('off')
-    plt.savefig(os.path.join(EXPORT_PATH, 'testpic.png'), bbox_inches='tight', pad_inches=0)
+        plt.axis('off')
+        if good_example:
+            plt.savefig(os.path.join(path, f"good_description_{i}.png"), bbox_inches='tight')
+        else:
+            plt.savefig(os.path.join(path, f"bad_description_{i}.png"), bbox_inches='tight')
+        plt.close()

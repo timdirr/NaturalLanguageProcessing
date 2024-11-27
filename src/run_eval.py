@@ -12,6 +12,7 @@ from globals import DATA_PATH, EXPORT_PATH, SEED
 from helper import pandas_ndarray_series_to_numpy
 from preprocess.dataloader import load_stratified_data
 from classifier.base import MultiLabelClassifier
+from colored_text_plot import save_colored_descriptions
 from text_modelling.modelling import BagOfWords, WordEmbeddingModel, Word2VecModel
 from helper import load_genres, decode_genres
 
@@ -73,6 +74,8 @@ def analyse_features(model: MultiLabelClassifier,
 def plot_bad_qualitative_results(X: np.ndarray,
                                  y_true: np.ndarray,
                                  y_pred: np.ndarray,
+                                 model: MultiLabelClassifier,
+                                 text_model: Union[BagOfWords, WordEmbeddingModel],
                                  n_samples: int = 10,
                                  path: str = None):
 
@@ -96,12 +99,14 @@ def plot_bad_qualitative_results(X: np.ndarray,
     save_table_as_image(results, os.path.join(path, "bad_qualitative_results.png"))
     # save to csv
     results.to_csv(os.path.join(path, "bad_qualitative_results.csv"), index=False)
+    save_colored_descriptions(model, text_model, descriptions, predicted_genres, path, good_example=False)
 
 
 def plot_good_qualitative_results(X: np.ndarray,
                                   y_true: np.ndarray,
                                   y_pred: np.ndarray,
-
+                                  model: MultiLabelClassifier,
+                                  text_model: Union[BagOfWords, WordEmbeddingModel],
                                   n_samples: int = 10,
                                   path: str = None,
                                   top_k: int = 10):
@@ -126,6 +131,8 @@ def plot_good_qualitative_results(X: np.ndarray,
     save_table_as_image(results, os.path.join(path, "good_qualitative_results.png"))
     # save to csv
     results.to_csv(os.path.join(path, "good_qualitative_results.csv"), index=False)
+    # plot colored descriptions
+    save_colored_descriptions(model, text_model, descriptions, predicted_genres, path)
 
 
 def plot_cfm(y_true: np.ndarray, y_pred: np.ndarray, path: str = None):
@@ -156,7 +163,7 @@ def plot_cfm(y_true: np.ndarray, y_pred: np.ndarray, path: str = None):
 
 
 def prepare_evaluate(model: MultiLabelClassifier,
-             text_model: Union[BagOfWords, WordEmbeddingModel]):
+                     text_model: Union[BagOfWords, WordEmbeddingModel]):
 
     clf_name = type(model.multi_output_clf_.estimators_[0]).__name__
     text_model_name = type(text_model.model).__name__
@@ -171,7 +178,7 @@ def prepare_evaluate(model: MultiLabelClassifier,
 
 def evaluate(clf,
              model,
-             lemmatized=True,
+             lemmatized=False,
              features=False,
              ):
 
@@ -181,10 +188,8 @@ def evaluate(clf,
     else:
         X_dev, y_dev = dev["description"].to_numpy(), pandas_ndarray_series_to_numpy(dev["genre"])
 
-
     X_train, y_train, X_test, y_test = iterative_train_test_split(
         X_dev[..., np.newaxis], y_dev, 0.1)
-
 
     X_train = X_train.squeeze(-1)
     X_test = X_test.squeeze(-1)
@@ -199,8 +204,8 @@ def evaluate(clf,
 
     if features:
         analyse_features(clf, model, path=dir_path)
-    plot_bad_qualitative_results(X_test, y_test, y_pred, path=dir_path)
-    plot_good_qualitative_results(X_test, y_test, y_pred, path=dir_path)
+    plot_bad_qualitative_results(X_test, y_test, y_pred, model, clf, path=dir_path)
+    plot_good_qualitative_results(X_test, y_test, y_pred, model, clf, path=dir_path)
     plot_cfm(y_test, y_pred,  path=dir_path)
 
 
@@ -232,11 +237,11 @@ def comparative_evaluation(model, lemmatized=False):
         X_dev_train, X_dev_test, y_dev_train, y_dev_test = X_dev[train_idx], X_dev[test_idx], y_dev[train_idx], y_dev[test_idx]
         results = test_model(BagOfWords("tf-idf", ngram_range=(1, 1)), MultiLabelClassifier("lreg"), X_dev_train, X_dev_test, y_dev_train, y_dev_test)
         scores["lreg"] = scores["lreg"] + results
-        results = test_model(BagOfWords("tf-idf", ngram_range=(1, 1)), MultiLabelClassifier("knn", n_neighbors=15, weights='distance', algorithm='auto', metric='euclidean', n_jobs=-1), X_dev_train, X_dev_test, y_dev_train, y_dev_test)
+        results = test_model(BagOfWords("tf-idf", ngram_range=(1, 1)), MultiLabelClassifier("knn", n_neighbors=15, weights='distance',
+                             algorithm='auto', metric='euclidean', n_jobs=-1), X_dev_train, X_dev_test, y_dev_train, y_dev_test)
         scores["knn"] = scores["knn"] + results
-        #results = test_model(BagOfWords("tf-idf", ngram_range=(1, 1)), MultiLabelClassifier("svm"), X_dev_train, X_dev_test, y_dev_train, y_dev_test)
-        #scores["svm"] = results
-
+        # results = test_model(BagOfWords("tf-idf", ngram_range=(1, 1)), MultiLabelClassifier("svm"), X_dev_train, X_dev_test, y_dev_train, y_dev_test)
+        # scores["svm"] = results
 
     sample_size = 100
     samples = np.arange(1, sample_size + 1)
@@ -272,8 +277,7 @@ def main():
     evaluate(MultiLabelClassifier("knn"), BagOfWords("tf-idf", ngram_range=(1, 1)))
     evaluate(MultiLabelClassifier("mlp"), BagOfWords("tf-idf", ngram_range=(1, 1)))
 
-
-    #comparative_evaluation(BagOfWords("tf-idf", ngram_range=(1, 1)))
+    # comparative_evaluation(BagOfWords("tf-idf", ngram_range=(1, 1)))
 
 
 if __name__ == "__main__":
