@@ -156,8 +156,8 @@ def test_word_embeddings(model, pretrained=None):
 
     clf.fit(X_train, y_train)
     y_pred = clf.predict(X_test)
-    log.info(f"Classification report: \n {
-             classification_report(y_test, y_pred)}")
+    log.info(
+        f"Classification report: \n {classification_report(y_test, y_pred)}")
 
     if pretrained:
         log.info(f"Loading pretrained model from Gensim")
@@ -170,8 +170,8 @@ def test_word_embeddings(model, pretrained=None):
 
         clf.fit(X_train, y_train)
         y_pred = clf.predict(X_test)
-        log.info(f"Classification report: \n {
-            classification_report(y_test, y_pred)}")
+        log.info(
+            f"Classification report: \n {classification_report(y_test, y_pred)}")
     return test_features, test_features_pretrained
 
 
@@ -239,8 +239,8 @@ def test_bag_of_words(model_name, **kwargs):
     )
     clf.fit(X_train, y_train)
     y_pred = clf.predict(X_test)
-    log.info(f"Classification report: \n {
-             classification_report(y_test, y_pred)}")
+    log.info(
+        f"Classification report: \n {classification_report(y_test, y_pred)}")
 
 
 def run_tests_bag_of_words():
