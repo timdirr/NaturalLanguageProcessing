@@ -12,21 +12,15 @@ from globals import DATA_PATH, EXPORT_PATH, SEED
 from helper import pandas_ndarray_series_to_numpy
 from preprocess.dataloader import load_stratified_data
 from classifier.base import MultiLabelClassifier
-from evaluation.colored_text_plot import save_colored_descriptions
 from text_modelling.modelling import BagOfWords, WordEmbeddingModel, Word2VecModel
-from helper import load_genres, decode_genres
 
-from evaluation.metrics import compute_metrics, single_signed_overlap, confusion_matrix, score_per_sample
-from evaluation.plotting import plot_feature_importances, plot_wordcloud, save_table_as_image
-from evaluation.utils import get_feature_importances
+from evaluation.metrics import compute_metrics, score_per_sample
+from evaluation.plotting import plot_feature_importances, plot_wordcloud, plot_bad_qualitative_results, plot_good_qualitative_results, plot_cfm
+from evaluation.utils import get_feature_importances, prepare_evaluate
 
-from sklearn.pipeline import make_pipeline
 from skmultilearn.model_selection.iterative_stratification import iterative_train_test_split
 
 from iterstrat.ml_stratifiers import MultilabelStratifiedKFold
-
-
-from sklearn.metrics import recall_score
 
 
 log.basicConfig(level=log.INFO,
@@ -69,117 +63,10 @@ def analyse_features(model: MultiLabelClassifier,
         plot_wordcloud(feat_names, importances, genre, path)
 
 
-# Color words in descriptions according to importance
-
-def plot_bad_qualitative_results(X: np.ndarray,
-                                 y_true: np.ndarray,
-                                 y_pred: np.ndarray,
-                                 model: MultiLabelClassifier,
-                                 text_model: Union[BagOfWords, WordEmbeddingModel],
-                                 n_samples: int = 10,
-                                 path: str = None):
-
-    path = os.path.join(path, "qualitative_results")
-    if not os.path.exists(path):
-        os.makedirs(path)
-    # extract predictions with very bad performance
-    metrics = np.array([recall_score(y_t, y_p) for y_t, y_p in zip(y_true, y_pred)])
-    bad_indices = np.argsort(metrics)[:n_samples]
-    print("Bad indices: ", bad_indices)
-    # get descriptions
-    descriptions = X[bad_indices]
-
-    true_genres = [decode_genres(y_true[i]) for i in bad_indices]
-    predicted_genres = [decode_genres(y_pred[i]) for i in bad_indices]
-    results = pd.DataFrame({
-        "Description": descriptions,
-        "True Labels": true_genres,
-        "Predicted Labels": predicted_genres,
-    })
-    save_table_as_image(results, os.path.join(path, "bad_qualitative_results.png"))
-    # save to csv
-    results.to_csv(os.path.join(path, "bad_qualitative_results.csv"), index=False)
-    save_colored_descriptions(model, text_model, descriptions, predicted_genres, path, good_example=False)
-
-
-def plot_good_qualitative_results(X: np.ndarray,
-                                  y_true: np.ndarray,
-                                  y_pred: np.ndarray,
-                                  model: MultiLabelClassifier,
-                                  text_model: Union[BagOfWords, WordEmbeddingModel],
-                                  n_samples: int = 10,
-                                  path: str = None,
-                                  top_k: int = 10):
-
-    path = os.path.join(path, "qualitative_results")
-    if not os.path.exists(path):
-        os.makedirs(path)
-    # extract predictions with very good performance
-    metrics = np.array([recall_score(y_t, y_p) for y_t, y_p in zip(y_true, y_pred)])
-    good_indices = np.argsort(metrics)[-n_samples:]
-    print("Good indices: ", good_indices)
-    # get descriptions
-    descriptions = X[good_indices]
-
-    true_genres = [decode_genres(y_true[i]) for i in good_indices]
-    predicted_genres = [decode_genres(y_pred[i]) for i in good_indices]
-    results = pd.DataFrame({
-        "Description": descriptions,
-        "True Labels": true_genres,
-        "Predicted Labels": predicted_genres,
-    })
-    save_table_as_image(results, os.path.join(path, "good_qualitative_results.png"))
-    # save to csv
-    results.to_csv(os.path.join(path, "good_qualitative_results.csv"), index=False)
-    # plot colored descriptions
-    save_colored_descriptions(model, text_model, descriptions, predicted_genres, path)
-
-
-def plot_cfm(y_true: np.ndarray, y_pred: np.ndarray, path: str = None):
-    cfm = confusion_matrix(y_true, y_pred)
-    num_labels = cfm.shape[0]
-    genres = load_genres()
-    path = os.path.join(path, "conufsion_matrices")
-    if not os.path.exists(path):
-        os.makedirs(path)
-
-    for i in range(num_labels):
-        cm = cfm[i]
-        genre = genres[i]
-        plt.figure(figsize=(6, 6))
-        plt.matshow(cm, cmap='Blues', fignum=1)
-
-        for (x, y), value in np.ndenumerate(cm):
-            plt.text(y, x, f"{value}", va='center', ha='center', fontsize=42, color='black')
-
-        plt.title(f"Confusion Matrix for genre {genre}", fontsize=18, weight='bold', pad=20)
-        plt.xlabel("Predicted", fontsize=14)
-        plt.ylabel("Actual", fontsize=14)
-        plt.xticks(range(2), labels=["0", "1"], fontsize=12)
-        plt.yticks(range(2), labels=["0", "1"], fontsize=12)
-        plt.grid(False)
-        plt.savefig(os.path.join(path, f'confusion_matrix_{genre}.png'))
-        plt.close()
-
-
-def prepare_evaluate(model: MultiLabelClassifier,
-                     text_model: Union[BagOfWords, WordEmbeddingModel]):
-
-    clf_name = type(model.multi_output_clf_.estimators_[0]).__name__
-    text_model_name = type(text_model.model).__name__
-    dir_path = os.path.join(EXPORT_PATH, f"evluation_{clf_name}_{text_model_name}")
-    if not os.path.exists(dir_path):
-        os.makedirs(dir_path)
-
-    log.info(f"Evaluating model {type(model.multi_output_clf_.estimators_[0]).__name__}")
-
-    return dir_path
-
-
 def evaluate(clf,
              model,
              lemmatized=False,
-             features=False,
+             features=True,
              ):
 
     _, _, dev = load_stratified_data()
@@ -272,10 +159,10 @@ def comparative_evaluation(model, lemmatized=False):
 
 
 def main():
-    evaluate(MultiLabelClassifier("lreg"), BagOfWords("tf-idf", ngram_range=(1, 1)))
-    evaluate(MultiLabelClassifier("svm"), BagOfWords("tf-idf", ngram_range=(1, 1)))
-    evaluate(MultiLabelClassifier("knn"), BagOfWords("tf-idf", ngram_range=(1, 1)))
-    evaluate(MultiLabelClassifier("mlp"), BagOfWords("tf-idf", ngram_range=(1, 1)))
+    evaluate(MultiLabelClassifier("lreg"), BagOfWords("tf-idf", ngram_range=(1, 1)), lemmatized=False, features=True)
+    # evaluate(MultiLabelClassifier("svm"), BagOfWords("tf-idf", ngram_range=(1, 1)))
+    # evaluate(MultiLabelClassifier("knn"), BagOfWords("tf-idf", ngram_range=(1, 1)))
+    # evaluate(MultiLabelClassifier("mlp"), BagOfWords("tf-idf", ngram_range=(1, 1)))
 
     # comparative_evaluation(BagOfWords("tf-idf", ngram_range=(1, 1)))
 

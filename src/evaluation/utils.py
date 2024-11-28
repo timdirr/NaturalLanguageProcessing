@@ -15,6 +15,20 @@ from classifier.base import MultiLabelClassifier
 from text_modelling.modelling import BagOfWords, WordEmbeddingModel
 
 
+def prepare_evaluate(model: MultiLabelClassifier,
+                     text_model: Union[BagOfWords, WordEmbeddingModel]):
+
+    clf_name = type(model.multi_output_clf_.estimators_[0]).__name__
+    text_model_name = type(text_model.model).__name__
+    dir_path = os.path.join(EXPORT_PATH, f"evluation_{clf_name}_{text_model_name}")
+    if not os.path.exists(dir_path):
+        os.makedirs(dir_path)
+
+    log.info(f"Evaluating model {type(model.multi_output_clf_.estimators_[0]).__name__}")
+
+    return dir_path
+
+
 def get_feature_importances(model: MultiLabelClassifier, text_model: Union[BagOfWords, WordEmbeddingModel]):
     '''
     Get feature importances for given model and text model.

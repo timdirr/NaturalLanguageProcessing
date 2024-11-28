@@ -3,6 +3,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 from typing import Union
+from sklearn.metrics import recall_score
 from wordcloud import WordCloud
 import textwrap
 
@@ -13,6 +14,11 @@ import numpy as np
 import matplotlib.pyplot as plt
 import numpy as np
 import textwrap
+from evaluation.metrics import confusion_matrix
+from evaluation.colored_text_plot import save_colored_descriptions
+from helper import decode_genres, load_genres
+from text_modelling.modelling import BagOfWords, WordEmbeddingModel
+from classifier.base import MultiLabelClassifier
 
 
 def save_table_as_image(df, filename="table_image.png"):
@@ -145,3 +151,104 @@ def plot_feature_importances(feat_names: list, importances: Union[list, np.array
     plt.tight_layout()
     plt.savefig(os.path.join(path, f"feature_importance_{genre}.png"))
     plt.close()
+
+
+def plot_metrics_per_genre(metrics: dict, path: str):
+    '''
+    Plots metrics per genre as bar plots. Saved under path/metrics_per_genre.png
+
+    Args:
+        metrics (dict): Dictionary containing metrics for each genre.
+    '''
+    pass
+
+
+def plot_good_qualitative_results(X: np.ndarray,
+                                  y_true: np.ndarray,
+                                  y_pred: np.ndarray,
+                                  model: MultiLabelClassifier,
+                                  text_model: Union[BagOfWords, WordEmbeddingModel],
+                                  n_samples: int = 10,
+                                  path: str = None,
+                                  top_k: int = 10):
+
+    path = os.path.join(path, "qualitative_results")
+    if not os.path.exists(path):
+        os.makedirs(path)
+    # extract predictions with very good performance
+    metrics = np.array([recall_score(y_t, y_p) for y_t, y_p in zip(y_true, y_pred)])
+    good_indices = np.argsort(metrics)[-n_samples:]
+    print("Good indices: ", good_indices)
+    # get descriptions
+    descriptions = X[good_indices]
+
+    true_genres = [decode_genres(y_true[i]) for i in good_indices]
+    predicted_genres = [decode_genres(y_pred[i]) for i in good_indices]
+    results = pd.DataFrame({
+        "Description": descriptions,
+        "True Labels": true_genres,
+        "Predicted Labels": predicted_genres,
+    })
+    save_table_as_image(results, os.path.join(path, "good_qualitative_results.png"))
+    # save to csv
+    results.to_csv(os.path.join(path, "good_qualitative_results.csv"), index=False)
+    # plot colored descriptions
+    save_colored_descriptions(model, text_model, descriptions, predicted_genres, path)
+
+
+def plot_bad_qualitative_results(X: np.ndarray,
+                                 y_true: np.ndarray,
+                                 y_pred: np.ndarray,
+                                 model: MultiLabelClassifier,
+                                 text_model: Union[BagOfWords, WordEmbeddingModel],
+                                 n_samples: int = 10,
+                                 path: str = None):
+
+    path = os.path.join(path, "qualitative_results")
+    if not os.path.exists(path):
+        os.makedirs(path)
+    # extract predictions with very bad performance
+    metrics = np.array([recall_score(y_t, y_p) for y_t, y_p in zip(y_true, y_pred)])
+    bad_indices = np.argsort(metrics)[:n_samples]
+    print("Bad indices: ", bad_indices)
+    # get descriptions
+    descriptions = X[bad_indices]
+
+    true_genres = [decode_genres(y_true[i]) for i in bad_indices]
+    predicted_genres = [decode_genres(y_pred[i]) for i in bad_indices]
+    results = pd.DataFrame({
+        "Description": descriptions,
+        "True Labels": true_genres,
+        "Predicted Labels": predicted_genres,
+    })
+    save_table_as_image(results, os.path.join(path, "bad_qualitative_results.png"))
+    # save to csv
+    results.to_csv(os.path.join(path, "bad_qualitative_results.csv"), index=False)
+    save_colored_descriptions(model, text_model, descriptions, predicted_genres, path, good_example=False)
+
+
+def plot_cfm(y_true: np.ndarray, y_pred: np.ndarray, path: str = None):
+    cfm = confusion_matrix(y_true, y_pred)
+    num_labels = cfm.shape[0]
+    genres = load_genres()
+    path = os.path.join(path, "confusion_matrices")
+    if not os.path.exists(path):
+        os.makedirs(path)
+
+    for i in range(num_labels):
+        cm = cfm[i]
+        genre = genres[i]
+        plt.figure(figsize=(6, 6))
+        plt.matshow(cm, cmap='Blues', fignum=1)
+
+        for (x, y), value in np.ndenumerate(cm):
+            plt.text(y, x, f"{value}", va='center', ha='center', fontsize=42, color='black')
+
+        plt.title(f"Confusion Matrix for genre {genre}", fontsize=18, weight='bold', pad=20)
+        plt.xlabel("Predicted", fontsize=14)
+        plt.ylabel("Actual", fontsize=14)
+        plt.xticks(range(2), labels=["0", "1"], fontsize=12)
+        plt.yticks(range(2), labels=["0", "1"], fontsize=12)
+        plt.grid(False)
+        plt.savefig(os.path.join(path, f'confusion_matrix_{genre}.png'))
+        plt.close()
