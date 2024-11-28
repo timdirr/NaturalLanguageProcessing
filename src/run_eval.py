@@ -12,7 +12,7 @@ from globals import DATA_PATH, EXPORT_PATH, SEED
 from helper import pandas_ndarray_series_to_numpy
 from preprocess.dataloader import load_stratified_data
 from classifier.base import MultiLabelClassifier
-from colored_text_plot import save_colored_descriptions
+from evaluation.colored_text_plot import save_colored_descriptions
 from text_modelling.modelling import BagOfWords, WordEmbeddingModel, Word2VecModel
 from helper import load_genres, decode_genres
 
