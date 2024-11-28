@@ -46,7 +46,7 @@ def analyse_features(clf: MultiLabelClassifier,
     '''
 
     feature_names = text_model.get_feature_names_out()
-    feat_impts = get_feature_importances(clf, text_model)
+    feat_impts = get_feature_importances(clf)
     with open(os.path.join(DATA_PATH, "genres.json"), 'r') as f:
         classes = json.load(f)
 
@@ -77,7 +77,7 @@ def evaluate(clf: MultiLabelClassifier,
     X_train = X_train.squeeze(-1)
     X_test = X_test.squeeze(-1)
 
-    log.info(f"Fitting model {type(clf.multi_output_clf_.estimators_[0]).__name__} with text model {type(text_model.model).__name__}")
+    log.info(f"Fitting model")
     X_transformed = text_model.fit_transform(X_train)
     clf.fit(X_transformed, y_train)
     log.info(f"Model fitted.")
@@ -90,8 +90,8 @@ def evaluate(clf: MultiLabelClassifier,
     if features:
         analyse_features(clf, text_model, path=dir_path)
     plot_metrics_per_genre(y_test, y_pred, clf, metrics_names=['jaccard', 'hamming', 'accuracy', 'balanced_accuracy', 'precision', 'recall'], path=dir_path)
-    plot_bad_qualitative_results(X_test, y_test, y_pred, text_model, clf, path=dir_path)
-    plot_good_qualitative_results(X_test, y_test, y_pred, text_model, clf, path=dir_path)
+    plot_bad_qualitative_results(X_test, y_test, y_pred, clf, text_model, path=dir_path)
+    plot_good_qualitative_results(X_test, y_test, y_pred, clf, text_model, path=dir_path)
     plot_cfm(y_test, y_pred,  path=dir_path)
     if clf.multi_output_clf_.estimators_[0].__class__.__name__ == "DecisionTreeClassifier":
         plot_decision_tree(clf, text_model, path=dir_path)

@@ -221,7 +221,7 @@ def plot_metrics_per_genre(y_true: np.ndarray,
 def plot_good_qualitative_results(X: np.ndarray,
                                   y_true: np.ndarray,
                                   y_pred: np.ndarray,
-                                  model: MultiLabelClassifier,
+                                  clf: MultiLabelClassifier,
                                   text_model: Union[BagOfWords, WordEmbeddingModel],
                                   n_samples: int = 10,
                                   path: str = None,
@@ -248,7 +248,7 @@ def plot_good_qualitative_results(X: np.ndarray,
     # save to csv
     results.to_csv(os.path.join(path, "good_qualitative_results.csv"), index=False)
     # plot colored descriptions
-    save_colored_descriptions(model, text_model, descriptions, predicted_genres, path)
+    save_colored_descriptions(clf, text_model, descriptions, predicted_genres, path)
 
 
 def plot_bad_qualitative_results(X: np.ndarray,

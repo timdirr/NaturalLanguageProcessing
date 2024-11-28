@@ -112,8 +112,8 @@ def get_color_by_score(score):
     return plt.cm.Reds(score)
 
 
-def save_colored_descriptions(model, clf, descriptions, predicted_genres_list, path, good_example=True):
-    feat_impts = get_feature_importances(clf, model)
+def save_colored_descriptions(clf, text_model, descriptions, predicted_genres_list, path, good_example=True):
+    feat_impts = get_feature_importances(clf)
     with open(os.path.join(DATA_PATH, "genres.json"), 'r') as f:
         all_genres = json.load(f)
 
@@ -129,7 +129,7 @@ def save_colored_descriptions(model, clf, descriptions, predicted_genres_list, p
         plt.rcParams['figure.subplot.right'] = 1
         plt.rcParams['figure.subplot.top'] = 1
         plt.figure(figsize=(10, 10))
-        plot_colored_description(words, predicted_genres, size=30, vector=vector, text_model=model)
+        plot_colored_description(words, predicted_genres, size=30, vector=vector, text_model=text_model)
 
         plt.axis('off')
         if good_example:
