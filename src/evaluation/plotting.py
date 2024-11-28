@@ -9,12 +9,12 @@ import textwrap
 
 import matplotlib.pyplot as plt
 import numpy as np
-
+from collections import defaultdict
 
 import matplotlib.pyplot as plt
 import numpy as np
 import textwrap
-from evaluation.metrics import confusion_matrix
+from evaluation.metrics import compute_metrics, confusion_matrix
 from evaluation.colored_text_plot import save_colored_descriptions
 from helper import decode_genres, load_genres
 from text_modelling.modelling import BagOfWords, WordEmbeddingModel
@@ -153,14 +153,45 @@ def plot_feature_importances(feat_names: list, importances: Union[list, np.array
     plt.close()
 
 
-def plot_metrics_per_genre(metrics: dict, path: str):
+def plot_metrics_per_genre(y_true: np.ndarray,
+                           y_pred: np.ndarray,
+                           model: MultiLabelClassifier,
+                           metrics_names: list[str],
+                           path: str):
     '''
     Plots metrics per genre as bar plots. Saved under path/metrics_per_genre.png
 
     Args:
-        metrics (dict): Dictionary containing metrics for each genre.
+        y_true (np.ndarray): Ground truth (binary matrix, shape [n_samples, n_classes]).
+        y_pred (np.ndarray): Predictions (binary matrix, shape [n_samples, n_classes]).
+        model (MultiLabelClassifier): Model for which feature importances are to be computed.
+        metrics_names (list[str]):  List of metrics to compute. Default: ['jaccard', 'hamming', 'accuracy', 'f1', 'precision', 'recall'].
+        path (str): Path to directory to save results in.
     '''
-    pass
+    path = os.path.join(path, 'metrics_per_genre')
+    if not os.path.exists(path):
+        os.makedirs(path)
+
+    # For each genre, compute metrics
+
+    genres = load_genres()
+
+    metrics = defaultdict(list)
+
+    for i, genre in enumerate(genres):
+        y_true_genre = y_true[:, i]
+        y_pred_genre = y_pred[:, i]
+        metrics_genre = compute_metrics(y_true_genre, y_pred_genre, metrics_names)
+        metrics[genre] = metrics_genre
+
+    # turn into dataframe containing columns: genre, [metrics_names]
+    metrics_df = pd.DataFrame(metrics, index=metrics_names).T
+    print(metrics_df)
+
+    # Plot metrics in a bar plot grouping
+    fig, axs = plt.subplots(1, 1, figsize=(30, 10))
+    x = np.arange(len(metrics_names))
+    width = 0.1
 
 
 def plot_good_qualitative_results(X: np.ndarray,

@@ -2,7 +2,6 @@ import numpy as np
 from sklearn.metrics import jaccard_score, hamming_loss, accuracy_score, f1_score, precision_score, recall_score, multilabel_confusion_matrix
 
 
-
 def signed_overlap(y_true, y_pred):
     """
     Compute signed overlap metric for multilabel classification.
@@ -85,7 +84,6 @@ def score_per_sample(y_true, y_preds, metric=jaccard_score):
     return scores
 
 
-
 def compute_metrics(y_true,
                     y_pred,
                     metrics_names: list = ['jaccard', 'hamming', 'accuracy', 'f1', 'precision', 'recall', 'at_least_one', 'at_least_two', 'signed_overlap', 'confusion_matrix']):
@@ -96,6 +94,9 @@ def compute_metrics(y_true,
         y_true (np.ndarray): Ground truth (binary matrix, shape [n_samples, n_classes]).
         y_pred (np.ndarray): Predictions (binary matrix, shape [n_samples, n_classes]).
         metrics_names (list[str]):  List of metrics to compute. Default: ['jaccard', 'hamming', 'accuracy', 'f1', 'precision', 'recall'].
+
+    Returns:
+        metrics (dict): Dictionary containing the computed metrics.
     '''
 
     metrics = {}

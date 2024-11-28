@@ -61,8 +61,7 @@ def load_genres():
 
 
 def encode_genres(genre):
-    with open(os.path.join(DATA_PATH, 'genres.json'), 'r') as f:
-        genres = json.load(f)
+    genres = load_genres()
     return np.isin(genres, genre).astype(int)
 
 
@@ -70,8 +69,7 @@ def decode_genres(encoded_genre):
     '''
     Takes an encoded genre and return the correspondind genres as a list of strings.
     '''
-    with open(os.path.join(DATA_PATH, 'genres.json'), 'r') as f:
-        genres = json.load(f)
+    genres = load_genres()
     indices = np.where(encoded_genre == 1)[0]
     if len(indices) == 0:
         return []

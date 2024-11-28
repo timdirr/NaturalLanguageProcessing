@@ -15,7 +15,7 @@ from classifier.base import MultiLabelClassifier
 from text_modelling.modelling import BagOfWords, WordEmbeddingModel, Word2VecModel
 
 from evaluation.metrics import compute_metrics, score_per_sample
-from evaluation.plotting import plot_feature_importances, plot_wordcloud, plot_bad_qualitative_results, plot_good_qualitative_results, plot_cfm
+from evaluation.plotting import plot_feature_importances, plot_wordcloud, plot_bad_qualitative_results, plot_good_qualitative_results, plot_cfm, plot_metrics_per_genre
 from evaluation.utils import get_feature_importances, prepare_evaluate
 
 from skmultilearn.model_selection.iterative_stratification import iterative_train_test_split
@@ -26,10 +26,6 @@ from iterstrat.ml_stratifiers import MultilabelStratifiedKFold
 log.basicConfig(level=log.INFO,
                 format='%(asctime)s: %(levelname)s: %(message)s',
                 datefmt='%Y-%m-%d %H:%M:%S')
-
-
-def plot_metric_per_genre(y, y_pred, metrics: list):
-    pass
 
 
 def analyse_features(model: MultiLabelClassifier,
@@ -91,9 +87,10 @@ def evaluate(clf,
 
     if features:
         analyse_features(clf, model, path=dir_path)
-    plot_bad_qualitative_results(X_test, y_test, y_pred, model, clf, path=dir_path)
-    plot_good_qualitative_results(X_test, y_test, y_pred, model, clf, path=dir_path)
-    plot_cfm(y_test, y_pred,  path=dir_path)
+    plot_metrics_per_genre(y_test, y_pred, clf, metrics_names=['jaccard', 'hamming', 'precision', 'recall', 'at_least_one', 'at_least_two'], path=dir_path)
+    # plot_bad_qualitative_results(X_test, y_test, y_pred, model, clf, path=dir_path)
+    # plot_good_qualitative_results(X_test, y_test, y_pred, model, clf, path=dir_path)
+    # plot_cfm(y_test, y_pred,  path=dir_path)
 
 
 def comparative_evaluation(model, lemmatized=False):
@@ -159,7 +156,7 @@ def comparative_evaluation(model, lemmatized=False):
 
 
 def main():
-    evaluate(MultiLabelClassifier("lreg"), BagOfWords("tf-idf", ngram_range=(1, 1)), lemmatized=False, features=True)
+    evaluate(MultiLabelClassifier("lreg"), BagOfWords("tf-idf", ngram_range=(1, 1)), lemmatized=False, features=False)
     # evaluate(MultiLabelClassifier("svm"), BagOfWords("tf-idf", ngram_range=(1, 1)))
     # evaluate(MultiLabelClassifier("knn"), BagOfWords("tf-idf", ngram_range=(1, 1)))
     # evaluate(MultiLabelClassifier("mlp"), BagOfWords("tf-idf", ngram_range=(1, 1)))
