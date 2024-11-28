@@ -40,6 +40,15 @@ class MultiLabelClassifier(BaseEstimator, ClassifierMixin):
 
         self.multi_output_clf_ = MultiOutputClassifier(self.base_estimator)
 
+        try:
+            # raise an AttributeError if `predict_proba` does not exist for the base estimator
+            self.multi_output_clf_._check_predict_proba()
+            self._has_predict_proba = True
+        except AttributeError:
+            self._has_predict_proba = False
+
+        print(self._has_predict_proba)
+
     def fit(self, X, y):
         if isinstance(y, pd.Series):
             y = helper.pandas_ndarray_series_to_numpy(y)
@@ -54,8 +63,9 @@ class MultiLabelClassifier(BaseEstimator, ClassifierMixin):
 
     def predict_at_least_1(self, X):
         predictions = self.multi_output_clf_.predict(X)
-        for i in range(len(predictions)):
-            if sum(predictions[i]) == 0:
-                true_label = np.array(list(map(lambda x: x[0][1], self.predict_proba(X[i:i+1])))).argmax()
-                predictions[i][true_label] = 1
+        if self._has_predict_proba:
+            for i in range(len(predictions)):
+                if sum(predictions[i]) == 0:
+                    true_label = np.array(list(map(lambda x: x[0][1], self.predict_proba(X[i:i+1])))).argmax()
+                    predictions[i][true_label] = 1
         return predictions
