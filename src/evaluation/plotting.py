@@ -4,6 +4,7 @@ import numpy as np
 import pandas as pd
 from typing import Union
 from sklearn.metrics import recall_score
+from sklearn import tree
 from wordcloud import WordCloud
 import textwrap
 
@@ -172,26 +173,49 @@ def plot_metrics_per_genre(y_true: np.ndarray,
     if not os.path.exists(path):
         os.makedirs(path)
 
-    # For each genre, compute metrics
+    if 'at_least_one' in metrics_names:
+        metrics_names.remove('at_least_one')
+    if 'at_least_two' in metrics_names:
+        metrics_names.remove('at_least_two')
 
     genres = load_genres()
 
     metrics = defaultdict(list)
+    genre_occurences = []
 
     for i, genre in enumerate(genres):
         y_true_genre = y_true[:, i]
         y_pred_genre = y_pred[:, i]
         metrics_genre = compute_metrics(y_true_genre, y_pred_genre, metrics_names)
         metrics[genre] = metrics_genre
+        genre_occurences.append(np.sum(y_true_genre))
 
+    genre_occurences = np.array(genre_occurences) / np.sum(genre_occurences)
     # turn into dataframe containing columns: genre, [metrics_names]
-    metrics_df = pd.DataFrame(metrics, index=metrics_names).T
-    print(metrics_df)
+    metrics_df = pd.DataFrame(metrics).T.reset_index().rename(columns={'index': 'Genre'})
+    metrics_df = metrics_df.melt(id_vars=['Genre'], var_name='Metric', value_name='Value')
+    metrics_df = metrics_df.pivot(index='Genre', columns='Metric', values='Value').reset_index()
+    metrics_df['genre_occurences'] = genre_occurences
+    metrics_df = metrics_df.sort_values(by='balanced_accuracy', ascending=False)
 
-    # Plot metrics in a bar plot grouping
-    fig, axs = plt.subplots(1, 1, figsize=(30, 10))
-    x = np.arange(len(metrics_names))
-    width = 0.1
+    fig, axs = plt.subplots(1, 1, figsize=(40, 15))
+    metrics_df.plot(
+        x='Genre',
+        kind='bar',
+        stacked=False,
+        title='Metrics per Genre',
+        ax=axs,
+    )
+
+    plt.xticks(fontsize=20, rotation=45, ha='right')  # Increased fontsize and rotated labels
+    plt.xlabel('Genre', fontsize=25)
+    plt.title('Metrics per Genre (Sorted by balanced Accuracy)', fontsize=30)
+    plt.legend(title='Metrics', fontsize=20, title_fontsize=25)
+
+    plt.tight_layout()
+
+    plt.savefig(os.path.join(path, 'metrics_per_genre.png'))
+    plt.close()
 
 
 def plot_good_qualitative_results(X: np.ndarray,
@@ -283,3 +307,19 @@ def plot_cfm(y_true: np.ndarray, y_pred: np.ndarray, path: str = None):
         plt.grid(False)
         plt.savefig(os.path.join(path, f'confusion_matrix_{genre}.png'))
         plt.close()
+
+
+def plot_decision_tree(clf: MultiLabelClassifier, text_model: Union[BagOfWords, WordEmbeddingModel], path: str = None):
+    path = os.path.join(path, "decision_tree")
+
+    feature_names = text_model.get_feature_names_out()
+    estimators = clf.multi_output_clf_.estimators_
+    fig, axs = plt.subplots(3, 7, figsize=(20, 10))
+
+    # acces axis as iterative
+    for ax, (i, estimator) in zip(axs.flat, estimators):
+        tree.plot_tree(estimator, ax=ax, feature_names=feature_names, class_names=load_genres(), filled=True)
+
+    plt.tight_layout()
+    plt.savefig(os.path.join(path, "decision_tree.png"))
+    plt.close()

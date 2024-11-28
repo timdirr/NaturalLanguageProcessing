@@ -15,7 +15,7 @@ from classifier.base import MultiLabelClassifier
 from text_modelling.modelling import BagOfWords, WordEmbeddingModel, Word2VecModel
 
 from evaluation.metrics import compute_metrics, score_per_sample
-from evaluation.plotting import plot_feature_importances, plot_wordcloud, plot_bad_qualitative_results, plot_good_qualitative_results, plot_cfm, plot_metrics_per_genre
+from evaluation.plotting import plot_decision_tree, plot_feature_importances, plot_wordcloud, plot_bad_qualitative_results, plot_good_qualitative_results, plot_cfm, plot_metrics_per_genre
 from evaluation.utils import get_feature_importances, prepare_evaluate
 
 from skmultilearn.model_selection.iterative_stratification import iterative_train_test_split
@@ -28,7 +28,7 @@ log.basicConfig(level=log.INFO,
                 datefmt='%Y-%m-%d %H:%M:%S')
 
 
-def analyse_features(model: MultiLabelClassifier,
+def analyse_features(clf: MultiLabelClassifier,
                      text_model: Union[BagOfWords, WordEmbeddingModel],
                      top_k: int = 10,
                      path: str = None):
@@ -46,7 +46,7 @@ def analyse_features(model: MultiLabelClassifier,
     '''
 
     feature_names = text_model.get_feature_names_out()
-    feat_impts = get_feature_importances(model, text_model)
+    feat_impts = get_feature_importances(clf, text_model)
     with open(os.path.join(DATA_PATH, "genres.json"), 'r') as f:
         classes = json.load(f)
 
@@ -59,8 +59,8 @@ def analyse_features(model: MultiLabelClassifier,
         plot_wordcloud(feat_names, importances, genre, path)
 
 
-def evaluate(clf,
-             model,
+def evaluate(clf: MultiLabelClassifier,
+             text_model: Union[BagOfWords, WordEmbeddingModel],
              lemmatized=False,
              features=True,
              ):
@@ -77,20 +77,24 @@ def evaluate(clf,
     X_train = X_train.squeeze(-1)
     X_test = X_test.squeeze(-1)
 
-    X_transformed = model.fit_transform(X_train)
+    log.info(f"Fitting model {type(clf.multi_output_clf_.estimators_[0]).__name__} with text model {type(text_model.model).__name__}")
+    X_transformed = text_model.fit_transform(X_train)
     clf.fit(X_transformed, y_train)
-    y_pred = clf.predict(model.transform(X_test))
+    log.info(f"Model fitted.")
+    y_pred = clf.predict(text_model.transform(X_test))
 
-    dir_path = prepare_evaluate(clf, model)
+    dir_path = prepare_evaluate(clf, text_model)
     metrics = compute_metrics(y_test, y_pred, metrics_names=['jaccard', 'hamming', 'precision', 'recall', 'at_least_one', 'at_least_two'])
     log.info(f"Metrics: {metrics}")
 
     if features:
-        analyse_features(clf, model, path=dir_path)
-    plot_metrics_per_genre(y_test, y_pred, clf, metrics_names=['jaccard', 'hamming', 'precision', 'recall', 'at_least_one', 'at_least_two'], path=dir_path)
-    # plot_bad_qualitative_results(X_test, y_test, y_pred, model, clf, path=dir_path)
-    # plot_good_qualitative_results(X_test, y_test, y_pred, model, clf, path=dir_path)
-    # plot_cfm(y_test, y_pred,  path=dir_path)
+        analyse_features(clf, text_model, path=dir_path)
+    plot_metrics_per_genre(y_test, y_pred, clf, metrics_names=['jaccard', 'hamming', 'accuracy', 'balanced_accuracy', 'precision', 'recall'], path=dir_path)
+    plot_bad_qualitative_results(X_test, y_test, y_pred, text_model, clf, path=dir_path)
+    plot_good_qualitative_results(X_test, y_test, y_pred, text_model, clf, path=dir_path)
+    plot_cfm(y_test, y_pred,  path=dir_path)
+    if clf.multi_output_clf_.estimators_[0].__class__.__name__ == "DecisionTreeClassifier":
+        plot_decision_tree(clf, text_model, path=dir_path)
 
 
 def comparative_evaluation(model, lemmatized=False):
@@ -156,9 +160,11 @@ def comparative_evaluation(model, lemmatized=False):
 
 
 def main():
-    evaluate(MultiLabelClassifier("lreg"), BagOfWords("tf-idf", ngram_range=(1, 1)), lemmatized=False, features=False)
+    evaluate(MultiLabelClassifier("lreg"), BagOfWords("tf-idf", ngram_range=(1, 1)), lemmatized=False, features=True)
+    evaluate(MultiLabelClassifier("bayes"), BagOfWords("tf-idf", ngram_range=(1, 1)), lemmatized=False, features=True)
+    evaluate(MultiLabelClassifier("dt"), BagOfWords("tf-idf", ngram_range=(1, 1), max_depth=5), lemmatized=False, features=True)
+    evaluate(MultiLabelClassifier("knn"), BagOfWords("tf-idf", ngram_range=(1, 1)))
     # evaluate(MultiLabelClassifier("svm"), BagOfWords("tf-idf", ngram_range=(1, 1)))
-    # evaluate(MultiLabelClassifier("knn"), BagOfWords("tf-idf", ngram_range=(1, 1)))
     # evaluate(MultiLabelClassifier("mlp"), BagOfWords("tf-idf", ngram_range=(1, 1)))
 
     # comparative_evaluation(BagOfWords("tf-idf", ngram_range=(1, 1)))

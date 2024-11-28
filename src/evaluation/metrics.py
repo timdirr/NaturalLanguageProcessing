@@ -1,5 +1,6 @@
 import numpy as np
-from sklearn.metrics import jaccard_score, hamming_loss, accuracy_score, f1_score, precision_score, recall_score, multilabel_confusion_matrix
+from sklearn.metrics import jaccard_score, hamming_loss, accuracy_score, balanced_accuracy_score, f1_score, precision_score, recall_score, multilabel_confusion_matrix
+import warnings
 
 
 def signed_overlap(y_true, y_pred):
@@ -99,19 +100,27 @@ def compute_metrics(y_true,
         metrics (dict): Dictionary containing the computed metrics.
     '''
 
+    if len(y_true.shape) == 1:
+        averaging = 'binary'
+    else:
+        averaging = 'samples'
+        warnings.filterwarnings("ignore")
     metrics = {}
+
     if 'jaccard' in metrics_names:
-        metrics['jaccard'] = jaccard_score(y_true, y_pred, average='samples')
+        metrics['jaccard'] = jaccard_score(y_true, y_pred, average=averaging)
     if 'hamming' in metrics_names:
         metrics['hamming'] = hamming_loss(y_true, y_pred)
     if 'accuracy' in metrics_names:
         metrics['accuracy'] = accuracy_score(y_true, y_pred)
+    if 'balanced_accuracy' in metrics_names:
+        metrics['balanced_accuracy'] = balanced_accuracy_score(y_true, y_pred)
     if 'f1' in metrics_names:
-        metrics['f1'] = f1_score(y_true, y_pred, average='samples')
+        metrics['f1'] = f1_score(y_true, y_pred, average=averaging)
     if 'precision' in metrics_names:
-        metrics['precision'] = precision_score(y_true, y_pred, average='samples')
+        metrics['precision'] = precision_score(y_true, y_pred, average=averaging)
     if 'recall' in metrics_names:
-        metrics['recall'] = recall_score(y_true, y_pred, average='samples')
+        metrics['recall'] = recall_score(y_true, y_pred, average=averaging)
     if 'at_least_one' in metrics_names:
         metrics['at_least_one'] = at_least_k(y_true, y_pred, 1)
     if 'at_least_two' in metrics_names:

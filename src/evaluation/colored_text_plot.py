@@ -1,5 +1,6 @@
 # ADAPTED FROM: https://matplotlib.org/3.1.0/api/transformations.html#matplotlib.transforms.offset_copy
 import json
+import logging as log
 import os
 from typing import Union
 import matplotlib
@@ -13,6 +14,10 @@ from globals import DATA_PATH, EXPORT_PATH
 from helper import pandas_ndarray_series_to_numpy
 from preprocess.dataloader import load_stratified_data
 from text_modelling.modelling import BagOfWords, WordEmbeddingModel
+
+log.basicConfig(level=log.INFO,
+                format='%(asctime)s: %(levelname)s: %(message)s',
+                datefmt='%Y-%m-%d %H:%M:%S')
 
 
 def plot_colored_description(description_words, predicted_genres, vector, text_model: Union[BagOfWords, WordEmbeddingModel],
@@ -111,6 +116,10 @@ def save_colored_descriptions(model, clf, descriptions, predicted_genres_list, p
     feat_impts = get_feature_importances(clf, model)
     with open(os.path.join(DATA_PATH, "genres.json"), 'r') as f:
         all_genres = json.load(f)
+
+    if len(feat_impts) == 0:
+        log.warning("Model does not have attribute for feature importance. Cannot plot colored descriptions.")
+        return
 
     for i, (description, predicted_genres) in enumerate(zip(descriptions, predicted_genres_list)):
         vector = get_score_vector_by_genres(feat_impts, all_genres, predicted_genres)
