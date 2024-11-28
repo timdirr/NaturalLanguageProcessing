@@ -254,7 +254,7 @@ def plot_good_qualitative_results(X: np.ndarray,
 def plot_bad_qualitative_results(X: np.ndarray,
                                  y_true: np.ndarray,
                                  y_pred: np.ndarray,
-                                 model: MultiLabelClassifier,
+                                 clf: MultiLabelClassifier,
                                  text_model: Union[BagOfWords, WordEmbeddingModel],
                                  n_samples: int = 10,
                                  path: str = None):
@@ -279,7 +279,7 @@ def plot_bad_qualitative_results(X: np.ndarray,
     save_table_as_image(results, os.path.join(path, "bad_qualitative_results.png"))
     # save to csv
     results.to_csv(os.path.join(path, "bad_qualitative_results.csv"), index=False)
-    save_colored_descriptions(model, text_model, descriptions, predicted_genres, path, good_example=False)
+    save_colored_descriptions(clf, text_model, descriptions, predicted_genres, path, good_example=False)
 
 
 def plot_cfm(y_true: np.ndarray, y_pred: np.ndarray, path: str = None):
@@ -311,15 +311,18 @@ def plot_cfm(y_true: np.ndarray, y_pred: np.ndarray, path: str = None):
 
 def plot_decision_tree(clf: MultiLabelClassifier, text_model: Union[BagOfWords, WordEmbeddingModel], path: str = None):
     path = os.path.join(path, "decision_tree")
-
+    genres = load_genres()
+    if not os.path.exists(path):
+        os.makedirs(path)
     feature_names = text_model.get_feature_names_out()
     estimators = clf.multi_output_clf_.estimators_
-    fig, axs = plt.subplots(3, 7, figsize=(20, 10))
-
     # acces axis as iterative
-    for ax, (i, estimator) in zip(axs.flat, estimators):
-        tree.plot_tree(estimator, ax=ax, feature_names=feature_names, class_names=load_genres(), filled=True)
+    for genre, estimator in zip(genres, estimators):
+        fig, axs = plt.subplots(1, 1, figsize=(30, 30))
 
-    plt.tight_layout()
-    plt.savefig(os.path.join(path, "decision_tree.png"))
-    plt.close()
+        tree.plot_tree(estimator, max_depth=5, ax=axs, feature_names=feature_names, class_names=[genre, f"No {genre}"], filled=True, fontsize=30, impurity=False)
+
+        axs.set_title(f"Decision Tree for {genre}", fontsize=30)
+
+        plt.savefig(os.path.join(path, f"decision_tree_{genre}.png"))
+        plt.close()

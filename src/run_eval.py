@@ -89,7 +89,8 @@ def evaluate(clf: MultiLabelClassifier,
 
     if features:
         analyse_features(clf, text_model, path=dir_path)
-    plot_metrics_per_genre(y_test, y_pred, clf, metrics_names=['jaccard', 'hamming', 'accuracy', 'balanced_accuracy', 'precision', 'recall'], path=dir_path)
+    plot_metrics_per_genre(y_test, y_pred, clf, metrics_names=['balanced_accuracy', 'precision', 'recall'], path=dir_path)
+
     plot_bad_qualitative_results(X_test, y_test, y_pred, clf, text_model, path=dir_path)
     plot_good_qualitative_results(X_test, y_test, y_pred, clf, text_model, path=dir_path)
     plot_cfm(y_test, y_pred,  path=dir_path)
@@ -160,13 +161,12 @@ def comparative_evaluation(model, lemmatized=False):
 
 
 def main():
-    evaluate(MultiLabelClassifier("lreg"), BagOfWords("tf-idf", ngram_range=(1, 1)), lemmatized=False, features=True)
-    evaluate(MultiLabelClassifier("bayes"), BagOfWords("tf-idf", ngram_range=(1, 1)), lemmatized=False, features=True)
-    evaluate(MultiLabelClassifier("dt"), BagOfWords("tf-idf", ngram_range=(1, 1), max_depth=5), lemmatized=False, features=True)
-    evaluate(MultiLabelClassifier("knn"), BagOfWords("tf-idf", ngram_range=(1, 1)))
+    # evaluate(MultiLabelClassifier("lreg"), BagOfWords("tf-idf", ngram_range=(1, 1)), lemmatized=False, features=True)
+    # evaluate(MultiLabelClassifier("bayes"), BagOfWords("tf-idf", ngram_range=(1, 1)), lemmatized=False, features=True)
+    evaluate(MultiLabelClassifier("dt", max_depth=3), BagOfWords("tf-idf", ngram_range=(1, 1)), lemmatized=False, features=True)
+    # evaluate(MultiLabelClassifier("knn"), BagOfWords("tf-idf", ngram_range=(1, 1)))
     # evaluate(MultiLabelClassifier("svm"), BagOfWords("tf-idf", ngram_range=(1, 1)))
     # evaluate(MultiLabelClassifier("mlp"), BagOfWords("tf-idf", ngram_range=(1, 1)))
-
     # comparative_evaluation(BagOfWords("tf-idf", ngram_range=(1, 1)))
 
 
