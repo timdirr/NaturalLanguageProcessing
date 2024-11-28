@@ -57,13 +57,12 @@ class MultiLabelClassifier(BaseEstimator, ClassifierMixin):
         return self.multi_output_clf_.predict(X)
 
     def predict_proba(self, X):
-        return self.multi_output_clf_.predict_proba(X)
+        return np.array(self.multi_output_clf_.predict_proba(X)).transpose()[1]
 
     def predict_at_least_1(self, X):
         predictions = self.multi_output_clf_.predict(X)
         if self._has_predict_proba:
-            for i in range(len(predictions)):
-                if sum(predictions[i]) == 0:
-                    true_label = np.array(list(map(lambda x: x[0][1], self.predict_proba(X[i:i+1])))).argmax()
-                    predictions[i][true_label] = 1
+            predictions_proba = self.predict_proba(X)
+            idx = predictions.sum(axis=1) == 0
+            predictions[idx] = (predictions_proba[idx] >= predictions_proba.max(axis=1)[idx][:, None]).astype(int)
         return predictions

@@ -1,5 +1,6 @@
 import os
 import json
+import time
 import numpy as np
 import pandas as pd
 import logging as log
@@ -81,11 +82,22 @@ def evaluate(clf: MultiLabelClassifier,
     X_transformed = text_model.fit_transform(X_train)
     clf.fit(X_transformed, y_train)
     log.info(f"Model fitted.")
+
+    log.info(f"Predicting on test set")
+    start_time = time.time()
     y_pred = clf.predict(text_model.transform(X_test))
+    log.info(f"Predictions done in: {time.time() - start_time}")
+
+    log.info(f"Predicting on test set (at least 1)")
+    start_time = time.time()
+    y_pred_at_least_1 = clf.predict_at_least_1(text_model.transform(X_test))
+    log.info(f"Predictions (at least 1) done in: {time.time() - start_time}")
 
     dir_path = prepare_evaluate(clf, text_model)
     metrics = compute_metrics(y_test, y_pred, metrics_names=['jaccard', 'hamming', 'precision', 'recall', 'at_least_one', 'at_least_two'])
-    log.info(f"Metrics: {metrics}")
+    log.info(f"Metrics:\n {metrics}")
+    metrics = compute_metrics(y_test, y_pred_at_least_1, metrics_names=['jaccard', 'hamming', 'precision', 'recall', 'at_least_one', 'at_least_two'])
+    log.info(f"Metrics (at least 1):\n {metrics}")
 
     if features:
         analyse_features(clf, text_model, path=dir_path)
@@ -114,7 +126,7 @@ def comparative_evaluation(model, lemmatized=False):
         transformed_data = model.fit_transform(X_train)
         classifier = classifier.fit(transformed_data, y_train)
 
-        jaccard = score_per_sample(y_test, classifier.predict(
+        jaccard = score_per_sample(y_test, classifier.predict_at_least_1(
             model.transform(X_test)))
         return jaccard
 
@@ -161,13 +173,13 @@ def comparative_evaluation(model, lemmatized=False):
 
 
 def main():
-    # evaluate(MultiLabelClassifier("lreg"), BagOfWords("tf-idf", ngram_range=(1, 1)), lemmatized=False, features=True)
-    # evaluate(MultiLabelClassifier("bayes"), BagOfWords("tf-idf", ngram_range=(1, 1)), lemmatized=False, features=True)
+    evaluate(MultiLabelClassifier("lreg"), BagOfWords("tf-idf", ngram_range=(1, 1)), lemmatized=False, features=True)
+    evaluate(MultiLabelClassifier("bayes"), BagOfWords("tf-idf", ngram_range=(1, 1)), lemmatized=False, features=True)
     evaluate(MultiLabelClassifier("dt", max_depth=3), BagOfWords("tf-idf", ngram_range=(1, 1)), lemmatized=False, features=True)
-    # evaluate(MultiLabelClassifier("knn"), BagOfWords("tf-idf", ngram_range=(1, 1)))
+    evaluate(MultiLabelClassifier("knn"), BagOfWords("tf-idf", ngram_range=(1, 1)))
     # evaluate(MultiLabelClassifier("svm"), BagOfWords("tf-idf", ngram_range=(1, 1)))
     # evaluate(MultiLabelClassifier("mlp"), BagOfWords("tf-idf", ngram_range=(1, 1)))
-    # comparative_evaluation(BagOfWords("tf-idf", ngram_range=(1, 1)))
+    comparative_evaluation(BagOfWords("tf-idf", ngram_range=(1, 1)))
 
 
 if __name__ == "__main__":

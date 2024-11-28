@@ -233,7 +233,6 @@ def plot_good_qualitative_results(X: np.ndarray,
     # extract predictions with very good performance
     metrics = np.array([recall_score(y_t, y_p) for y_t, y_p in zip(y_true, y_pred)])
     good_indices = np.argsort(metrics)[-n_samples:]
-    print("Good indices: ", good_indices)
     # get descriptions
     descriptions = X[good_indices]
 
@@ -265,7 +264,6 @@ def plot_bad_qualitative_results(X: np.ndarray,
     # extract predictions with very bad performance
     metrics = np.array([recall_score(y_t, y_p) for y_t, y_p in zip(y_true, y_pred)])
     bad_indices = np.argsort(metrics)[:n_samples]
-    print("Bad indices: ", bad_indices)
     # get descriptions
     descriptions = X[bad_indices]
 
