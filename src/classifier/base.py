@@ -47,8 +47,6 @@ class MultiLabelClassifier(BaseEstimator, ClassifierMixin):
         except AttributeError:
             self._has_predict_proba = False
 
-        print(self._has_predict_proba)
-
     def fit(self, X, y):
         if isinstance(y, pd.Series):
             y = helper.pandas_ndarray_series_to_numpy(y)
