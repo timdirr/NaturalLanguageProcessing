@@ -1,4 +1,3 @@
-# TODO: fix paths
 import os
 
 from classifier.dl import MovieGenreClassifier

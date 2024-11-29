@@ -134,7 +134,7 @@ def encode_genres(genre):
 
 def decode_genres(encoded_genre):
     '''
-    Takes an encoded genre and return the correspondind genres as a list of strings.
+    Takes an encoded genre and return the corresponding genres as a list of strings.
     '''
     with open(os.path.join(DATA_PATH, 'genres.json'), 'r') as f:
         genres = json.load(f)

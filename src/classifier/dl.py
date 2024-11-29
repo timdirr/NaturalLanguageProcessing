@@ -13,7 +13,7 @@ from transformers import (
     set_seed
 )
 from helper import get_genre_converter
-from globals import DATA_PATH, SPLIT_FOLDER
+from globals import DATA_PATH, SPLIT_FOLDER, SEED
 from datasets import Dataset
 import numpy as np
 import pandas as pd
@@ -25,7 +25,7 @@ os.environ["WANDB_DISABLED"] = "true"
 
 
 class MovieGenreClassifier:
-    def __init__(self, model_name, num_labels=21, random_seed=42):
+    def __init__(self, model_name, num_labels=21, random_seed=SEED):
         self.model_name = model_name
         self.num_labels = num_labels
         self.random_seed = random_seed
@@ -33,14 +33,15 @@ class MovieGenreClassifier:
             raise FileNotFoundError("genres.json not found in data folder.")
         with open(os.path.join(DATA_PATH, "genres.json"), 'r') as f:
             self.unique_genres = json.load(f)
-        set_seed(self.random_seed)  # get seed from globals.py
+        set_seed(self.random_seed)
 
     def load_data(self, file_path):
         """
         Load dataset from a CSV file with specific columns.
         """
         required_columns = ['movie_id', 'description', 'genre']
-        dataset = pd.read_csv(file_path, converters=get_genre_converter(), usecols=required_columns)
+        dataset = pd.read_csv(
+            file_path, converters=get_genre_converter(), usecols=required_columns)
         # self.unique_genres = sorted(pd.Series(dataset['genre'].str.extractall(r"'([^']*)'")[0]).unique())
         print(self.unique_genres)
         return dataset
@@ -48,11 +49,15 @@ class MovieGenreClassifier:
     def split_data(self, data_path):
         """Split the dev data into 80/10/10 for train, validation, and test."""
         dataset = self.load_data(data_path)
-        X = dataset[['movie_id', 'description']].values  # Include movie_id alongside description
-        y = np.vstack(dataset['genre'].values).astype(int)  # Stack rows of binary genre arrays
+        # Include movie_id alongside description
+        X = dataset[['movie_id', 'description']].values
+        y = np.vstack(dataset['genre'].values).astype(
+            int)  # Stack rows of binary genre arrays
 
-        X_train, y_train, X_temp, y_temp = iterative_train_test_split(X, y, test_size=0.2)
-        X_val, y_val, X_test, y_test = iterative_train_test_split(X_temp, y_temp, test_size=0.5)
+        X_train, y_train, X_temp, y_temp = iterative_train_test_split(
+            X, y, test_size=0.2)
+        X_val, y_val, X_test, y_test = iterative_train_test_split(
+            X_temp, y_temp, test_size=0.5)
 
         # Split movie_id and description into separate columns
         train_movie_ids, train_descriptions = X_train[:, 0], X_train[:, 1]
@@ -79,19 +84,22 @@ class MovieGenreClassifier:
         dev_split_folder = os.path.join(DATA_PATH, SPLIT_FOLDER, 'dev')
         os.makedirs(dev_split_folder, exist_ok=True)
 
-        train_data.to_csv(os.path.join(dev_split_folder, "train.csv"), index=False)
-        val_data.to_csv(os.path.join(dev_split_folder, "val.csv"), index=False)
-        test_data.to_csv(os.path.join(dev_split_folder, "test.csv"), index=False)
+        train_data.to_csv(os.path.join(
+            dev_split_folder, "train.csv"), index=False)
+
+        val_data.to_csv(os.path.join(
+            dev_split_folder, "val.csv"), index=False)
+
+        test_data.to_csv(os.path.join(
+            dev_split_folder, "test.csv"), index=False)
 
         return train_data, val_data, test_data
 
     def preprocess_function(self, examples):
-        tokenized_inputs = self.tokenizer(examples['description'], truncation=True, padding=True)
-        # # Add the labels to the tokenized data
-        # print(examples)
-        # print(examples["genre"])
-        tokenized_inputs["labels"] = torch.tensor(examples["genre"], dtype=torch.float32)
-        # print(tokenized_inputs["labels"]
+        tokenized_inputs = self.tokenizer(
+            examples['description'], truncation=True, padding=True)
+        tokenized_inputs["labels"] = torch.tensor(
+            examples["genre"], dtype=torch.float32)
 
         return tokenized_inputs
 
@@ -111,7 +119,8 @@ class MovieGenreClassifier:
                              'recall', 'classification_report', 'confusion_matrix']
         metrics = {}
         if 'jaccard' in metrics_names:
-            metrics['jaccard'] = jaccard_score(y_true, y_pred, average='samples')
+            metrics['jaccard'] = jaccard_score(
+                y_true, y_pred, average='samples')
         if 'hamming' in metrics_names:
             metrics['hamming'] = hamming_loss(y_true, y_pred)
         if 'accuracy' in metrics_names:
@@ -119,11 +128,13 @@ class MovieGenreClassifier:
         if 'f1' in metrics_names:
             metrics['f1'] = f1_score(y_true, y_pred, average='samples')
         if 'precision' in metrics_names:
-            metrics['precision'] = precision_score(y_true, y_pred, average='samples')
+            metrics['precision'] = precision_score(
+                y_true, y_pred, average='samples')
         if 'recall' in metrics_names:
             metrics['recall'] = recall_score(y_true, y_pred, average='samples')
         if 'classification_report' in metrics_names:
-            metrics['classification_report'] = classification_report(y_true, y_pred, target_names=self.unique_genres, output_dict=True)
+            metrics['classification_report'] = classification_report(
+                y_true, y_pred, target_names=self.unique_genres, output_dict=True)
         # if 'confusion_matrix' in metrics_names:
             # metrics['confusion_matrix'] = confusion_matrix(y_true, y_pred, labels=self.unique_genres)
         return metrics
@@ -139,16 +150,14 @@ class MovieGenreClassifier:
         """Fine-tune the model on the training data."""
         self.load_model(self.model_name)
 
-        # if train_data is None or val_data is None:
-        #     train_data = __load_csv(f"data/split/dev/train.csv", converters=get_genre_converter())
-        #     val_data = __load_csv(f"data/split/dev/val.csv", converters=get_genre_converter())
-
         # TODO: Creat custom Dataset class maybe?
         train_dataset = Dataset.from_pandas(train_data)
         val_dataset = Dataset.from_pandas(val_data)
 
-        tokenized_train_dataset = train_dataset.map(self.preprocess_function, batched=True)
-        tokenized_val_dataset = val_dataset.map(self.preprocess_function, batched=True)
+        tokenized_train_dataset = train_dataset.map(
+            self.preprocess_function, batched=True)
+        tokenized_val_dataset = val_dataset.map(
+            self.preprocess_function, batched=True)
 
         data_collator = DataCollatorWithPadding(tokenizer=self.tokenizer)
 
@@ -188,7 +197,8 @@ class MovieGenreClassifier:
         self.load_model(model_path)
 
         test_dataset = Dataset.from_pandas(test_data)
-        tokenized_test_dataset = test_dataset.map(self.preprocess_function, batched=True)
+        tokenized_test_dataset = test_dataset.map(
+            self.preprocess_function, batched=True)
         data_collator = DataCollatorWithPadding(tokenizer=self.tokenizer)
 
         trainer = Trainer(
@@ -196,7 +206,7 @@ class MovieGenreClassifier:
             tokenizer=self.tokenizer,
             data_collator=data_collator
             # compute_metrics=lambda eval_pred: self.compute_metrics_our(eval_pred.label_ids, eval_pred.predictions,
-            #  metrics_names=['jaccard', 'hamming', 'accuracy', 'f1', 'precision', 'recall'])
+            #                                                            metrics_names=['jaccard', 'hamming', 'accuracy', 'f1', 'precision', 'recall'])
         )
 
         predictions = trainer.predict(tokenized_test_dataset)
