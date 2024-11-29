@@ -38,14 +38,21 @@ class BagOfWords(BaseEstimator, TransformerMixin):
         self.model = self.set_vectorizer(vectorizer_name)
 
     def fit(self, X, y=None):
-        self.model.fit(X)
+        self.model.fit(self.check_X(X))
         return self
+
+    def check_X(self, X):
+        if isinstance(X[0], list):
+            X_input = [" ".join(x) for x in X]
+        else:
+            X_input = X
+        return X_input
 
     def transform(self, X):
         return self.model.transform(X)
 
     def fit_transform(self, X, y=None):
-        return self.model.fit_transform(X)
+        return self.model.fit_transform(self.check_X(X))
 
     def set_vectorizer(self, vectorizer_name):
         if vectorizer_name == 'count':
@@ -159,7 +166,7 @@ class WordEmbeddingModel(ABC, BaseEstimator, TransformerMixin):
         word_vectors = np.array([self.model.wv.get_vector(word)
                                 for word in words if word in self.model.wv])
         if len(word_vectors) == 0:
-            return np.zeros(self.get_vector_size())
+            return np.zeros(self.model.vector_size)
         return self.aggregate_vectors(word_vectors)
 
     def aggregate_vectors(self, word_vectors: np.ndarray):

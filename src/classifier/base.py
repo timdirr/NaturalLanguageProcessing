@@ -1,3 +1,4 @@
+import numpy as np
 from sklearn.base import BaseEstimator, ClassifierMixin
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.linear_model import LogisticRegression
@@ -28,7 +29,7 @@ class MultiLabelClassifier(BaseEstimator, ClassifierMixin):
         elif estimator_name == "bayes":
             self.base_estimator = MultinomialNB(**kwargs)
         elif estimator_name == "dt":
-            self.base_estimator = DecisionTreeClassifier(random_state=SEED)
+            self.base_estimator = DecisionTreeClassifier(**kwargs, random_state=SEED)
         elif estimator_name == "rf":
             self.base_estimator = RandomForestClassifier(**kwargs)
         elif estimator_name == "mlp":
@@ -38,6 +39,13 @@ class MultiLabelClassifier(BaseEstimator, ClassifierMixin):
                 "Base estimator not found. Choose from: lreg, knn, svm, bayes, rf, mlp")
 
         self.multi_output_clf_ = MultiOutputClassifier(self.base_estimator)
+
+        try:
+            # raise an AttributeError if `predict_proba` does not exist for the base estimator
+            self.multi_output_clf_._check_predict_proba()
+            self._has_predict_proba = True
+        except AttributeError:
+            self._has_predict_proba = False
 
     def fit(self, X, y):
         if isinstance(y, pd.Series):
@@ -49,4 +57,12 @@ class MultiLabelClassifier(BaseEstimator, ClassifierMixin):
         return self.multi_output_clf_.predict(X)
 
     def predict_proba(self, X):
-        return self.multi_output_clf_.predict_proba(X)
+        return np.array(self.multi_output_clf_.predict_proba(X)).transpose()[1]
+
+    def predict_at_least_1(self, X):
+        predictions = self.multi_output_clf_.predict(X)
+        if self._has_predict_proba:
+            predictions_proba = self.predict_proba(X)
+            idx = predictions.sum(axis=1) == 0
+            predictions[idx] = (predictions_proba[idx] >= predictions_proba.max(axis=1)[idx][:, None]).astype(int)
+        return predictions

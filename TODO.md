@@ -73,7 +73,7 @@
     -   [x] General Metrics
     -   [x] Bar Feature Importance (Filip)
     -   [x] Wordcloud based on Feature Importance (Filip)
-    -   [ ] Sentences with colored words based on Feature Importance (Tim)
+    -   [x] Sentences with colored words based on Feature Importance (Tim)
     -   [ ] Qualitative Results (high/low confidence/probability of estimation) (Tim)
         -   Completely wrong predictions (negative hits)
         -   predict_proba() for each class
