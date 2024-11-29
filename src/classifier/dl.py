@@ -1,6 +1,9 @@
-import pandas as pd
-import numpy as np
-from datasets import Dataset
+import os
+import torch
+from sklearn.metrics import jaccard_score, hamming_loss, accuracy_score, f1_score, precision_score, recall_score
+from skmultilearn.model_selection import iterative_train_test_split
+from sklearn.preprocessing import MultiLabelBinarizer
+from sklearn.metrics import classification_report, precision_recall_fscore_support, confusion_matrix
 from transformers import (
     AutoTokenizer,
     AutoModelForSequenceClassification,
@@ -9,57 +12,28 @@ from transformers import (
     DataCollatorWithPadding,
     set_seed
 )
-
-from sklearn.metrics import classification_report, precision_recall_fscore_support, confusion_matrix
-from sklearn.preprocessing import MultiLabelBinarizer
-from skmultilearn.model_selection import iterative_train_test_split
-from sklearn.metrics import jaccard_score, hamming_loss, accuracy_score, f1_score, precision_score, recall_score
-import os
-import re
-import torch
+from helper import get_genre_converter
+from globals import DATA_PATH, SPLIT_FOLDER
+from datasets import Dataset
+import numpy as np
+import pandas as pd
+import json
 
 os.environ["WANDB_DISABLED"] = "true"
-UNIQUE_GENRES = ['Action',
-                'Adventure',
-                'Animation',
-                'Biography',
-                'Comedy',
-                'Crime',
-                'Drama',
-                'Family',
-                'Fantasy',
-                'Film-Noir',
-                'History',
-                'Horror',
-                'Music',
-                'Musical',
-                'Mystery',
-                'Romance',
-                'Sci-Fi',
-                'Sport',
-                'Thriller',
-                'War',
-                'Western']
-
-# TODO: maybe use sklearn.preprocessing.MultiLabelBinarizer instead?
-def get_genre_converter():
-    '''
-    Returns a dictionary that can be used to convert genres when loading from a CSV file.
-    Returns:
-    -------
-    dict
-        The dictionary that can be used to convert genres when loading from a CSV file.
-    '''
-    return {"genre": lambda x: re.sub(r"[\[\]']", '', x).split(' ')}
 
 # TODO: get paths and other stuff from globals.py and other modules
+
+
 class MovieGenreClassifier:
     def __init__(self, model_name, num_labels=21, random_seed=42):
         self.model_name = model_name
         self.num_labels = num_labels
         self.random_seed = random_seed
-        self.unique_genres = UNIQUE_GENRES
-        set_seed(self.random_seed) # get seed from globals.py
+        if not os.path.isfile(os.path.join(DATA_PATH, "genres.json")):
+            raise FileNotFoundError("genres.json not found in data folder.")
+        with open(os.path.join(DATA_PATH, "genres.json"), 'r') as f:
+            self.unique_genres = json.load(f)
+        set_seed(self.random_seed)  # get seed from globals.py
 
     def load_data(self, file_path):
         """
@@ -102,15 +76,14 @@ class MovieGenreClassifier:
             'genre': list(y_test)
         })
 
-        dev_folder = f'data/split/dev'
-        os.makedirs(dev_folder, exist_ok=True)
+        dev_split_folder = os.path.join(DATA_PATH, SPLIT_FOLDER, 'dev')
+        os.makedirs(dev_split_folder, exist_ok=True)
 
-        train_data.to_csv(f"{dev_folder}/train.csv", index=False)
-        val_data.to_csv(f"{dev_folder}/val.csv", index=False)
-        test_data.to_csv(f"{dev_folder}/test.csv", index=False)
+        train_data.to_csv(os.path.join(dev_split_folder, "train.csv"), index=False)
+        val_data.to_csv(os.path.join(dev_split_folder, "val.csv"), index=False)
+        test_data.to_csv(os.path.join(dev_split_folder, "test.csv"), index=False)
 
         return train_data, val_data, test_data
-
 
     def preprocess_function(self, examples):
         tokenized_inputs = self.tokenizer(examples['description'], truncation=True, padding=True)
@@ -121,7 +94,6 @@ class MovieGenreClassifier:
         # print(tokenized_inputs["labels"]
 
         return tokenized_inputs
-
 
     def compute_metrics(self, y_true, y_pred):
         return {
@@ -163,7 +135,6 @@ class MovieGenreClassifier:
             model_path, num_labels=self.num_labels, problem_type="multi_label_classification"
         )
 
-
     def fine_tune(self, output_dir, train_data, val_data):
         """Fine-tune the model on the training data."""
         self.load_model(self.model_name)
@@ -171,7 +142,7 @@ class MovieGenreClassifier:
         # if train_data is None or val_data is None:
         #     train_data = __load_csv(f"data/split/dev/train.csv", converters=get_genre_converter())
         #     val_data = __load_csv(f"data/split/dev/val.csv", converters=get_genre_converter())
-        
+
         # TODO: Creat custom Dataset class maybe?
         train_dataset = Dataset.from_pandas(train_data)
         val_dataset = Dataset.from_pandas(val_data)
@@ -225,7 +196,7 @@ class MovieGenreClassifier:
             tokenizer=self.tokenizer,
             data_collator=data_collator
             # compute_metrics=lambda eval_pred: self.compute_metrics_our(eval_pred.label_ids, eval_pred.predictions,
-                                                                      #  metrics_names=['jaccard', 'hamming', 'accuracy', 'f1', 'precision', 'recall'])
+            #  metrics_names=['jaccard', 'hamming', 'accuracy', 'f1', 'precision', 'recall'])
         )
 
         predictions = trainer.predict(tokenized_test_dataset)
@@ -236,28 +207,3 @@ class MovieGenreClassifier:
         y_true = np.array(test_data['genre'].tolist()).astype(int)
 
         return y_true, y_pred, logits
-
-# TODO: fix paths
-if __name__ == "__main__":
-    os.chdir('/content/drive/My Drive/Colab Notebooks/')
-    print(os.getcwd())
-    classifier = MovieGenreClassifier(model_name="distilbert-base-uncased", num_labels=21)
-    train_data, val_data, test_data = classifier.split_data("data/dev.csv")
-
-    # Test base model
-    y_true_base, y_pred_base, logits_base = classifier.test(model_path=f"distilbert-base-uncased", test_data=test_data)
-    results_base = classifier.compute_metrics_our(y_true_base, y_pred_base)
-    print("Base Model Results:", results_base)
-
-    # Fine-tune model and test it again on best model
-    classifier.fine_tune(output_dir="distilbert_movie_genres", train_data=train_data, val_data=val_data)
-
-    y_true, y_pred, logits = classifier.test(model_path="distilbert_movie_genres/best", test_data=test_data)
-    results = classifier.compute_metrics_our(y_true, y_pred)
-    print("Test Results:", results)
-    # results_df = pd.DataFrame({
-    #     'movie_id': self.test_data['movie_id'],
-    #     'predicted_genres': predicted_genres,  # Your model's predictions
-    #     'true_genres': self.test_data['genres']
-    # })
-    # results_df.to_csv('evaluation_results.csv', index=False)
