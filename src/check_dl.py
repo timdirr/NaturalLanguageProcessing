@@ -11,32 +11,17 @@ log.basicConfig(level=log.INFO,
                 datefmt='%Y-%m-%d %H:%M:%S')
 
 
-def test_dl_model():
-    classifier = MovieGenreClassifier(model_name="distilbert-base-uncased",
-                                      unique_genres=UNIQUE_GENRES, num_labels=len(UNIQUE_GENRES), seed=SEED)
-    dev_dataset_path = os.path.join(DATA_PATH, SPLIT_FOLDER, "dev.csv")
-    train_data, val_data, test_data = classifier.split_data(dev_dataset_path)
-
-    # Test base model
-    # y_true_base, y_pred_base, logits_base = classifier.test(model_path=f"distilbert-base-uncased", test_data=test_data)
-    # results_base = classifier.compute_metrics_our(y_true_base, y_pred_base)
-    # print("Base Model Results:", results_base)
-
-    output_dir = os.path.join(MODEL_PATH, "distilbert_movie_genres")
-    # Fine-tune model
-    classifier.fine_tune(output_dir=output_dir,
-                         train_data=train_data, val_data=val_data)
-
-    # Test fine-tuned model
-    predictions = classifier.test(model_path=os.path.join(
-        output_dir, 'best'), test_data=test_data)
-    results = classifier.compute_metrics(predictions)
-
+def show_metrics(results, output_dir, save=True):
+    """Display and save metrics to a file."""
     metrics_path = os.path.join(output_dir, "metrics")
     os.makedirs(metrics_path, exist_ok=True)
+    conf_mat = None
+    conf_mat = results.pop("confusion_matrix", None)
 
-    with open(os.path.join(metrics_path, "best_metrics.json"), "w") as f:
-        json.dump(results, f, indent=4)
+    if save:
+        with open(os.path.join(metrics_path, "best_metrics.json"), "w") as f:
+            json.dump(results, f, indent=4)
+        log.info(f"Metrics saved to {metrics_path}")
 
     classification_report = results.pop("classification_report", {})
 
@@ -45,8 +30,7 @@ def test_dl_model():
     table = tabulate(table_data, headers=[
                      "Metric", "Value"], tablefmt="pretty")
 
-    log.info("\nTest Metrics:\n")
-    log.info(table)
+    log.info(f"\nTest Metrics:\n{table}")
 
     if classification_report:
         detailed_table_data = [
@@ -59,11 +43,23 @@ def test_dl_model():
             headers=["Genre", "Precision", "Recall", "F1-Score", "Support"],
             tablefmt="pretty"
         )
-        log.info("\nClassification report:\n")
-        log.info(detailed_table)
+        log.info(f"\nClassification report:\n{detailed_table}")
 
-    log.info(f"\nMetrics saved to {metrics_path}")
+    if conf_mat is not None:
+        rows = []
+        for genre, matrix in zip(UNIQUE_GENRES, conf_mat):
+            tn, fp, fn, tp = matrix.ravel()
+            rows.append({"Genre": genre, "TN": tn,
+                        "FP": fp, "FN": fn, "TP": tp})
 
+        df = pd.DataFrame(rows)
+        table = tabulate(df, headers="keys",
+                         tablefmt="pretty", showindex=False)
+        log.info(f"\nConfusion matrix:\n{table}")
+
+
+def save_predictions(output_dir, classifier, test_data, predictions):
+    """Save predictions to a CSV file."""
     preds_path = os.path.join(output_dir, "predictions")
     os.makedirs(preds_path, exist_ok=True)
 
@@ -76,4 +72,31 @@ def test_dl_model():
 
     log.info(f"Predictons saved to {preds_path}")
 
-    return predictions
+
+def test_dl_model():
+    classifier = MovieGenreClassifier(model_name="distilbert-base-uncased",
+                                      unique_genres=UNIQUE_GENRES, num_labels=len(UNIQUE_GENRES), seed=SEED)
+    dev_dataset_path = os.path.join(DATA_PATH, SPLIT_FOLDER, "dev.csv")
+    train_data, val_data, test_data = classifier.split_data(dev_dataset_path)
+    output_dir = os.path.join(MODEL_PATH, "distilbert_movie_genres")
+
+    # Test base model
+    # predictions_base = classifier.test(model_path=f"distilbert-base-uncased", test_data=test_data)
+    # results_base = classifier.compute_metrics(predictions_base)
+    # print("Base Model Results:", results_base)
+
+    # Fine-tune model
+    classifier.fine_tune(output_dir=output_dir,
+                         train_data=train_data, val_data=val_data)
+
+    # Test fine-tuned model
+    predictions = classifier.test(model_path=os.path.join(
+        output_dir, 'best'), test_data=test_data)
+    results = classifier.compute_metrics(predictions)
+
+    show_metrics(results, output_dir, save=True)
+    save_predictions(output_dir, classifier, test_data, predictions)
+
+
+if __name__ == "__main__":
+    test_dl_model()
