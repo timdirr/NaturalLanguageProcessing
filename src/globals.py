@@ -22,3 +22,24 @@ WORD_EMBEDDING_PATH = os.path.join(MODEL_PATH, "word_embeddings")
 
 # Constants
 SEED = 42069
+UNIQUE_GENRES = ['Action',
+                 'Adventure',
+                 'Animation',
+                 'Biography',
+                 'Comedy',
+                 'Crime',
+                 'Drama',
+                 'Family',
+                 'Fantasy',
+                 'Film-Noir',
+                 'History',
+                 'Horror',
+                 'Music',
+                 'Musical',
+                 'Mystery',
+                 'Romance',
+                 'Sci-Fi',
+                 'Sport',
+                 'Thriller',
+                 'War',
+                 'Western']

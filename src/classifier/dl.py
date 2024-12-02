@@ -1,39 +1,35 @@
 import os
 import torch
-from sklearn.metrics import jaccard_score, hamming_loss, accuracy_score, f1_score, precision_score, recall_score
 from skmultilearn.model_selection import iterative_train_test_split
 from sklearn.preprocessing import MultiLabelBinarizer
-from sklearn.metrics import classification_report, precision_recall_fscore_support, confusion_matrix
 from transformers import (
     AutoTokenizer,
     AutoModelForSequenceClassification,
     Trainer,
     TrainingArguments,
     DataCollatorWithPadding,
+    EvalPrediction,
     set_seed
 )
 from helper import get_genre_converter
-from globals import DATA_PATH, SPLIT_FOLDER, SEED
+from evaluation.metrics import compute_metrics as compute_metrics_multilabel
+from globals import DATA_PATH, SPLIT_FOLDER
 from datasets import Dataset
 import numpy as np
 import pandas as pd
-import json
 
 os.environ["WANDB_DISABLED"] = "true"
 
-# TODO: get paths and other stuff from globals.py and other modules
-
 
 class MovieGenreClassifier:
-    def __init__(self, model_name, num_labels=21, random_seed=SEED):
+    def __init__(self, model_name, unique_genres, num_labels=21, seed=42069, prob_threshold=0.425, num_epochs=3):
         self.model_name = model_name
+        self.unique_genres = unique_genres
         self.num_labels = num_labels
-        self.random_seed = random_seed
-        if not os.path.isfile(os.path.join(DATA_PATH, "genres.json")):
-            raise FileNotFoundError("genres.json not found in data folder.")
-        with open(os.path.join(DATA_PATH, "genres.json"), 'r') as f:
-            self.unique_genres = json.load(f)
-        set_seed(self.random_seed)
+        self.seed = seed
+        self.prob_threshold = prob_threshold
+        self.num_epochs = num_epochs
+        set_seed(self.seed)
 
     def load_data(self, file_path):
         """
@@ -42,8 +38,7 @@ class MovieGenreClassifier:
         required_columns = ['movie_id', 'description', 'genre']
         dataset = pd.read_csv(
             file_path, converters=get_genre_converter(), usecols=required_columns)
-        # self.unique_genres = sorted(pd.Series(dataset['genre'].str.extractall(r"'([^']*)'")[0]).unique())
-        print(self.unique_genres)
+
         return dataset
 
     def split_data(self, data_path):
@@ -96,6 +91,7 @@ class MovieGenreClassifier:
         return train_data, val_data, test_data
 
     def preprocess_function(self, examples):
+        """Tokenize the input data and prepare ground truth labels."""
         tokenized_inputs = self.tokenizer(
             examples['description'], truncation=True, padding=True)
         tokenized_inputs["labels"] = torch.tensor(
@@ -103,41 +99,28 @@ class MovieGenreClassifier:
 
         return tokenized_inputs
 
-    def compute_metrics(self, y_true, y_pred):
-        return {
-            "accuracy": accuracy_score(y_true, y_pred),
-            "f1": f1_score(y_true, y_pred, average='samples'),
-            "classification_report": classification_report(y_true, y_pred, target_names=self.unique_genres, output_dict=True)
-        }
+    def compute_logits(self, preds):
+        """Process the logits from the model predictions."""
+        logits = preds[0] if isinstance(preds, tuple) else preds
+        probabilities = torch.sigmoid(torch.tensor(logits)).numpy()
+        y_pred = (probabilities > self.prob_threshold).astype(int)
 
-    def compute_metrics_our(self, y_true, y_pred, metrics_names=None):
-        """
-        Get metrics for multilabel classification.
-        """
-        if metrics_names is None:
-            metrics_names = ['jaccard', 'hamming', 'accuracy', 'f1', 'precision',
-                             'recall', 'classification_report', 'confusion_matrix']
-        metrics = {}
-        if 'jaccard' in metrics_names:
-            metrics['jaccard'] = jaccard_score(
-                y_true, y_pred, average='samples')
-        if 'hamming' in metrics_names:
-            metrics['hamming'] = hamming_loss(y_true, y_pred)
-        if 'accuracy' in metrics_names:
-            metrics['accuracy'] = accuracy_score(y_true, y_pred)
-        if 'f1' in metrics_names:
-            metrics['f1'] = f1_score(y_true, y_pred, average='samples')
-        if 'precision' in metrics_names:
-            metrics['precision'] = precision_score(
-                y_true, y_pred, average='samples')
-        if 'recall' in metrics_names:
-            metrics['recall'] = recall_score(y_true, y_pred, average='samples')
-        if 'classification_report' in metrics_names:
-            metrics['classification_report'] = classification_report(
-                y_true, y_pred, target_names=self.unique_genres, output_dict=True)
-        # if 'confusion_matrix' in metrics_names:
-            # metrics['confusion_matrix'] = confusion_matrix(y_true, y_pred, labels=self.unique_genres)
-        return metrics
+        # If no class is predicted as positive
+        no_positive_class = np.sum(y_pred, axis=1) == 0
+        # Put the the one with highest prob as positive
+        y_pred[no_positive_class, np.argmax(
+            probabilities[no_positive_class], axis=1)] = 1
+
+        return y_pred
+
+    def compute_metrics(self, p: EvalPrediction, metric_names=None):
+        """Helper fucntion to compute metrics."""
+        y_pred = self.compute_logits(p.predictions)
+        y_true = p.label_ids
+
+        result = compute_metrics_multilabel(y_true, y_pred, metric_names)
+
+        return result
 
     def load_model(self, model_path):
         """Load the model."""
@@ -150,7 +133,6 @@ class MovieGenreClassifier:
         """Fine-tune the model on the training data."""
         self.load_model(self.model_name)
 
-        # TODO: Creat custom Dataset class maybe?
         train_dataset = Dataset.from_pandas(train_data)
         val_dataset = Dataset.from_pandas(val_data)
 
@@ -166,11 +148,12 @@ class MovieGenreClassifier:
             learning_rate=2e-5,
             per_device_train_batch_size=16,
             per_device_eval_batch_size=16,
-            num_train_epochs=3,
+            num_train_epochs=self.num_epochs,
             weight_decay=0.01,
             evaluation_strategy="epoch",
             save_strategy="epoch",
-            load_best_model_at_end=True
+            load_best_model_at_end=True,
+            save_total_limit=self.num_epochs
             # logging_dir=f'{output_dir}/logs',
         )
 
@@ -180,9 +163,10 @@ class MovieGenreClassifier:
             train_dataset=tokenized_train_dataset,
             eval_dataset=tokenized_val_dataset,
             tokenizer=self.tokenizer,
-            data_collator=data_collator
-            # compute_metrics=lambda eval_pred: self.compute_metrics_our(eval_pred.label_ids, eval_pred.predictions,
-            #                                                            metrics_names=['jaccard', 'hamming', 'accuracy', 'f1', 'precision', 'recall'])
+            data_collator=data_collator,
+            compute_metrics=lambda p: self.compute_metrics(
+                p, metric_names=['jaccard', 'hamming', 'accuracy', 'f1', 'precision', 'recall'])
+            # callbacks=[EarlyStoppingCallback(early_stopping_patience=3)]
         )
 
         self.trainer.train()
@@ -204,16 +188,11 @@ class MovieGenreClassifier:
         trainer = Trainer(
             model=self.model,
             tokenizer=self.tokenizer,
-            data_collator=data_collator
-            # compute_metrics=lambda eval_pred: self.compute_metrics_our(eval_pred.label_ids, eval_pred.predictions,
-            #                                                            metrics_names=['jaccard', 'hamming', 'accuracy', 'f1', 'precision', 'recall'])
+            data_collator=data_collator,
+            compute_metrics=lambda p: self.compute_metrics(
+                p, metric_names=['jaccard', 'hamming', 'accuracy', 'f1', 'precision', 'recall'])
         )
 
         predictions = trainer.predict(tokenized_test_dataset)
-        logits = predictions.predictions
-        # TODO: transform logits to probabilites? (sigmoid)
-        # probability > 0.5 === logits > 0
-        y_pred = (logits > 0).astype(int)
-        y_true = np.array(test_data['genre'].tolist()).astype(int)
 
-        return y_true, y_pred, logits
+        return predictions
