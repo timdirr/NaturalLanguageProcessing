@@ -100,7 +100,25 @@
 
 -   [ ] Deep Learning Approach (Lecture on 22.11) (Daniel, Filip)
     -   [ ] Simple MLP on TextModelling
-    -   [ ] Finetune pretrained LLM (DistilBERT from Huggingface) on RAW dataset
+    -   [X] Finetune pretrained LLM (DistilBERT from Huggingface) on RAW dataset
+
+    -   [ ] Handle Division by Zero and Low Support Classes
+        -   [ ] Investigate division by zero and precision = 0.00 issues in low support classes.
+        -   [ ] Potential solutions:
+            -   [ ] Get rid of low support classes?
+            -   [ ] Adjust weights of imbalanced classes.
+                -   [ ] Implement a **CustomTrainer**. Refer to Huggingface discussion: [CustomTrainer Discussion](https://discuss.huggingface.co/t/how-can-i-use-class-weights-when-training/1067).
+                -   [ ] Use `BCEWithLogitsLoss` or another suitable custom loss function.
+        -   [ ]  Run the model with more data to improve class representation.
+
+    -   [ ] Low Support Classes Explanation
+        -   [ ] Document specific low support classes (e.g., "music," "musical," "western," "sport", "film-noir").
+        -   [ ] Address issues related to these classes using one or more of the strategies above.
+
+    -   [X] Threshold Tuning
+        -   Prob. threshold of 0.425 mproves recall while keeping precision.
+        -   Select the highest probability class if no others meet the threshold.
+        -   Improves performance by a few percentage points.
 
 -   [ ] Remove stop variable from start split load (just for testing so we dont need to split the whole data)
 
