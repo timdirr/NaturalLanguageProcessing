@@ -123,6 +123,21 @@
 -   [ ] Remove stop variable from start split load (just for testing so we dont need to split the whole data)
 
 
+## Final TODO Milestone II:
+
+- [ ] Short overview of what we tried (classifiers and modelling approaches). 
+- [ ] Basic scores per modelling + classifier (confusion matrix per class, etc)
+- [ ] Take best classifier(s) and describe what we found, where is the model good and where is it bad? 
+  - Feature importance
+  - Example of good and bad examples (text)
+  - Confusion matrix and other plots
+
+## Task for Final
+- [ ] Drop Nonsense descriptions (how to detect) (maybe syntax analysis)
+- [ ] Maybe drop to short/long description
+- [ ] remove common shared words across classes (for bOw and stuff like this)
+- [ ] ??
+
 what I got from the meeting
 - that we are not bound to any dataformat
 - There should be a way to read conllu efficiently without reading all the information into memory that we dont need 
