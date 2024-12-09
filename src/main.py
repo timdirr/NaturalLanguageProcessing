@@ -11,6 +11,7 @@ import re
 import json
 
 from globals import DATA_PATH, EXPORT_PATH, CONFIG_PATH
+from run_eval import run_eval
 
 OUTPUT_PATH = os.path.join(DATA_PATH, "clean_data.csv")
 RAW_PATH = os.path.join(DATA_PATH, "raw_data.csv")
@@ -48,6 +49,9 @@ def main():
 
         verbose = config['verbose']
         assert verbose in [True, False], "Invalid value for verbose"
+
+        predict = config['predict']
+        assert predict in [True, False], "Invalid value for predict"
     else:
         raise FileNotFoundError("Config file not found")
 
@@ -80,6 +84,9 @@ def main():
     if tokenize:
         if check_file_exists(OUTPUT_PATH, "Clean data"):
             tokenize()
+
+    if predict:
+        run_eval()
 
 
 if __name__ == '__main__':

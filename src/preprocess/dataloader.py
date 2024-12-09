@@ -45,7 +45,7 @@ def load_stratified_data(stop=None):
     DEV_FILE_PATH = os.path.join(SPLIT_FOLDER_PATH, DEV_FILE)
 
     if os.path.exists(SPLIT_FOLDER_PATH) and os.path.isfile(TEST_FILE_PATH) and os.path.isfile(TRAIN_FILE_PATH) and os.path.isfile(DEV_FILE_PATH) and stop is None:
-        converter = helper.get_genre_converter()
+        converter = helper.get_converters()
         test = __load_csv(TEST_FILE_PATH, converters=converter)
         train = __load_csv(TRAIN_FILE_PATH, converters=converter)
         dev = __load_csv(DEV_FILE_PATH, converters=converter)

@@ -1,6 +1,6 @@
 import numpy as np
 from sklearn.base import BaseEstimator, ClassifierMixin
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import RandomForestClassifier, BaggingClassifier
 from sklearn.linear_model import LogisticRegression
 from sklearn.multioutput import MultiOutputClassifier
 from sklearn.naive_bayes import MultinomialNB
@@ -38,7 +38,10 @@ class MultiLabelClassifier(BaseEstimator, ClassifierMixin):
             raise ValueError(
                 "Base estimator not found. Choose from: lreg, knn, svm, bayes, rf, mlp")
 
-        self.multi_output_clf_ = MultiOutputClassifier(self.base_estimator)
+        if estimator_name == "svm":
+            self.multi_output_clf_ = MultiOutputClassifier(BaggingClassifier(self.base_estimator), n_jobs=-1, n_estimators=10)
+        else:
+            self.multi_output_clf_ = MultiOutputClassifier(self.base_estimator)
 
         try:
             # raise an AttributeError if `predict_proba` does not exist for the base estimator

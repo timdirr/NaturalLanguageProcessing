@@ -1,14 +1,10 @@
 import os
 import json
-import time
 import numpy as np
-import pandas as pd
 import logging as log
-import matplotlib.pyplot as plt
 from tqdm import tqdm
 
 from typing import Union
-from wordcloud import WordCloud
 from globals import DATA_PATH, EXPORT_PATH, SEED
 from helper import pandas_ndarray_series_to_numpy
 from preprocess.dataloader import load_stratified_data
@@ -60,56 +56,44 @@ def analyse_features(clf: MultiLabelClassifier,
         plot_wordcloud(feat_names, importances, genre, path)
 
 
-def evaluate(clf: MultiLabelClassifier,
-             text_model: Union[BagOfWords, WordEmbeddingModel],
-             lemmatized=False,
-             features=True,
-             ):
+def evaluate(X, ypred, ytrue, classifier, text_model, lemmatized, features):
+    '''
+    Wrapper function to analyse a trained model. Computes a set of matrices and plots
+    Args:
+        :param X: the set of input features used for the prediction
+        :param ypred: predicted labels
+        :param ytrue: ground truth labels
+        :param classifier: the fitted classifier object
+        :param text_model: the fitted text model
+        :param lemmatized: (boolean) if lemmatized text was used
+        :param features: (boolean) if we want to analyse the feature importance. Only applicable for certain models
+        :return:
+    '''
+    classifier_name = type(classifier.multi_output_clf_.estimators_[0]).__name__
+    model_name = type(text_model.model).__name__
 
-    _, _, dev = load_stratified_data()
-    if lemmatized:
-        X_dev, y_dev = dev["lemmatized_description"].to_numpy(), pandas_ndarray_series_to_numpy(dev["genre"])
-    else:
-        X_dev, y_dev = dev["description"].to_numpy(), pandas_ndarray_series_to_numpy(dev["genre"])
-
-    X_train, y_train, X_test, y_test = iterative_train_test_split(
-        X_dev[..., np.newaxis], y_dev, 0.1)
-
-    X_train = X_train.squeeze(-1)
-    X_test = X_test.squeeze(-1)
-
-    log.info(f"Fitting model")
-    X_transformed = text_model.fit_transform(X_train)
-    clf.fit(X_transformed, y_train)
-    log.info(f"Model fitted.")
-
-    log.info(f"Predicting on test set")
-    start_time = time.time()
-    y_pred = clf.predict(text_model.transform(X_test))
-    log.info(f"Predictions done in: {time.time() - start_time}")
-
-    log.info(f"Predicting on test set (at least 1)")
-    start_time = time.time()
-    y_pred_at_least_1 = clf.predict_at_least_1(text_model.transform(X_test))
-    log.info(f"Predictions (at least 1) done in: {time.time() - start_time}")
-
-    dir_path = prepare_evaluate(clf, text_model)
-    metrics = compute_metrics(y_test, y_pred, metrics_names=['jaccard', 'hamming', 'precision', 'recall', 'at_least_one', 'at_least_two'])
+    dir_path = prepare_evaluate(classifier_name, model_name)
+    metrics = compute_metrics(ytrue, ypred, metrics_names=['jaccard', 'hamming', 'precision', 'recall', 'at_least_one', 'at_least_two'])
+    metrics["lemmatized"] = lemmatized
     log.info(f"Metrics:\n {metrics}")
-    metrics = compute_metrics(y_test, y_pred_at_least_1, metrics_names=['jaccard', 'hamming', 'precision', 'recall', 'at_least_one', 'at_least_two'])
-    log.info(f"Metrics (at least 1):\n {metrics}")
 
     if features:
-        analyse_features(clf, text_model, path=dir_path)
-    plot_metrics_per_genre(y_test, y_pred, clf, metrics_names=['balanced_accuracy', 'precision', 'recall'], path=dir_path)
+        analyse_features(classifier, text_model, path=dir_path)
 
-    plot_bad_qualitative_results(X_test, y_test, y_pred, clf, text_model, path=dir_path)
-    plot_good_qualitative_results(X_test, y_test, y_pred, clf, text_model, path=dir_path)
-    plot_cfm(y_test, y_pred,  path=dir_path)
-    if clf.multi_output_clf_.estimators_[0].__class__.__name__ == "DecisionTreeClassifier":
-        plot_decision_tree(clf, text_model, path=dir_path)
+    plot_metrics_per_genre(ytrue, ypred, classifier, metrics_names=['balanced_accuracy', 'precision', 'recall'], path=dir_path)
 
+    print(type(X[0]))
+    plot_bad_qualitative_results(X, ytrue, ypred, classifier, text_model, path=dir_path)
+    plot_good_qualitative_results(X, ytrue, ypred, classifier, text_model, path=dir_path)
+    plot_cfm(ytrue, ypred,  path=dir_path)
 
+    if classifier.multi_output_clf_.estimators_[0].__class__.__name__ == "DecisionTreeClassifier":
+        plot_decision_tree(classifier, text_model, path=dir_path)
+
+    with open(os.path.join(dir_path, "metrics.json"), "w") as file:
+        json.dump(metrics, file, indent=4)
+
+"""
 def comparative_evaluation(model, lemmatized=False):
     _, _, dev = load_stratified_data()
     if lemmatized:
@@ -170,17 +154,71 @@ def comparative_evaluation(model, lemmatized=False):
     plt.legend()
     plt.grid(False)
     plt.savefig(os.path.join(dir_path, f'comparative.png'))
+    
+"""
 
 
-def main():
-    evaluate(MultiLabelClassifier("lreg"), BagOfWords("tf-idf", ngram_range=(1, 1)), lemmatized=False, features=True)
-    evaluate(MultiLabelClassifier("bayes"), BagOfWords("tf-idf", ngram_range=(1, 1)), lemmatized=False, features=True)
-    evaluate(MultiLabelClassifier("dt", max_depth=3), BagOfWords("tf-idf", ngram_range=(1, 1)), lemmatized=False, features=True)
-    evaluate(MultiLabelClassifier("knn"), BagOfWords("tf-idf", ngram_range=(1, 1)))
-    # evaluate(MultiLabelClassifier("svm"), BagOfWords("tf-idf", ngram_range=(1, 1)))
-    # evaluate(MultiLabelClassifier("mlp"), BagOfWords("tf-idf", ngram_range=(1, 1)))
-    comparative_evaluation(BagOfWords("tf-idf", ngram_range=(1, 1)))
+def fit_predict(classifier, text_model, lemmatized=False):
+
+    # load stratified data, but keep only test set
+    _, _, dev = load_stratified_data()
+
+    # depending on model and classifier, lemmatized input data may be beneficial
+    if lemmatized:
+        X_dev, y_dev = dev["lemmatized_description"].to_numpy(), pandas_ndarray_series_to_numpy(dev["genre"])
+    else:
+        X_dev, y_dev = dev["description"].to_numpy(), pandas_ndarray_series_to_numpy(dev["genre"])
+
+    k_fold = MultilabelStratifiedKFold(
+            n_splits=5, random_state=SEED, shuffle=True)
+
+    predictions = None
+    ground_truth = None
+    X = None
+    for train_idx, test_idx in tqdm(k_fold.split(X_dev, y_dev)):
+        X_dev_train, X_dev_test, y_dev_train, y_dev_test = X_dev[train_idx], X_dev[test_idx], y_dev[train_idx], y_dev[test_idx]
+        transformed_data = text_model.fit_transform(X_dev_train)
+        classifier = classifier.fit(transformed_data, y_dev_train)
+
+        y_pred = classifier.predict_at_least_1(text_model.transform(X_dev_test))
+
+        if predictions is None:
+            predictions = y_pred
+        else:
+            predictions = np.vstack((predictions, y_pred))
+
+        if ground_truth is None:
+            ground_truth = y_dev_test
+        else:
+            ground_truth = np.vstack((ground_truth, y_dev_test))
+
+        if X is None:
+            X = X_dev_test
+        else:
+            X = np.concatenate((X, X_dev_test),  axis=0)
+
+    return X, predictions, ground_truth, classifier, text_model
+
+
+def run_eval(predict=True, eval=True):
+    X, y_pred, y_true, classifier, text_model = fit_predict(MultiLabelClassifier("lreg", n_jobs=-1), BagOfWords("count", ngram_range=(1, 1)), lemmatized=True)
+    evaluate(X, y_pred, y_true, classifier, text_model, lemmatized=False,  features=True)
+    
+    X, y_pred, y_true, classifier, text_model = fit_predict(MultiLabelClassifier("knn", n_jobs=-1), BagOfWords("count", ngram_range=(1, 1)), lemmatized=True)
+    evaluate(X, y_pred, y_true, classifier, text_model, lemmatized=True,  features=False)
+    X, y_pred, y_true, classifier, text_model = fit_predict(MultiLabelClassifier("svm"), BagOfWords("count", ngram_range=(1, 1)), lemmatized=True)
+    evaluate(X, y_pred, y_true, classifier, text_model, lemmatized=True,  features=False)
+
+    X, y_pred, y_true, classifier, text_model = fit_predict(MultiLabelClassifier("lreg", n_jobs=-1), BagOfWords("tf-idf", ngram_range=(1, 1)), lemmatized=True)
+    evaluate(X, y_pred, y_true, classifier, text_model, lemmatized=True,  features=True)
+    X, y_pred, y_true, classifier, text_model = fit_predict(MultiLabelClassifier("knn", n_jobs=-1), BagOfWords("tf-idf", ngram_range=(1, 1)), lemmatized=True)
+    evaluate(X, y_pred, y_true, classifier, text_model, lemmatized=True,  features=False)
+    X, y_pred, y_true, classifier, text_model = fit_predict(MultiLabelClassifier("svm"), BagOfWords("tf-idf", ngram_range=(1, 1)), lemmatized=True)
+    evaluate(X, y_pred, y_true, classifier, text_model, lemmatized=True,  features=False)
+
+
+    #comparative_evaluation(BagOfWords("tf-idf", ngram_range=(1, 1)))
 
 
 if __name__ == "__main__":
-    main()
+    run_eval()

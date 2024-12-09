@@ -1,32 +1,20 @@
 import os
-import json
-import numpy as np
-import pandas as pd
+
 import logging as log
-import matplotlib.pyplot as plt
-from sklearn.metrics import jaccard_score, hamming_loss, accuracy_score, f1_score, precision_score, recall_score
-from sklearn.pipeline import make_pipeline
-from typing import Union
-from wordcloud import WordCloud
 from globals import DATA_PATH, EXPORT_PATH
-from helper import pandas_ndarray_series_to_numpy
-from preprocess.dataloader import load_stratified_data
 from classifier.base import MultiLabelClassifier
-from text_modelling.modelling import BagOfWords, WordEmbeddingModel
 
 
-def prepare_evaluate(model: MultiLabelClassifier,
-                     text_model: Union[BagOfWords, WordEmbeddingModel]):
-
-    clf_name = type(model.multi_output_clf_.estimators_[0]).__name__
-    text_model_name = type(text_model.model).__name__
-    dir_path = os.path.join(EXPORT_PATH, f"evluation_{clf_name}_{text_model_name}")
+def prepare_evaluate(classifier_name, model_name):
+    dir_path = os.path.join(EXPORT_PATH, f"evluation_{classifier_name}_{model_name}")
     if not os.path.exists(dir_path):
         os.makedirs(dir_path)
 
-    log.info(f"Evaluating model {type(model.multi_output_clf_.estimators_[0]).__name__}")
+    log.info(f"Evaluating classifier {classifier_name} with {model_name}")
 
     return dir_path
+
+
 
 
 def get_feature_importances(clf: MultiLabelClassifier):

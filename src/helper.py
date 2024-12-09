@@ -54,6 +54,22 @@ def get_genre_converter():
     return {"genre": lambda x: re.sub(r"[\[\]']", '', x).split(' ')}
 
 
+def get_converters():
+    return {"genre": lambda x: re.sub(r"[\[\]']", '', x).split(' '),
+            "lemmatized_description": lambda x: " ".join(re.sub(r"[\[\],']", '', x).split(' '))}
+
+
+def get_lemmatized_converter():
+    '''
+    Returns a dictionary that can be used to convert the lemmatized description when loading from a CSV file via pandas.
+    Returns:
+    -------
+    dict
+        The dictionary that can be used to convert lemmatized description when loading from a CSV file.
+    '''
+    return {"lemmatized_description": lambda x: re.sub(r"[\[\]']", '', x).split(' ')}
+
+
 def load_genres():
     with open(os.path.join(DATA_PATH, 'genres.json'), 'r') as f:
         genres = json.load(f)

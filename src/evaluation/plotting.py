@@ -1,15 +1,10 @@
 import os
-import matplotlib.pyplot as plt
-import numpy as np
 import pandas as pd
 from typing import Union
 from sklearn.metrics import recall_score
 from sklearn import tree
 from wordcloud import WordCloud
-import textwrap
 
-import matplotlib.pyplot as plt
-import numpy as np
 from collections import defaultdict
 
 import matplotlib.pyplot as plt
@@ -218,7 +213,7 @@ def plot_metrics_per_genre(y_true: np.ndarray,
     plt.close()
 
 
-def plot_good_qualitative_results(X: np.ndarray,
+def plot_good_qualitative_results(X,
                                   y_true: np.ndarray,
                                   y_pred: np.ndarray,
                                   clf: MultiLabelClassifier,
@@ -234,7 +229,10 @@ def plot_good_qualitative_results(X: np.ndarray,
     metrics = np.array([recall_score(y_t, y_p) for y_t, y_p in zip(y_true, y_pred)])
     good_indices = np.argsort(metrics)[-n_samples:]
     # get descriptions
-    descriptions = X[good_indices]
+    descriptions = X[good_indices, ]
+
+    if not isinstance(descriptions[0], str):
+        descriptions = np.array(list(map(' '.join, descriptions)))
 
     true_genres = [decode_genres(y_true[i]) for i in good_indices]
     predicted_genres = [decode_genres(y_pred[i]) for i in good_indices]
@@ -250,7 +248,7 @@ def plot_good_qualitative_results(X: np.ndarray,
     save_colored_descriptions(clf, text_model, descriptions, predicted_genres, path)
 
 
-def plot_bad_qualitative_results(X: np.ndarray,
+def plot_bad_qualitative_results(X,
                                  y_true: np.ndarray,
                                  y_pred: np.ndarray,
                                  clf: MultiLabelClassifier,
@@ -265,7 +263,10 @@ def plot_bad_qualitative_results(X: np.ndarray,
     metrics = np.array([recall_score(y_t, y_p) for y_t, y_p in zip(y_true, y_pred)])
     bad_indices = np.argsort(metrics)[:n_samples]
     # get descriptions
-    descriptions = X[bad_indices]
+    descriptions = X[bad_indices, ]
+
+    if not isinstance(descriptions[0], str):
+        descriptions = np.array(list(map(' '.join, descriptions)))
 
     true_genres = [decode_genres(y_true[i]) for i in bad_indices]
     predicted_genres = [decode_genres(y_pred[i]) for i in bad_indices]
