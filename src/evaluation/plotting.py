@@ -1,7 +1,7 @@
 import os
 import pandas as pd
 from typing import Union
-from sklearn.metrics import recall_score
+from sklearn.metrics import recall_score, jaccard_score
 from sklearn import tree
 from wordcloud import WordCloud
 
@@ -226,7 +226,7 @@ def plot_good_qualitative_results(X,
     if not os.path.exists(path):
         os.makedirs(path)
     # extract predictions with very good performance
-    metrics = np.array([recall_score(y_t, y_p) for y_t, y_p in zip(y_true, y_pred)])
+    metrics = np.array([jaccard_score(y_t, y_p) for y_t, y_p in zip(y_true, y_pred)])
     good_indices = np.argsort(metrics)[-n_samples:]
     # get descriptions
     descriptions = X[good_indices, ]
@@ -253,14 +253,14 @@ def plot_bad_qualitative_results(X,
                                  y_pred: np.ndarray,
                                  clf: MultiLabelClassifier,
                                  text_model: Union[BagOfWords, WordEmbeddingModel],
-                                 n_samples: int = 10,
+                                 n_samples: int = 30,
                                  path: str = None):
 
     path = os.path.join(path, "qualitative_results")
     if not os.path.exists(path):
         os.makedirs(path)
     # extract predictions with very bad performance
-    metrics = np.array([recall_score(y_t, y_p) for y_t, y_p in zip(y_true, y_pred)])
+    metrics = np.array([jaccard_score(y_t, y_p) for y_t, y_p in zip(y_true, y_pred)])
     bad_indices = np.argsort(metrics)[:n_samples]
     # get descriptions
     descriptions = X[bad_indices, ]

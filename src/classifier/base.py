@@ -39,7 +39,7 @@ class MultiLabelClassifier(BaseEstimator, ClassifierMixin):
                 "Base estimator not found. Choose from: lreg, knn, svm, bayes, rf, mlp")
 
         if estimator_name == "svm":
-            self.multi_output_clf_ = MultiOutputClassifier(BaggingClassifier(self.base_estimator), n_jobs=-1, n_estimators=10)
+            self.multi_output_clf_ = MultiOutputClassifier(BaggingClassifier(self.base_estimator, n_jobs=-1, n_estimators=10))
         else:
             self.multi_output_clf_ = MultiOutputClassifier(self.base_estimator)
 

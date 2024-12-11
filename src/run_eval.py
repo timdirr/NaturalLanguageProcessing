@@ -93,69 +93,6 @@ def evaluate(X, ypred, ytrue, classifier, text_model, lemmatized, features):
     with open(os.path.join(dir_path, "metrics.json"), "w") as file:
         json.dump(metrics, file, indent=4)
 
-"""
-def comparative_evaluation(model, lemmatized=False):
-    _, _, dev = load_stratified_data()
-    if lemmatized:
-        X_dev, y_dev = dev["lemmatized_description"].to_numpy(), pandas_ndarray_series_to_numpy(dev["genre"])
-    else:
-        X_dev, y_dev = dev["description"].to_numpy(), pandas_ndarray_series_to_numpy(dev["genre"])
-
-    dir_path = os.path.join(EXPORT_PATH, "comparative")
-
-    if not os.path.exists(dir_path):
-        os.makedirs(dir_path)
-
-    def test_model(model, classifier, X_train, X_test, y_train, y_test):
-        transformed_data = model.fit_transform(X_train)
-        classifier = classifier.fit(transformed_data, y_train)
-
-        jaccard = score_per_sample(y_test, classifier.predict_at_least_1(
-            model.transform(X_test)))
-        return jaccard
-
-    k_fold = MultilabelStratifiedKFold(
-        n_splits=2, random_state=SEED, shuffle=True)
-
-    scores = {"lreg": [], "knn": []}
-    for train_idx, test_idx in tqdm(k_fold.split(X_dev, y_dev)):
-        X_dev_train, X_dev_test, y_dev_train, y_dev_test = X_dev[train_idx], X_dev[test_idx], y_dev[train_idx], y_dev[test_idx]
-        results = test_model(BagOfWords("tf-idf", ngram_range=(1, 1)), MultiLabelClassifier("lreg"), X_dev_train, X_dev_test, y_dev_train, y_dev_test)
-        scores["lreg"] = scores["lreg"] + results
-        results = test_model(BagOfWords("tf-idf", ngram_range=(1, 1)), MultiLabelClassifier("knn", n_neighbors=15, weights='distance',
-                             algorithm='auto', metric='euclidean', n_jobs=-1), X_dev_train, X_dev_test, y_dev_train, y_dev_test)
-        scores["knn"] = scores["knn"] + results
-        # results = test_model(BagOfWords("tf-idf", ngram_range=(1, 1)), MultiLabelClassifier("svm"), X_dev_train, X_dev_test, y_dev_train, y_dev_test)
-        # scores["svm"] = results
-
-    sample_size = 100
-    samples = np.arange(1, sample_size + 1)
-    random_indices = np.random.choice(len(y_dev), sample_size, replace=False)
-
-    random_sampled_scores = {
-        classifier: [score[i] for i in random_indices] for classifier, score in scores.items()
-    }
-
-    sort_by = "lreg"
-    scores_to_sort = np.array(random_sampled_scores[sort_by])
-    sorted_indices = np.argsort(scores_to_sort)
-
-    sampled_scores = {
-        classifier: [score[i] for i in sorted_indices] for classifier, score in random_sampled_scores.items()
-    }
-
-    plt.figure(figsize=(10, 6))
-    for classifier, score in sampled_scores.items():
-        plt.plot(samples, score, label=classifier, marker='')
-
-    plt.xlabel('samples')
-    plt.ylabel('Jaccard score')
-    plt.title('Jaccard score per Sample for Each Classifier')
-    plt.legend()
-    plt.grid(False)
-    plt.savefig(os.path.join(dir_path, f'comparative.png'))
-    
-"""
 
 
 def fit_predict(classifier, text_model, lemmatized=False):
@@ -201,9 +138,16 @@ def fit_predict(classifier, text_model, lemmatized=False):
 
 
 def run_eval(predict=True, eval=True):
+
+    #model = Word2VecModel(min_count=1)
+   # model.load_pretrained('word2vec-google-news-300')
+
+    #X, y_pred, y_true, classifier, text_model = fit_predict(MultiLabelClassifier("lreg", n_jobs=-1), model, lemmatized=False)
+    #evaluate(X, y_pred, y_true, classifier, model, lemmatized=False,  features=False)
+
     X, y_pred, y_true, classifier, text_model = fit_predict(MultiLabelClassifier("lreg", n_jobs=-1), BagOfWords("count", ngram_range=(1, 1)), lemmatized=True)
     evaluate(X, y_pred, y_true, classifier, text_model, lemmatized=False,  features=True)
-    
+    """
     X, y_pred, y_true, classifier, text_model = fit_predict(MultiLabelClassifier("knn", n_jobs=-1), BagOfWords("count", ngram_range=(1, 1)), lemmatized=True)
     evaluate(X, y_pred, y_true, classifier, text_model, lemmatized=True,  features=False)
     X, y_pred, y_true, classifier, text_model = fit_predict(MultiLabelClassifier("svm"), BagOfWords("count", ngram_range=(1, 1)), lemmatized=True)
@@ -213,9 +157,10 @@ def run_eval(predict=True, eval=True):
     evaluate(X, y_pred, y_true, classifier, text_model, lemmatized=True,  features=True)
     X, y_pred, y_true, classifier, text_model = fit_predict(MultiLabelClassifier("knn", n_jobs=-1), BagOfWords("tf-idf", ngram_range=(1, 1)), lemmatized=True)
     evaluate(X, y_pred, y_true, classifier, text_model, lemmatized=True,  features=False)
+    
     X, y_pred, y_true, classifier, text_model = fit_predict(MultiLabelClassifier("svm"), BagOfWords("tf-idf", ngram_range=(1, 1)), lemmatized=True)
     evaluate(X, y_pred, y_true, classifier, text_model, lemmatized=True,  features=False)
-
+        """
 
     #comparative_evaluation(BagOfWords("tf-idf", ngram_range=(1, 1)))
 
