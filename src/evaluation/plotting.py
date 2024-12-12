@@ -1,6 +1,7 @@
 import os
 import pandas as pd
 from typing import Union
+import logging as log
 from sklearn.metrics import recall_score, jaccard_score
 from sklearn import tree
 from wordcloud import WordCloud
@@ -15,6 +16,11 @@ from evaluation.colored_text_plot import save_colored_descriptions
 from helper import decode_genres, load_genres
 from text_modelling.modelling import BagOfWords, WordEmbeddingModel
 from classifier.base import MultiLabelClassifier
+
+
+log.basicConfig(level=log.INFO,
+                format='%(asctime)s: %(levelname)s: %(message)s',
+                datefmt='%Y-%m-%d %H:%M:%S')
 
 
 def save_table_as_image(df, filename="table_image.png"):
@@ -218,9 +224,8 @@ def plot_good_qualitative_results(X,
                                   y_pred: np.ndarray,
                                   clf: MultiLabelClassifier,
                                   text_model: Union[BagOfWords, WordEmbeddingModel],
-                                  n_samples: int = 10,
-                                  path: str = None,
-                                  top_k: int = 10):
+                                  n_samples: int = 30,
+                                  path: str = None):
 
     path = os.path.join(path, "qualitative_results")
     if not os.path.exists(path):
@@ -275,8 +280,12 @@ def plot_bad_qualitative_results(X,
         "True Labels": true_genres,
         "Predicted Labels": predicted_genres,
     })
-    save_table_as_image(results, os.path.join(path, "bad_qualitative_results.png"))
-    # save to csv
+
+    try:
+        save_table_as_image(results, os.path.join(path, "bad_qualitative_results.png"))
+    except:
+        log.error("Error saving table as image")
+
     results.to_csv(os.path.join(path, "bad_qualitative_results.csv"), index=False)
     save_colored_descriptions(clf, text_model, descriptions, predicted_genres, path, good_example=False)
 
@@ -325,3 +334,37 @@ def plot_decision_tree(clf: MultiLabelClassifier, text_model: Union[BagOfWords, 
 
         plt.savefig(os.path.join(path, f"decision_tree_{genre}.png"))
         plt.close()
+
+
+def plot_metrics_per_length(X: np.ndarray,
+                            y_true: np.ndarray,
+                            y_pred: np.ndarray,
+                            model: MultiLabelClassifier,
+                            metrics_names: list[str],
+                            path: str):
+    '''
+    Plots metrics per length of the input text. Saved under path/metrics_per_length.png
+    '''
+
+    log.info("Plotting metrics per length...")
+    path = os.path.join(path, 'metrics_per_length')
+    if not os.path.exists(path):
+        os.makedirs(path)
+    # get lengths of the input text
+    lengths = np.array([len(text.split()) for text in X])
+    metrics = np.array([jaccard_score(y_t, y_p) for y_t, y_p in zip(y_true, y_pred)])
+
+    bins = np.linspace(0, lengths.max(), 10)
+    bin_indices = np.digitize(lengths, bins) - 1
+
+    metrics_per_bin = [np.mean(metrics[bin_indices == i]) for i in range(len(bins) - 1)]
+
+    plt.figure(figsize=(10, 5))
+    plt.plot(bins[:-1], metrics_per_bin, marker='o')
+    plt.xlabel('Length of input text')
+    plt.ylabel('Average Jaccard Score')
+    plt.title('Metrics per length of input text')
+    plt.xticks(bins, rotation=45)
+    plt.tight_layout()
+    plt.savefig(os.path.join(path, 'metrics_per_length.png'))
+    plt.close()

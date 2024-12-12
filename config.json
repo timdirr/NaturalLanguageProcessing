@@ -1,7 +1,7 @@
 {
-    "tokenize": false,
+    "preprocess": true,
     "explore": false,
-    "preprocess": false,
+    "tokenize": false,
     "store_intermediate": false,
     "verbose": true,
     "predict": true,

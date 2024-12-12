@@ -55,7 +55,6 @@ def main():
     else:
         raise FileNotFoundError("Config file not found")
 
-
     if verbose:
         log.basicConfig(level=log.INFO,
                         format='%(asctime)s: %(levelname)s: %(message)s',

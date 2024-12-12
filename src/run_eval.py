@@ -12,7 +12,7 @@ from classifier.base import MultiLabelClassifier
 from text_modelling.modelling import BagOfWords, WordEmbeddingModel, Word2VecModel
 
 from evaluation.metrics import compute_metrics, score_per_sample
-from evaluation.plotting import plot_decision_tree, plot_feature_importances, plot_wordcloud, plot_bad_qualitative_results, plot_good_qualitative_results, plot_cfm, plot_metrics_per_genre
+from evaluation.plotting import plot_decision_tree, plot_feature_importances, plot_wordcloud, plot_bad_qualitative_results, plot_good_qualitative_results, plot_cfm, plot_metrics_per_genre, plot_metrics_per_length
 from evaluation.utils import get_feature_importances, prepare_evaluate
 
 from skmultilearn.model_selection.iterative_stratification import iterative_train_test_split
@@ -81,6 +81,7 @@ def evaluate(X, ypred, ytrue, classifier, text_model, lemmatized, features):
         analyse_features(classifier, text_model, path=dir_path)
 
     plot_metrics_per_genre(ytrue, ypred, classifier, metrics_names=['balanced_accuracy', 'precision', 'recall'], path=dir_path)
+    plot_metrics_per_length(X, ytrue, ypred, classifier, text_model, path=dir_path)
 
     print(type(X[0]))
     plot_bad_qualitative_results(X, ytrue, ypred, classifier, text_model, path=dir_path)
@@ -92,7 +93,6 @@ def evaluate(X, ypred, ytrue, classifier, text_model, lemmatized, features):
 
     with open(os.path.join(dir_path, "metrics.json"), "w") as file:
         json.dump(metrics, file, indent=4)
-
 
 
 def fit_predict(classifier, text_model, lemmatized=False):
@@ -107,7 +107,7 @@ def fit_predict(classifier, text_model, lemmatized=False):
         X_dev, y_dev = dev["description"].to_numpy(), pandas_ndarray_series_to_numpy(dev["genre"])
 
     k_fold = MultilabelStratifiedKFold(
-            n_splits=5, random_state=SEED, shuffle=True)
+        n_splits=2, random_state=SEED, shuffle=True)
 
     predictions = None
     ground_truth = None
@@ -139,14 +139,17 @@ def fit_predict(classifier, text_model, lemmatized=False):
 
 def run_eval(predict=True, eval=True):
 
-    #model = Word2VecModel(min_count=1)
+    # model = Word2VecModel(min_count=1)
    # model.load_pretrained('word2vec-google-news-300')
 
-    #X, y_pred, y_true, classifier, text_model = fit_predict(MultiLabelClassifier("lreg", n_jobs=-1), model, lemmatized=False)
-    #evaluate(X, y_pred, y_true, classifier, model, lemmatized=False,  features=False)
+    # X, y_pred, y_true, classifier, text_model = fit_predict(MultiLabelClassifier("lreg", n_jobs=-1), model, lemmatized=False)
+    # evaluate(X, y_pred, y_true, classifier, model, lemmatized=False,  features=False)
 
     X, y_pred, y_true, classifier, text_model = fit_predict(MultiLabelClassifier("lreg", n_jobs=-1), BagOfWords("count", ngram_range=(1, 1)), lemmatized=True)
     evaluate(X, y_pred, y_true, classifier, text_model, lemmatized=False,  features=True)
+    X, y_pred, y_true, classifier, text_model = fit_predict(MultiLabelClassifier("lreg", n_jobs=-1), BagOfWords("tf-idf", ngram_range=(1, 1)), lemmatized=True)
+    evaluate(X, y_pred, y_true, classifier, text_model, lemmatized=False,  features=True)
+
     """
     X, y_pred, y_true, classifier, text_model = fit_predict(MultiLabelClassifier("knn", n_jobs=-1), BagOfWords("count", ngram_range=(1, 1)), lemmatized=True)
     evaluate(X, y_pred, y_true, classifier, text_model, lemmatized=True,  features=False)
@@ -162,7 +165,7 @@ def run_eval(predict=True, eval=True):
     evaluate(X, y_pred, y_true, classifier, text_model, lemmatized=True,  features=False)
         """
 
-    #comparative_evaluation(BagOfWords("tf-idf", ngram_range=(1, 1)))
+    # comparative_evaluation(BagOfWords("tf-idf", ngram_range=(1, 1)))
 
 
 if __name__ == "__main__":
