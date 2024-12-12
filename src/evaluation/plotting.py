@@ -246,11 +246,15 @@ def plot_good_qualitative_results(X,
         "True Labels": true_genres,
         "Predicted Labels": predicted_genres,
     })
-    save_table_as_image(results, os.path.join(path, "good_qualitative_results.png"))
-    # save to csv
+    try:
+        save_table_as_image(results, os.path.join(path, "good_qualitative_results.png"))
+    except:
+        log.error("Error saving table as image")
     results.to_csv(os.path.join(path, "good_qualitative_results.csv"), index=False)
-    # plot colored descriptions
-    save_colored_descriptions(clf, text_model, descriptions, predicted_genres, path)
+    try:
+        save_colored_descriptions(clf, text_model, descriptions, predicted_genres, path)
+    except:
+        log.error("Error saving colored descriptions")
 
 
 def plot_bad_qualitative_results(X,
@@ -287,7 +291,10 @@ def plot_bad_qualitative_results(X,
         log.error("Error saving table as image")
 
     results.to_csv(os.path.join(path, "bad_qualitative_results.csv"), index=False)
-    save_colored_descriptions(clf, text_model, descriptions, predicted_genres, path, good_example=False)
+    try:
+        save_colored_descriptions(clf, text_model, descriptions, predicted_genres, path, good_example=False)
+    except:
+        log.error("Error saving colored descriptions")
 
 
 def plot_cfm(y_true: np.ndarray, y_pred: np.ndarray, path: str = None):
@@ -339,8 +346,6 @@ def plot_decision_tree(clf: MultiLabelClassifier, text_model: Union[BagOfWords, 
 def plot_metrics_per_length(X: np.ndarray,
                             y_true: np.ndarray,
                             y_pred: np.ndarray,
-                            model: MultiLabelClassifier,
-                            metrics_names: list[str],
                             path: str):
     '''
     Plots metrics per length of the input text. Saved under path/metrics_per_length.png
@@ -367,4 +372,33 @@ def plot_metrics_per_length(X: np.ndarray,
     plt.xticks(bins, rotation=45)
     plt.tight_layout()
     plt.savefig(os.path.join(path, 'metrics_per_length.png'))
+    plt.close()
+
+
+def plot_metrics_per_genre_distribution(y_true: np.ndarray,
+                                        y_pred: np.ndarray,
+                                        path: str):
+    '''
+    Plots the distribution of metrics per genre. 
+    '''
+    log.info("Plotting metrics per genre distribution...")
+    path = os.path.join(path, 'metrics_per_genre_distribution')
+    if not os.path.exists(path):
+        os.makedirs(path)
+    genre_counts = np.sum(y_true, axis=0)
+    metrics = np.array([jaccard_score(y_t, y_p) for y_t, y_p in zip(y_true, y_pred)])
+    metrics_per_genre = []
+    for i in range(y_true.shape[1]):
+        indices = y_true[:, i] == 1
+        metrics_per_genre.append(np.mean(metrics[indices]))
+
+    plt.figure(figsize=(10, 5))
+    plt.scatter(genre_counts, metrics_per_genre)
+    for i, txt in enumerate(load_genres()):
+        plt.annotate(txt, (genre_counts[i], metrics_per_genre[i]))
+    plt.xlabel('Number of samples per genre')
+    plt.ylabel('Average Jaccard Score per genre')
+    plt.title('Metrics per genre distribution')
+    plt.tight_layout()
+    plt.savefig(os.path.join(path, 'metrics_per_genre_distribution.png'))
     plt.close()
