@@ -29,7 +29,7 @@ Further, we compared the "good" predictions with "bad" predictions based on the 
 Taking a look at the two plots above one can see that we tend to have some strong class imbalance towards the Drama genre. Additionally, this genre tends to occur quite often with other genres. 
 We focus further analysis on the logistic regression with bag-of-words classifier, as it has the highest Jaccard score and is the best performing non-DL model, additionally it is quite interpretable.
 
-Generally, we found that the model looks for certain distinct key words in the plots, like "Future" in Sci-Fi. If these certain highly weighted words are present in the description, the model tends to nearly always predict this class. 
+Generally, we found that the model looks for certain distinct keywords in the plots, like "Future" in Sci-Fi. If these certain highly weighted words are present in the description, the model tends to nearly always predict this class. 
 
 This behaviour however, is also the main pitfall of the model, as we tend to have strong overlap between genres (especially Drama) which then confuses the model. If these distinct keywords are missing, the model usually defaults back to the majority class, which is Drama. Note that we also use a "predict at least one" approach, thats why Drama is predicted most often if the model is unsure.
 
@@ -42,7 +42,7 @@ Below, some wrongly predicted samples can be seen.
 * *"Victimized teenager chased by death has to make tough decisions to hide, survive and strengthen her future."*
   * **Labels**: ['Thriller']
   * **Predicted**: ['Action', 'Sci-Fi']
-  * **Note**: Here, the model detects the "Future" key-word, and therefore predicting Sci-Fi.
+  * **Note**: Here, the model detects the ["future"](/images/feature_importance_Sci-Fi.png) keyword, and therefore predicting Sci-Fi.
 
 
 * *"In an excavation in Saudi Arabia, professor Albert Wombot discovers an ancient object of mysterious origins, and hidden within is a powerful secret. After his discovery the professor is brutally murdered and the secret of his mysterious object seems lost forever. [...] But what Sean does not know is that Miklo's has a dark secret of his own, he is a vampire, and his journey through immortality lies in the hands of Sean and the discovery of the professors secret."*
@@ -71,12 +71,12 @@ Below, some wrongly predicted samples can be seen.
 * *"A pink/roman porno with a yakuza character or two."*
   * **Labels**: ['Action', 'Crime']
   * **Predicted**: ['Action', 'Crime']
-  * **Note**: Here, "yakuza" is a very strong key word for Crime and Action. 
+  * **Note**: Here, ["yakuza"](/images/feature_importance_Crime.png) is a very strong keyword for Crime and Action. 
 
 
 * *"The kidnapping and murder of an innocent child leads agents Julián Carrera ""Valentín Trujillo"" and Roberto Rojas to investigate an organization led by Antonio Farcas and the ruthless Albina who engage in organ trafficking and drugs."*
-  * **Labels**: "['Action', 'Crime', 'Thriller']",
-  * **Predicted**: "['Action', 'Crime', 'Thriller']"
+  * **Labels**: ['Action', 'Crime', 'Thriller'],
+  * **Predicted**: ['Action', 'Crime', 'Thriller']
   * **Note**: Again, keywords.
 
 ### Impossible Examples
