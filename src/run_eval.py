@@ -2,13 +2,15 @@ import os
 import json
 import numpy as np
 import logging as log
+import pandas as pd
 from tqdm import tqdm
 
 from typing import Union
-from globals import DATA_PATH, EXPORT_PATH, SEED
+from globals import DATA_PATH, EXPORT_PATH, SEED, MODEL_PATH,  UNIQUE_GENRES
 from helper import pandas_ndarray_series_to_numpy
 from preprocess.dataloader import load_stratified_data
 from classifier.base import MultiLabelClassifier
+from classifier.dl import MovieGenreClassifier
 from text_modelling.modelling import BagOfWords, WordEmbeddingModel, Word2VecModel
 
 from evaluation.metrics import compute_metrics, score_per_sample
@@ -113,17 +115,30 @@ def fit_predict(classifier, text_model, lemmatized=False):
         X_dev, y_dev = dev["description"].to_numpy(), pandas_ndarray_series_to_numpy(dev["genre"])
 
     k_fold = MultilabelStratifiedKFold(
-        n_splits=2, random_state=SEED, shuffle=True)
+        n_splits=3, random_state=SEED, shuffle=True)
 
     predictions = None
     ground_truth = None
     X = None
-    for train_idx, test_idx in tqdm(k_fold.split(X_dev, y_dev)):
+    for i, (train_idx, test_idx) in tqdm(enumerate(k_fold.split(X_dev, y_dev))):
         X_dev_train, X_dev_test, y_dev_train, y_dev_test = X_dev[train_idx], X_dev[test_idx], y_dev[train_idx], y_dev[test_idx]
-        transformed_data = text_model.fit_transform(X_dev_train)
-        classifier = classifier.fit(transformed_data, y_dev_train)
 
-        y_pred = classifier.predict_at_least_1(text_model.transform(X_dev_test))
+        clf = classifier
+        if classifier == "DL":
+            clf = MovieGenreClassifier(model_name="distilbert-base-uncased",
+                                              unique_genres=UNIQUE_GENRES, num_labels=len(UNIQUE_GENRES), seed=SEED)
+            output_dir = os.path.join(MODEL_PATH, "distilbert_movie_genres")
+            train_data = pd.DataFrame({'description': X_dev_train, 'genre': pd.Series(list(y_dev_train))})
+            test_data = pd.DataFrame({'description': X_dev_test, 'genre': pd.Series(list(y_dev_test))})
+
+            clf.fine_tune(output_dir=output_dir,
+                                 train_data=train_data, val_data=test_data)
+            y_pred = clf.compute_logits(clf.test(model_path=os.path.join(
+                output_dir, 'best'), test_data=test_data).predictions)
+        else:
+            transformed_data = text_model.fit_transform(X_dev_train)
+            classifier = classifier.fit(transformed_data, y_dev_train)
+            y_pred = classifier.predict_at_least_1(text_model.transform(X_dev_test))
 
         if predictions is None:
             predictions = y_pred
@@ -140,7 +155,11 @@ def fit_predict(classifier, text_model, lemmatized=False):
         else:
             X = np.concatenate((X, X_dev_test),  axis=0)
 
-    return X, predictions, ground_truth, classifier, text_model
+    return X, predictions, ground_truth, clf, text_model
+
+
+
+
 
 
 def run_eval(predict=True, eval=True):
@@ -168,6 +187,9 @@ def run_eval(predict=True, eval=True):
     X, y_pred, y_true, classifier, text_model = fit_predict(MultiLabelClassifier("svm"), BagOfWords("tf-idf", ngram_range=(1, 1)), lemmatized=True)
     evaluate(X, y_pred, y_true, classifier, text_model, lemmatized=True,  features=False)
         """
+
+    #X, y_pred, y_true, classifier, text_model = fit_predict("DL", BagOfWords("count", ngram_range=(1, 1)), lemmatized=False)
+    #evaluate(X, y_pred, y_true, classifier, text_model, lemmatized=False,  features=False)
 
     # comparative_evaluation(BagOfWords("tf-idf", ngram_range=(1, 1)))
 

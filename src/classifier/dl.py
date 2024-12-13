@@ -146,8 +146,9 @@ class MovieGenreClassifier:
         training_args = TrainingArguments(
             output_dir=output_dir,
             learning_rate=2e-5,
-            per_device_train_batch_size=16,
-            per_device_eval_batch_size=16,
+            per_device_train_batch_size=32,
+            dataloader_num_workers=16,
+            per_device_eval_batch_size=32,
             num_train_epochs=self.num_epochs,
             weight_decay=0.01,
             evaluation_strategy="epoch",
