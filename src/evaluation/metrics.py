@@ -79,7 +79,7 @@ def confusion_matrix(y_true, y_pred, plot=False):
     return cfm
 
 
-def score_per_sample(y_true, y_preds, metric=jaccard_score):
+def score_per_sample(y_true, y_preds, metric: str = 'jaccard'):
     """
     Computes the Jaccard index per sample.
 
@@ -92,10 +92,39 @@ def score_per_sample(y_true, y_preds, metric=jaccard_score):
     """
     scores = []
 
+    scorer = get_scorer(metric)
     for truth, pred in zip(y_true, y_preds):
-        scores.append(metric(truth, pred))
+        scores.append(scorer(truth, pred))
 
-    return scores
+    return np.array(scores)
+
+
+def get_scorer(metric: str):
+    """
+    Get the scorer function for a given metric.
+
+    Args:
+        metric (str): Name of the metric.
+
+    Returns:
+        function: Scorer function.
+    """
+    if metric == 'jaccard':
+        return jaccard_score
+    elif metric == 'hamming':
+        return hamming_loss
+    elif metric == 'accuracy':
+        return accuracy_score
+    elif metric == 'balanced_accuracy':
+        return balanced_accuracy_score
+    elif metric == 'f1':
+        return f1_score
+    elif metric == 'precision':
+        return precision_score
+    elif metric == 'recall':
+        return recall_score
+    else:
+        raise ValueError(f"Invalid metric: {metric}")
 
 
 def compute_metrics(y_true,
