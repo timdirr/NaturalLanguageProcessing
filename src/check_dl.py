@@ -58,7 +58,7 @@ def show_metrics(results, output_dir, save=True):
         log.info(f"\nConfusion matrix:\n{table}")
 
 
-def save_predictions(output_dir, classifier, test_data, predictions):
+def save_predictions(output_dir, classifier, test_data, predictions, file_name):
     """Save predictions to a CSV file."""
     preds_path = os.path.join(output_dir, "predictions")
     os.makedirs(preds_path, exist_ok=True)
@@ -68,7 +68,7 @@ def save_predictions(output_dir, classifier, test_data, predictions):
         'y_pred': list(classifier.compute_logits(predictions.predictions)),
         'y_true': test_data['genre']
     })
-    results_df.to_csv(os.path.join(preds_path, "best_preds.csv"), index=False)
+    results_df.to_csv(os.path.join(preds_path, file_name), index=False)
 
     log.info(f"Predictons saved to {preds_path}")
 
@@ -77,7 +77,8 @@ def test_dl_model():
     classifier = MovieGenreClassifier(model_name="distilbert-base-uncased",
                                       unique_genres=UNIQUE_GENRES, num_labels=len(UNIQUE_GENRES), seed=SEED)
     dev_dataset_path = os.path.join(DATA_PATH, SPLIT_FOLDER, "dev.csv")
-    train_data, val_data, test_data = classifier.split_data(dev_dataset_path)
+    train_data, val_data, test_data = classifier.split_data(
+        dev_dataset_path, save=True)
     output_dir = os.path.join(MODEL_PATH, "distilbert_movie_genres")
 
     # Test base model
@@ -94,8 +95,13 @@ def test_dl_model():
         output_dir, 'best'), test_data=test_data)
     results = classifier.compute_metrics(predictions)
 
+    preds = predictions.predictions.tolist()
+    with open("pred.json", 'w') as f:
+        json.dump(preds, f, indent=4)
+
     show_metrics(results, output_dir, save=True)
-    save_predictions(output_dir, classifier, test_data, predictions)
+    save_predictions(output_dir, classifier, test_data,
+                     predictions, file_name="best_preds.csv")
 
 
 if __name__ == "__main__":

@@ -41,7 +41,7 @@ class MovieGenreClassifier:
 
         return dataset
 
-    def split_data(self, data_path):
+    def split_data(self, data_path, save=False):
         """Split the dev data into 80/10/10 for train, validation, and test."""
         dataset = self.load_data(data_path)
         # Include movie_id alongside description
@@ -76,17 +76,18 @@ class MovieGenreClassifier:
             'genre': list(y_test)
         })
 
-        dev_split_folder = os.path.join(DATA_PATH, SPLIT_FOLDER, 'dev')
-        os.makedirs(dev_split_folder, exist_ok=True)
+        if save:
+            dev_split_folder = os.path.join(DATA_PATH, SPLIT_FOLDER, 'dev')
+            os.makedirs(dev_split_folder, exist_ok=True)
 
-        train_data.to_csv(os.path.join(
-            dev_split_folder, "train.csv"), index=False)
+            train_data.to_csv(os.path.join(
+                dev_split_folder, "train.csv"), index=False)
 
-        val_data.to_csv(os.path.join(
-            dev_split_folder, "val.csv"), index=False)
+            val_data.to_csv(os.path.join(
+                dev_split_folder, "val.csv"), index=False)
 
-        test_data.to_csv(os.path.join(
-            dev_split_folder, "test.csv"), index=False)
+            test_data.to_csv(os.path.join(
+                dev_split_folder, "test.csv"), index=False)
 
         return train_data, val_data, test_data
 

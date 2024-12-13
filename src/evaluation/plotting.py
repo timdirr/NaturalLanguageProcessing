@@ -11,11 +11,12 @@ from collections import defaultdict
 import matplotlib.pyplot as plt
 import numpy as np
 import textwrap
-from evaluation.metrics import compute_metrics, confusion_matrix
+from evaluation.metrics import compute_metrics, confusion_matrix, score_per_sample
 from evaluation.colored_text_plot import save_colored_descriptions
 from helper import decode_genres, load_genres
 from text_modelling.modelling import BagOfWords, WordEmbeddingModel
 from classifier.base import MultiLabelClassifier
+import sklearn
 
 
 log.basicConfig(level=log.INFO,
@@ -346,7 +347,8 @@ def plot_decision_tree(clf: MultiLabelClassifier, text_model: Union[BagOfWords, 
 def plot_metrics_per_length(X: np.ndarray,
                             y_true: np.ndarray,
                             y_pred: np.ndarray,
-                            path: str):
+                            path: str,
+                            metric: str = 'jaccard'):
     '''
     Plots metrics per length of the input text. Saved under path/metrics_per_length.png
     '''
@@ -357,7 +359,7 @@ def plot_metrics_per_length(X: np.ndarray,
         os.makedirs(path)
     # get lengths of the input text
     lengths = np.array([len(text.split()) for text in X])
-    metrics = np.array([jaccard_score(y_t, y_p) for y_t, y_p in zip(y_true, y_pred)])
+    metrics = score_per_sample(y_true, y_pred, metric=metric)
 
     bins = np.linspace(0, lengths.max(), 10)
     bin_indices = np.digitize(lengths, bins) - 1
@@ -377,7 +379,8 @@ def plot_metrics_per_length(X: np.ndarray,
 
 def plot_metrics_per_genre_distribution(y_true: np.ndarray,
                                         y_pred: np.ndarray,
-                                        path: str):
+                                        path: str,
+                                        metric: str = 'jaccard'):
     '''
     Plots the distribution of metrics per genre. 
     '''
@@ -386,7 +389,7 @@ def plot_metrics_per_genre_distribution(y_true: np.ndarray,
     if not os.path.exists(path):
         os.makedirs(path)
     genre_counts = np.sum(y_true, axis=0)
-    metrics = np.array([jaccard_score(y_t, y_p) for y_t, y_p in zip(y_true, y_pred)])
+    metrics = score_per_sample(y_true, y_pred, metric=metric)
     metrics_per_genre = []
     for i in range(y_true.shape[1]):
         indices = y_true[:, i] == 1
