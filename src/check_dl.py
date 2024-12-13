@@ -91,8 +91,7 @@ def test_dl_model():
                          train_data=train_data, val_data=val_data)
 
     # Test fine-tuned model
-    predictions = classifier.test(model_path=os.path.join(
-        output_dir, 'best'), test_data=test_data)
+    predictions = classifier.test(test_data=test_data)
     results = classifier.compute_metrics(predictions)
 
     preds = predictions.predictions.tolist()

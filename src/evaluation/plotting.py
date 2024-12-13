@@ -158,7 +158,6 @@ def plot_feature_importances(feat_names: list, importances: Union[list, np.array
 
 def plot_metrics_per_genre(y_true: np.ndarray,
                            y_pred: np.ndarray,
-                           model: MultiLabelClassifier,
                            metrics_names: list[str],
                            path: str):
     '''

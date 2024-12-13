@@ -17,6 +17,7 @@ from globals import DATA_PATH, SPLIT_FOLDER
 from datasets import Dataset
 import numpy as np
 import pandas as pd
+import logging as log
 
 os.environ["WANDB_DISABLED"] = "true"
 
@@ -65,7 +66,7 @@ class MovieGenreClassifier:
             'description': train_descriptions,
             'genre': list(y_train)
         })
-        val_data = pd.DataFrame({
+        eval_data = pd.DataFrame({
             'movie_id': val_movie_ids,
             'description': val_descriptions,
             'genre': list(y_val)
@@ -83,13 +84,13 @@ class MovieGenreClassifier:
             train_data.to_csv(os.path.join(
                 dev_split_folder, "train.csv"), index=False)
 
-            val_data.to_csv(os.path.join(
+            eval_data.to_csv(os.path.join(
                 dev_split_folder, "val.csv"), index=False)
 
             test_data.to_csv(os.path.join(
                 dev_split_folder, "test.csv"), index=False)
 
-        return train_data, val_data, test_data
+        return train_data, eval_data, test_data
 
     def preprocess_function(self, examples):
         """Tokenize the input data and prepare ground truth labels."""
@@ -130,29 +131,41 @@ class MovieGenreClassifier:
             model_path, num_labels=self.num_labels, problem_type="multi_label_classification"
         )
 
-    def fine_tune(self, output_dir, train_data, val_data):
+    def fine_tune(self, output_dir, train_data, eval_data):
         """Fine-tune the model on the training data."""
         self.load_model(self.model_name)
 
         train_dataset = Dataset.from_pandas(train_data)
-        val_dataset = Dataset.from_pandas(val_data)
+        eval_dataset = Dataset.from_pandas(eval_data)
 
-        tokenized_train_dataset = train_dataset.map(
-            self.preprocess_function, batched=True)
-        tokenized_val_dataset = val_dataset.map(
-            self.preprocess_function, batched=True)
+        tokenized_train_dataset = train_dataset.map(self.preprocess_function, batched=True)
+        tokenized_eval_dataset = eval_dataset.map(self.preprocess_function, batched=True)
 
         data_collator = DataCollatorWithPadding(tokenizer=self.tokenizer)
+        max_num_worker_suggest = None
+        if hasattr(os, "sched_getaffinity"):
+            try:
+                max_num_worker_suggest = len(os.sched_getaffinity(0))
+            except Exception:
+                pass
+        if max_num_worker_suggest is None:
+            cpu_count = os.cpu_count()
+            if cpu_count is not None:
+                max_num_worker_suggest = cpu_count
+        if max_num_worker_suggest is None:
+            max_num_worker_suggest = 1
+
+        log.info(f"max_num_worker_suggest: {max_num_worker_suggest}")
 
         training_args = TrainingArguments(
             output_dir=output_dir,
             learning_rate=2e-5,
             per_device_train_batch_size=32,
-            dataloader_num_workers=16,
+            dataloader_num_workers=max_num_worker_suggest,
             per_device_eval_batch_size=32,
             num_train_epochs=self.num_epochs,
             weight_decay=0.01,
-            evaluation_strategy="epoch",
+            eval_strategy="epoch",
             save_strategy="epoch",
             load_best_model_at_end=True,
             save_total_limit=self.num_epochs
@@ -163,8 +176,8 @@ class MovieGenreClassifier:
             model=self.model,
             args=training_args,
             train_dataset=tokenized_train_dataset,
-            eval_dataset=tokenized_val_dataset,
-            tokenizer=self.tokenizer,
+            eval_dataset=tokenized_eval_dataset,
+            processing_class=self.tokenizer,
             data_collator=data_collator,
             compute_metrics=lambda p: self.compute_metrics(
                 p, metric_names=['jaccard', 'hamming', 'accuracy', 'f1', 'precision', 'recall'])
@@ -178,10 +191,8 @@ class MovieGenreClassifier:
             os.makedirs(self.best_model_path)
         self.trainer.save_model(self.best_model_path)
 
-    def test(self, model_path, test_data):
+    def test(self, test_data):
         """Evaluate the model on the test data."""
-        self.load_model(model_path)
-
         test_dataset = Dataset.from_pandas(test_data)
         tokenized_test_dataset = test_dataset.map(
             self.preprocess_function, batched=True)
@@ -189,7 +200,7 @@ class MovieGenreClassifier:
 
         trainer = Trainer(
             model=self.model,
-            tokenizer=self.tokenizer,
+            processing_class=self.tokenizer,
             data_collator=data_collator,
             compute_metrics=lambda p: self.compute_metrics(
                 p, metric_names=['jaccard', 'hamming', 'accuracy', 'f1', 'precision', 'recall'])
@@ -198,3 +209,9 @@ class MovieGenreClassifier:
         predictions = trainer.predict(tokenized_test_dataset)
 
         return predictions
+
+    def predict(self, data):
+        """Predict the genres for the input data."""
+        preds = self.test(data).predictions
+        y_pred = self.compute_logits(preds)
+        return y_pred

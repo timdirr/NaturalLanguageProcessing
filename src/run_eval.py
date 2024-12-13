@@ -77,18 +77,22 @@ def evaluate(X: np.ndarray,
         :param features: (boolean) if we want to analyse the feature importance. Only applicable for certain models
         :return:
     '''
-    classifier_name = type(classifier.multi_output_clf_.estimators_[0]).__name__
-    model_name = type(text_model.model).__name__
+    if type(classifier).__name__ == "MovieGenreClassifier":
+        classifier_name = type(classifier).__name__
+        model_name = type(text_model).__name__
+    else:
+        classifier_name = type(classifier.multi_output_clf_.estimators_[0]).__name__
+        model_name = type(text_model.model).__name__
 
     dir_path = prepare_evaluate(classifier_name, model_name)
     metrics = compute_metrics(ytrue, ypred, metrics_names=['jaccard', 'hamming', 'precision', 'recall', 'at_least_one', 'at_least_two'])
     metrics["lemmatized"] = lemmatized
     log.info(f"Metrics:\n {metrics}")
 
-    if features:
+    if features and classifier_name != "MovieGenreClassifier":
         analyse_features(classifier, text_model, path=dir_path)
 
-    plot_metrics_per_genre(ytrue, ypred, classifier, metrics_names=['balanced_accuracy', 'precision', 'recall'], path=dir_path)
+    plot_metrics_per_genre(ytrue, ypred, metrics_names=['balanced_accuracy', 'precision', 'recall'], path=dir_path)
     plot_metrics_per_length(X, ytrue, ypred, path=dir_path, metric='jaccard')
     plot_metrics_per_genre_distribution(ytrue, ypred, path=dir_path, metric='jaccard')
 
@@ -96,70 +100,47 @@ def evaluate(X: np.ndarray,
     plot_good_qualitative_results(X, ytrue, ypred, classifier, text_model, path=dir_path)
     plot_cfm(ytrue, ypred,  path=dir_path)
 
-    if classifier.multi_output_clf_.estimators_[0].__class__.__name__ == "DecisionTreeClassifier":
+    if classifier_name != "MovieGenreClassifier" and classifier.multi_output_clf_.estimators_[0].__class__.__name__ == "DecisionTreeClassifier":
         plot_decision_tree(classifier, text_model, path=dir_path)
 
     with open(os.path.join(dir_path, "metrics.json"), "w") as file:
         json.dump(metrics, file, indent=4)
 
 
-def fit_predict(classifier, text_model, lemmatized=False):
-
-    # load stratified data, but keep only test set
-    _, _, dev = load_stratified_data()
+def fit_predict(classifier, text_model, lemmatized=False, fine_tune=False):
+    # load stratified data
+    _, test, dev = load_stratified_data()
 
     # depending on model and classifier, lemmatized input data may be beneficial
     if lemmatized:
         X_dev, y_dev = dev["lemmatized_description"].to_numpy(), pandas_ndarray_series_to_numpy(dev["genre"])
+        X_test, y_test = test["lemmatized_description"].to_numpy(), pandas_ndarray_series_to_numpy(test["genre"])
     else:
         X_dev, y_dev = dev["description"].to_numpy(), pandas_ndarray_series_to_numpy(dev["genre"])
+        X_test, y_test = test["description"].to_numpy(), pandas_ndarray_series_to_numpy(test["genre"])
 
-    k_fold = MultilabelStratifiedKFold(
-        n_splits=3, random_state=SEED, shuffle=True)
+    if type(classifier).__name__ == "MovieGenreClassifier":
+        output_dir = os.path.join(MODEL_PATH, "distilbert_movie_genres")
+        X_dev = X_dev.reshape(-1, 1)
+        X_dev_train, y_dev_train, X_dev_val, y_dev_val = iterative_train_test_split(X_dev, y_dev, test_size=0.2)
+        train_data = pd.DataFrame({'description': X_dev_train.reshape(-1), 'genre': pd.Series(list(y_dev_train))})
+        val_data = pd.DataFrame({'description': X_dev_val.reshape(-1), 'genre': pd.Series(list(y_dev_val))})
+        test_data = pd.DataFrame({'description': X_test, 'genre': pd.Series(list(y_test))})
 
-    predictions = None
-    ground_truth = None
-    X = None
-    for i, (train_idx, test_idx) in tqdm(enumerate(k_fold.split(X_dev, y_dev))):
-        X_dev_train, X_dev_test, y_dev_train, y_dev_test = X_dev[train_idx], X_dev[test_idx], y_dev[train_idx], y_dev[test_idx]
+        if fine_tune:
+            log.info(f'Fine-tuning model (Path: {output_dir})')
+            classifier.fine_tune(output_dir=output_dir,
+                                 train_data=train_data, eval_data=val_data)
+            log.info('Fine-tuning finished')
+        classifier.load_model(model_path=os.path.join(output_dir, 'best'))
+        log.info(f'Loaded best model (Path: {os.path.join(output_dir, 'best')})')
+        y_pred = classifier.predict(test_data)
+    else:
+        transformed_data = text_model.fit_transform(X_dev)
+        classifier = classifier.fit(transformed_data, y_dev)
+        y_pred = classifier.predict_at_least_1(text_model.transform(X_test))
 
-        clf = classifier
-        if classifier == "DL":
-            clf = MovieGenreClassifier(model_name="distilbert-base-uncased",
-                                              unique_genres=UNIQUE_GENRES, num_labels=len(UNIQUE_GENRES), seed=SEED)
-            output_dir = os.path.join(MODEL_PATH, "distilbert_movie_genres")
-            train_data = pd.DataFrame({'description': X_dev_train, 'genre': pd.Series(list(y_dev_train))})
-            test_data = pd.DataFrame({'description': X_dev_test, 'genre': pd.Series(list(y_dev_test))})
-
-            clf.fine_tune(output_dir=output_dir,
-                                 train_data=train_data, val_data=test_data)
-            y_pred = clf.compute_logits(clf.test(model_path=os.path.join(
-                output_dir, 'best'), test_data=test_data).predictions)
-        else:
-            transformed_data = text_model.fit_transform(X_dev_train)
-            classifier = classifier.fit(transformed_data, y_dev_train)
-            y_pred = classifier.predict_at_least_1(text_model.transform(X_dev_test))
-
-        if predictions is None:
-            predictions = y_pred
-        else:
-            predictions = np.vstack((predictions, y_pred))
-
-        if ground_truth is None:
-            ground_truth = y_dev_test
-        else:
-            ground_truth = np.vstack((ground_truth, y_dev_test))
-
-        if X is None:
-            X = X_dev_test
-        else:
-            X = np.concatenate((X, X_dev_test),  axis=0)
-
-    return X, predictions, ground_truth, clf, text_model
-
-
-
-
+    return X_test, y_pred, y_test, classifier, text_model
 
 
 def run_eval(predict=True, eval=True):
@@ -170,9 +151,8 @@ def run_eval(predict=True, eval=True):
     # X, y_pred, y_true, classifier, text_model = fit_predict(MultiLabelClassifier("lreg", n_jobs=-1), model, lemmatized=False)
     # evaluate(X, y_pred, y_true, classifier, model, lemmatized=False,  features=False)
 
-    X, y_pred, y_true, classifier, text_model = fit_predict(MultiLabelClassifier("lreg", n_jobs=-1), BagOfWords("count", ngram_range=(1, 1)), lemmatized=True)
-    evaluate(X, y_pred, y_true, classifier, text_model, lemmatized=True,  features=True)
-
+    # X, y_pred, y_true, classifier, text_model = fit_predict(MultiLabelClassifier("lreg", n_jobs=-1), BagOfWords("count", ngram_range=(1, 1)), lemmatized=True)
+    # evaluate(X, y_pred, y_true, classifier, text_model, lemmatized=True,  features=True)
     """
     X, y_pred, y_true, classifier, text_model = fit_predict(MultiLabelClassifier("knn", n_jobs=-1), BagOfWords("count", ngram_range=(1, 1)), lemmatized=True)
     evaluate(X, y_pred, y_true, classifier, text_model, lemmatized=True,  features=False)
@@ -183,13 +163,19 @@ def run_eval(predict=True, eval=True):
     evaluate(X, y_pred, y_true, classifier, text_model, lemmatized=True,  features=True)
     X, y_pred, y_true, classifier, text_model = fit_predict(MultiLabelClassifier("knn", n_jobs=-1), BagOfWords("tf-idf", ngram_range=(1, 1)), lemmatized=True)
     evaluate(X, y_pred, y_true, classifier, text_model, lemmatized=True,  features=False)
-    
+
     X, y_pred, y_true, classifier, text_model = fit_predict(MultiLabelClassifier("svm"), BagOfWords("tf-idf", ngram_range=(1, 1)), lemmatized=True)
     evaluate(X, y_pred, y_true, classifier, text_model, lemmatized=True,  features=False)
         """
 
-    #X, y_pred, y_true, classifier, text_model = fit_predict("DL", BagOfWords("count", ngram_range=(1, 1)), lemmatized=False)
-    #evaluate(X, y_pred, y_true, classifier, text_model, lemmatized=False,  features=False)
+    X, y_pred, y_true, classifier, text_model = fit_predict(
+        MovieGenreClassifier(
+            model_name="distilbert-base-uncased", unique_genres=UNIQUE_GENRES, num_labels=len(UNIQUE_GENRES),
+            seed=SEED),
+        BagOfWords("count", ngram_range=(1, 1)),
+        lemmatized=False,
+        fine_tune=False)
+    evaluate(X, y_pred, y_true, classifier, text_model, lemmatized=False,  features=False)
 
     # comparative_evaluation(BagOfWords("tf-idf", ngram_range=(1, 1)))
 
