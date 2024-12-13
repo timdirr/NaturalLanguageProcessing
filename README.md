@@ -43,7 +43,6 @@ All functions are run through `main.py` and configured by the `config.json` file
 * `--store_intermediate`: Saves intermediate files for data crawling.
 * `--verbose`: Enables logging.
 * `--predict`: Enables model prediction.
-* `--evaluate`: Evaluates the model performance.
 
 # Movie Genre Classification
 
@@ -151,10 +150,10 @@ Genres like **Film-Noir** have low support, which leads to challenges in classif
 
 <h4 id="low-support-genres">Performance Heatmap for Low-Support Genres </h4>
 
-![Performance Heatmap SVG](plots/performance_heatmap.svg)
+![Performance Heatmap SVG](images/performance_heatmap.svg)
 Recall dramatically higher in **BCE Log** model for low-support genres, while Focal loss keeps up in both precision and recall.
 
 <h4 id="high-support-genres">Performance Heatmap for High-Support Genres </h4>
 
-![Performance Heatmap SVG](plots/performance_heatmap_high.svg)
+![Performance Heatmap SVG](images/performance_heatmap_high.svg)
 Differences in precision and recall are less pronounced in high-support genres, with **Original** and **Focal Loss** models performing better.

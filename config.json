@@ -4,6 +4,5 @@
     "tokenize": false,
     "store_intermediate": false,
     "verbose": true,
-    "predict": true,
-    "evaluate": true
+    "predict": true
 }

@@ -93,3 +93,5 @@ In the plot below, one can see that there is a correlation between the average j
 <p>
   <img src="./images/samples_score_genre.jpeg" title="Co-occurrence matrix" width="480" />
 </p>
+
+Also, please refer to the feature importance plots in the images folder. These are the words scaled by the repective learned weights of the logistic regression classifier.
