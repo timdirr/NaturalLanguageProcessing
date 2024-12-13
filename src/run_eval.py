@@ -87,8 +87,8 @@ def evaluate(X: np.ndarray,
         analyse_features(classifier, text_model, path=dir_path)
 
     plot_metrics_per_genre(ytrue, ypred, classifier, metrics_names=['balanced_accuracy', 'precision', 'recall'], path=dir_path)
-    plot_metrics_per_length(X, ytrue, ypred, path=dir_path)
-    plot_metrics_per_genre_distribution(ytrue, ypred, path=dir_path)
+    plot_metrics_per_length(X, ytrue, ypred, path=dir_path, metric='jaccard')
+    plot_metrics_per_genre_distribution(ytrue, ypred, path=dir_path, metric='jaccard')
 
     plot_bad_qualitative_results(X, ytrue, ypred, classifier, text_model, path=dir_path)
     plot_good_qualitative_results(X, ytrue, ypred, classifier, text_model, path=dir_path)
