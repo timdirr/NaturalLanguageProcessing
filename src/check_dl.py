@@ -1,6 +1,6 @@
 import os
 import json
-from src.classifier.dl import MovieGenreClassifier
+from classifier.dl import MovieGenreClassifier
 from globals import DATA_PATH, MODEL_PATH, SPLIT_FOLDER, SEED, UNIQUE_GENRES
 import pandas as pd
 from tabulate import tabulate
