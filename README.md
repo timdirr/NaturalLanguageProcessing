@@ -28,7 +28,7 @@ Next, download `crawl_data.csv` (or optionally `clean_data.csv`) from the links 
 ## Folder Structure
 
 - `src/`: Contains all scripts.
-- `plot/`: Contains all generated plots from data analysis.
+- `plot/` and `images/`: Contains generated plots from data and model analysis (`export/` folder is not pushed, contains additional plots if `run_eval()` is ran).
 
 ## Running the Code
 
@@ -44,7 +44,7 @@ All functions are run through `main.py` and configured by the `config.json` file
 * `--explore`: Enables data exploration (options: raw or clean).
 * `--store_intermediate`: Saves intermediate files for data crawling.
 * `--verbose`: Enables logging.
-* `--predict`: Enables model prediction.
+* `--predict`: Enables model prediction and evaluation.
 
 ## Non-Deep Learning Model(s)
 
@@ -373,6 +373,19 @@ Here we chose examples based on the difference of scores between Logistic regres
 
 These examples highlight model strengths in handling explicit genre cues but also its overreliance on single keywords or majority class bias when context is insufficient.
 
+## Description Length Analysis
+
+### Distribution of Description Lengths
+![Description Length Distribution](plots/description_length_char_distribution_cleaned.png)
+
+With **mean being ~240** and **median ~181**, the distribution is right-skewed, with a few outliers having descriptions over 1000 characters. The majority of descriptions fall within **100-300** characters (interquantile range is (124, 237)), maximum length is 9733. Removing outliers and truncating descriptions to a reasonable length could improve model performance.
+
+![Description Length vs. Jaccard](images/metrics_per_length/metrics_per_length_DL.png)
+
+The graph above shows the Jaccard scores for the **DL model** across different input text lengths. Similar trends were observed for KNN with Bag-of-Words (BOW) and TF-IDF Vectorizer, as well as Logistic Regression with BOW + TF-IDF, where performance increased after a certain text length. However, models using CountVectorizer did not exhibit this improvement, indicating that CountVectorizer may struggle to capture patterns in longer texts compared to other vectorization techniques. See [more graphs](images/metrics_per_length/).
+
+Performance peaks at **250–450** characters, likely because this range provides sufficient information **without introducing noise**. Interestingly, performance rises again around **700+** characters, possibly because longer descriptions contain **additional context** that helps the model make better predictions despite earlier noise.
+
 ## Summary of Findings
 While the DL model performs better overall, it is still heavily influenced by class imbalances, primarily due to the prevalence of the Drama genre. This bias towards Drama affects the model's predictions, often leading to misclassifications. Many of the DL model's behaviors can be explained by the feature importances observed in the logistic regression model. For instance, keywords that are highly indicative of certain genres in logistic regression also tend to dominate the DL model's predictions, highlighting the need for more balanced training data and advanced techniques to mitigate class imbalance effects.
 
@@ -386,8 +399,12 @@ remove common keywords for different genres so the model learns deeper stuff -->
 
 1. **Apply SMOTE:** Balance class distributions by generating synthetic samples for underrepresented classes as proposed [here](https://datascience.stackexchange.com/questions/27671/how-do-you-apply-smote-on-text-classification) or after vectorizing the text data (e.g., TF-IDF or embeddings).
 
-2. **Remove gibberish descriptions:** Filter out nonsensical or noisy data that adds no meaningful signal.  
+2. **Remove gibberish descriptions:** Filter out nonsensical or noisy data that adds no meaningful signal.
 
-3. **Filter lengthy/short descriptions:** Remove descriptions that are too short (lack context) or too long (add irrelevant details).
+3. **Filter lengthy/short descriptions:** Remove descriptions that are too short (lack context) or too long (add irrelevant details). See [description length analysis](#description-length-analysis).
 
-4. **Remove common keywords:** Eliminate generic words (e.g., "movie," "story") shared across genres to encourage the model to learn deeper semantic patterns.  
+<!-- Truncating overly long texts or
+Summarizing lengthy inputs
+might help eliminate noise and improve performance for problematic ranges. -->
+
+4. **Remove common keywords:** Eliminate generic words (e.g., "movie," "story") shared across genres to encourage the model to learn deeper semantic patterns (see [wordclouds](plots/) and [feature importance graphs](images/)).
