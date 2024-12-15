@@ -223,8 +223,6 @@ We utilized **DistilBERT**, a distilled and compact version of BERT, as the back
 
 - **Recall** is better in the **BCE Log** model due to the class weights it applies, which help it focus on underrepresented genres. This allows it to capture more true positives, especially in low-support genres like **Film-Noir**.
 
-- **F1-Score** is generally higher in **Original** and **Focal Loss** models, as they balance precision and recall better, while **BCE Log** performs well in low-support genres by boosting recall.
-
 ### Genre-Specific Notes
 Genres like **Film-Noir** have low support (while also co-occuring with majority classes), which leads to challenges in classifying them. **BCE Log** improves recall for these genres by applying class weights, though at the cost of precision (precision and recall are more balanced), which we can see in the [first set of heat maps](#low-support-genres) and also in the [classification report comparison](#classification-report-graph-original-vs-bce). The **Original** and **Focal Loss** models perform better for larger genres with more balanced classes, can be observed in the [second set of heat maps](#high-support-genres).
 
