@@ -7,7 +7,7 @@ from tqdm import tqdm
 
 from typing import Union
 from globals import DATA_PATH, EXPORT_PATH, SEED, MODEL_PATH,  UNIQUE_GENRES
-from helper import pandas_ndarray_series_to_numpy
+from helper import pandas_ndarray_series_to_numpy, load_genres
 from preprocess.dataloader import load_stratified_data
 from classifier.base import MultiLabelClassifier
 from classifier.dl import MovieGenreClassifier
@@ -46,8 +46,7 @@ def analyse_features(clf: MultiLabelClassifier,
 
     feature_names = text_model.get_feature_names_out()
     feat_impts = get_feature_importances(clf)
-    with open(os.path.join(DATA_PATH, "genres.json"), 'r') as f:
-        classes = json.load(f)
+    classes = load_genres()
 
     for i, (genre, feat_impt) in enumerate(zip(classes, feat_impts)):
         indices = np.argsort(feat_impt)[::-1][:top_k]
@@ -79,7 +78,7 @@ def evaluate(X: np.ndarray,
     '''
     if type(classifier).__name__ == "MovieGenreClassifier":
         classifier_name = type(classifier).__name__
-        model_name = type(text_model).__name__
+        model_name = "raw_text"
     else:
         classifier_name = type(classifier.multi_output_clf_.estimators_[0]).__name__
         model_name = type(text_model.model).__name__
@@ -133,7 +132,7 @@ def fit_predict(classifier, text_model, lemmatized=False, fine_tune=False):
                                  train_data=train_data, eval_data=val_data)
             log.info('Fine-tuning finished')
         classifier.load_model(model_path=os.path.join(output_dir, 'best'))
-        log.info(f'Loaded best model (Path: {os.path.join(output_dir, 'best')})')
+        log.info(f"Loaded best model (Path: {os.path.join(output_dir, 'best')})")
         y_pred = classifier.predict(test_data)
     else:
         transformed_data = text_model.fit_transform(X_dev)
@@ -146,28 +145,26 @@ def fit_predict(classifier, text_model, lemmatized=False, fine_tune=False):
 def run_eval(predict=True, eval=True):
 
     # model = Word2VecModel(min_count=1)
-   # model.load_pretrained('word2vec-google-news-300')
+    # model.load_pretrained('word2vec-google-news-300')
 
     # X, y_pred, y_true, classifier, text_model = fit_predict(MultiLabelClassifier("lreg", n_jobs=-1), model, lemmatized=False)
     # evaluate(X, y_pred, y_true, classifier, model, lemmatized=False,  features=False)
 
-    # X, y_pred, y_true, classifier, text_model = fit_predict(MultiLabelClassifier("lreg", n_jobs=-1), BagOfWords("count", ngram_range=(1, 1)), lemmatized=True)
-    # evaluate(X, y_pred, y_true, classifier, text_model, lemmatized=True,  features=True)
-    """
-    X, y_pred, y_true, classifier, text_model = fit_predict(MultiLabelClassifier("knn", n_jobs=-1), BagOfWords("count", ngram_range=(1, 1)), lemmatized=True)
-    evaluate(X, y_pred, y_true, classifier, text_model, lemmatized=True,  features=False)
-    X, y_pred, y_true, classifier, text_model = fit_predict(MultiLabelClassifier("svm"), BagOfWords("count", ngram_range=(1, 1)), lemmatized=True)
-    evaluate(X, y_pred, y_true, classifier, text_model, lemmatized=True,  features=False)
-
-    X, y_pred, y_true, classifier, text_model = fit_predict(MultiLabelClassifier("lreg", n_jobs=-1), BagOfWords("tf-idf", ngram_range=(1, 1)), lemmatized=True)
+    X, y_pred, y_true, classifier, text_model = fit_predict(MultiLabelClassifier("lreg", n_jobs=-1), BagOfWords("count", ngram_range=(1, 1)), lemmatized=True)
     evaluate(X, y_pred, y_true, classifier, text_model, lemmatized=True,  features=True)
-    X, y_pred, y_true, classifier, text_model = fit_predict(MultiLabelClassifier("knn", n_jobs=-1), BagOfWords("tf-idf", ngram_range=(1, 1)), lemmatized=True)
-    evaluate(X, y_pred, y_true, classifier, text_model, lemmatized=True,  features=False)
+    # X, y_pred, y_true, classifier, text_model = fit_predict(MultiLabelClassifier("knn", n_jobs=-1), BagOfWords("count", ngram_range=(1, 1)), lemmatized=True)
+    # evaluate(X, y_pred, y_true, classifier, text_model, lemmatized=True,  features=False)
+    # X, y_pred, y_true, classifier, text_model = fit_predict(MultiLabelClassifier("svm"), BagOfWords("count", ngram_range=(1, 1)), lemmatized=True)
+    # evaluate(X, y_pred, y_true, classifier, text_model, lemmatized=True,  features=False)
 
-    X, y_pred, y_true, classifier, text_model = fit_predict(MultiLabelClassifier("svm"), BagOfWords("tf-idf", ngram_range=(1, 1)), lemmatized=True)
-    evaluate(X, y_pred, y_true, classifier, text_model, lemmatized=True,  features=False)
-        """
+    # X, y_pred, y_true, classifier, text_model = fit_predict(MultiLabelClassifier("lreg", n_jobs=-1), BagOfWords("tf-idf", ngram_range=(1, 1)), lemmatized=True)
+    # evaluate(X, y_pred, y_true, classifier, text_model, lemmatized=True,  features=True)
+    # X, y_pred, y_true, classifier, text_model = fit_predict(MultiLabelClassifier("knn", n_jobs=-1), BagOfWords("tf-idf", ngram_range=(1, 1)), lemmatized=True)
+    # evaluate(X, y_pred, y_true, classifier, text_model, lemmatized=True,  features=False)
 
+    # X, y_pred, y_true, classifier, text_model = fit_predict(MultiLabelClassifier("svm"), BagOfWords("tf-idf", ngram_range=(1, 1)), lemmatized=True)
+    # evaluate(X, y_pred, y_true, classifier, text_model, lemmatized=True,  features=False)
+    
     X, y_pred, y_true, classifier, text_model = fit_predict(
         MovieGenreClassifier(
             model_name="distilbert-base-uncased", unique_genres=UNIQUE_GENRES, num_labels=len(UNIQUE_GENRES),

@@ -81,11 +81,6 @@ def test_dl_model():
         dev_dataset_path, save=True)
     output_dir = os.path.join(MODEL_PATH, "distilbert_movie_genres")
 
-    # Test base model
-    # predictions_base = classifier.test(model_path=f"distilbert-base-uncased", test_data=test_data)
-    # results_base = classifier.compute_metrics(predictions_base)
-    # print("Base Model Results:", results_base)
-
     # Fine-tune model
     classifier.fine_tune(output_dir=output_dir,
                          train_data=train_data, val_data=val_data)
@@ -93,10 +88,6 @@ def test_dl_model():
     # Test fine-tuned model
     predictions = classifier.test(test_data=test_data)
     results = classifier.compute_metrics(predictions)
-
-    preds = predictions.predictions.tolist()
-    with open("pred.json", 'w') as f:
-        json.dump(preds, f, indent=4)
 
     show_metrics(results, output_dir, save=True)
     save_predictions(output_dir, classifier, test_data,

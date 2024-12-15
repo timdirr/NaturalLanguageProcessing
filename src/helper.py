@@ -3,7 +3,7 @@ import pandas as pd
 import numpy as np
 import json
 import os
-from globals import DATA_PATH
+from globals import DATA_PATH, UNIQUE_GENRES
 
 
 def numpy_to_pandas(X, columns):
@@ -71,8 +71,11 @@ def get_lemmatized_converter():
 
 
 def load_genres():
-    with open(os.path.join(DATA_PATH, 'genres.json'), 'r') as f:
-        genres = json.load(f)
+    try:
+        with open(os.path.join(DATA_PATH, 'genres.json'), 'r') as f:
+            genres = json.load(f)
+    except FileNotFoundError:
+        genres = UNIQUE_GENRES
     return genres
 
 

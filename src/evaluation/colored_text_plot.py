@@ -11,7 +11,7 @@ import numpy as np
 from classifier.base import MultiLabelClassifier
 from evaluation.utils import get_feature_importances
 from globals import DATA_PATH, EXPORT_PATH
-from helper import pandas_ndarray_series_to_numpy
+from helper import pandas_ndarray_series_to_numpy, load_genres
 from preprocess.dataloader import load_stratified_data
 from text_modelling.modelling import BagOfWords, WordEmbeddingModel
 
@@ -114,8 +114,7 @@ def get_color_by_score(score):
 
 def save_colored_descriptions(clf, text_model, descriptions, predicted_genres_list, path, good_example=True):
     feat_impts = get_feature_importances(clf)
-    with open(os.path.join(DATA_PATH, "genres.json"), 'r') as f:
-        all_genres = json.load(f)
+    all_genres = load_genres()
 
     if len(feat_impts) == 0:
         log.warning("Model does not have attribute for feature importance. Cannot plot colored descriptions.")

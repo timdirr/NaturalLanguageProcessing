@@ -18,12 +18,12 @@ First, the quantitative results are presented as an overview of the classifiers 
 
 The results indicate that the SVM classifier has a high recall but lower precision, suggesting it is good at identifying relevant instances but also includes more false positives. Logistic Regression with Bag of Words shows a balanced performance with the highest Jaccard score among non-DL models.
 
-## Quantitative results
+## Quantitative Analysis
 Further, we compared the "good" predictions with "bad" predictions based on the jaccard score. To give a better overview we include plots about the genre occurance as well as a co-occurance matrix, to give a overview of the class distribution.
 
 <p>
-  <img src="./images/cooccurrence_matrix.png" title="Co-occurrence matrix" width="480" />
-  <img src="./images/genre_distribution.png" width="480" />
+  <img src="./images/cooccurrence_matrix.png" title="Co-occurrence matrix" width="550" />
+  <img src="./images/genre_distribution.png" width="550" />
 </p>
 
 Taking a look at the two plots above one can see that we tend to have some strong class imbalance towards the Drama genre. Additionally, this genre tends to occur quite often with other genres. 
@@ -48,7 +48,7 @@ Below, some wrongly predicted samples can be seen.
 * *"In an excavation in Saudi Arabia, professor Albert Wombot discovers an ancient object of mysterious origins, and hidden within is a powerful secret. After his discovery the professor is brutally murdered and the secret of his mysterious object seems lost forever. [...] But what Sean does not know is that Miklo's has a dark secret of his own, he is a vampire, and his journey through immortality lies in the hands of Sean and the discovery of the professors secret."*
   * **Labels**: ['Horror']
   * **Predicted**: ['Mystery']
-  * **Note**: Both predictions seem reasonable, as the distinction between Horror and Mystery is subtle. These genres often co-occur, and the keyword "mysterious" is present in the description.
+  * **Note**: Both predictions seem reasonable, as the distinction between Horror and Mystery is subtle here. These genres often co-occur, and the keyword "mysterious" is present in the description.
 
 * *"The adventure of a female reporter in the 1890s."*
   * **Labels**: ['Romance']
@@ -97,7 +97,7 @@ Below, some wrongly predicted samples can be seen.
 ### Supportive Plots
 In the plot below, one can see that there is a correlation between the average jaccard score and the amount of samples per label. This shows that the class imbalance has a strong effect on the performance.
 <p>
-  <img src="./images/samples_score_genre.jpeg" title="Co-occurrence matrix" width="480" />
+  <img src="./images/metrics_per_genre_distribution_lr.svg" width="800" />
 </p>
 
 Also, please refer to the feature importance plots in the [images](/images) folder. These are the words scaled by the repective learned weights of the logistic regression classifier.

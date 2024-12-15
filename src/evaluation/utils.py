@@ -6,15 +6,15 @@ from classifier.base import MultiLabelClassifier
 
 
 def prepare_evaluate(classifier_name, model_name):
-    dir_path = os.path.join(EXPORT_PATH, f"evluation_{classifier_name}_{model_name}")
+    if classifier_name == "MovieGenreClassifier":
+        model_name = "raw_text"
+    dir_path = os.path.join(EXPORT_PATH, f"evaluation_{classifier_name}_{model_name}")
     if not os.path.exists(dir_path):
         os.makedirs(dir_path)
 
     log.info(f"Evaluating classifier {classifier_name} with {model_name}")
 
     return dir_path
-
-
 
 
 def get_feature_importances(clf: MultiLabelClassifier):
@@ -35,12 +35,13 @@ def get_feature_importances(clf: MultiLabelClassifier):
         for est in estimators:
             # ndarray of shape (1, n_features)
             feat_impts.append(est.coef_[0])
-
+            
     elif hasattr(estimators[0], 'feature_importances_'):
         log.info("Extracting feature importances from feature_importances_ attribute.")
         for est in estimators:
             # ndarray of shape (n_features,)
             feat_impts.append(est.feature_importances_)
+            
     elif hasattr(estimators[0], 'feature_log_prob_'):
         log.info("Extracting feature importances from feature_log_prob_ attribute.")
         for est in estimators:
