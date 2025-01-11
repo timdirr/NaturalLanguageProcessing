@@ -206,3 +206,4 @@ def clean_data(df, save_intermediate=False):
     log.info('Cleaned data: \n%s', df_clean.head())
 
     return df_merged
+

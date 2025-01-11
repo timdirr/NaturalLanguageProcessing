@@ -9,6 +9,7 @@ from typing import Union
 from globals import DATA_PATH, EXPORT_PATH, SEED, MODEL_PATH,  UNIQUE_GENRES
 from helper import pandas_ndarray_series_to_numpy, load_genres
 from preprocess.dataloader import load_stratified_data
+from preprocess.data_manager import DataManager
 from classifier.base import MultiLabelClassifier
 from classifier.dl import MovieGenreClassifier
 from text_modelling.modelling import BagOfWords, WordEmbeddingModel, Word2VecModel
@@ -62,7 +63,7 @@ def evaluate(X: np.ndarray,
              ytrue: np.ndarray,
              classifier: MultiLabelClassifier,
              text_model: Union[BagOfWords, WordEmbeddingModel],
-             lemmatized: bool,
+             model: DataManager,
              features: bool):
     '''
     Wrapper function to analyse a trained model. Computes a set of matrices and plots
@@ -83,9 +84,9 @@ def evaluate(X: np.ndarray,
         classifier_name = type(classifier.multi_output_clf_.estimators_[0]).__name__
         model_name = type(text_model.model).__name__
 
-    dir_path = prepare_evaluate(classifier_name, model_name)
+    dir_path = prepare_evaluate(classifier_name, model_name, model)
     metrics = compute_metrics(ytrue, ypred, metrics_names=['jaccard', 'hamming', 'precision', 'recall', 'at_least_one', 'at_least_two'])
-    metrics["lemmatized"] = lemmatized
+    metrics["lemmatized"] = model.lemmatized
     log.info(f"Metrics:\n {metrics}")
 
     if features and classifier_name != "MovieGenreClassifier":
@@ -106,17 +107,16 @@ def evaluate(X: np.ndarray,
         json.dump(metrics, file, indent=4)
 
 
-def fit_predict(classifier, text_model, lemmatized=False, fine_tune=False):
+def fit_predict(classifier, text_model, manager: DataManager, fine_tune=False):
     # load stratified data
     _, test, dev = load_stratified_data()
 
-    # depending on model and classifier, lemmatized input data may be beneficial
-    if lemmatized:
-        X_dev, y_dev = dev["lemmatized_description"].to_numpy(), pandas_ndarray_series_to_numpy(dev["genre"])
-        X_test, y_test = test["lemmatized_description"].to_numpy(), pandas_ndarray_series_to_numpy(test["genre"])
-    else:
-        X_dev, y_dev = dev["description"].to_numpy(), pandas_ndarray_series_to_numpy(dev["genre"])
-        X_test, y_test = test["description"].to_numpy(), pandas_ndarray_series_to_numpy(test["genre"])
+    manager.test = test
+    manager.dev = dev
+    X_dev, y_dev = manager.dev
+    X_test, y_test = manager.test
+
+    print(len(y_test))
 
     if type(classifier).__name__ == "MovieGenreClassifier":
         output_dir = os.path.join(MODEL_PATH, "distilbert_movie_genres")
@@ -139,7 +139,7 @@ def fit_predict(classifier, text_model, lemmatized=False, fine_tune=False):
         classifier = classifier.fit(transformed_data, y_dev)
         y_pred = classifier.predict_at_least_1(text_model.transform(X_test))
 
-    return X_test, y_pred, y_test, classifier, text_model
+    return X_test, y_pred, y_test, classifier, text_model, manager
 
 
 def run_eval(predict=True, eval=True):
@@ -147,24 +147,17 @@ def run_eval(predict=True, eval=True):
     # model = Word2VecModel(min_count=1)
     # model.load_pretrained('word2vec-google-news-300')
 
-    # X, y_pred, y_true, classifier, text_model = fit_predict(MultiLabelClassifier("lreg", n_jobs=-1), model, lemmatized=False)
-    # evaluate(X, y_pred, y_true, classifier, model, lemmatized=False,  features=False)
+    X, y_pred, y_true, classifier, text_model, manager = fit_predict(MultiLabelClassifier("lreg", n_jobs=-1),
+                                                            BagOfWords("count", ngram_range=(1, 1)),
+                                                            DataManager(lemmatized=True, prune=False))
+    evaluate(X, y_pred, y_true, classifier, text_model, manager, features=True)
 
-    X, y_pred, y_true, classifier, text_model = fit_predict(MultiLabelClassifier("lreg", n_jobs=-1), BagOfWords("count", ngram_range=(1, 1)), lemmatized=True)
-    evaluate(X, y_pred, y_true, classifier, text_model, lemmatized=True,  features=True)
-    # X, y_pred, y_true, classifier, text_model = fit_predict(MultiLabelClassifier("knn", n_jobs=-1), BagOfWords("count", ngram_range=(1, 1)), lemmatized=True)
-    # evaluate(X, y_pred, y_true, classifier, text_model, lemmatized=True,  features=False)
-    # X, y_pred, y_true, classifier, text_model = fit_predict(MultiLabelClassifier("svm"), BagOfWords("count", ngram_range=(1, 1)), lemmatized=True)
-    # evaluate(X, y_pred, y_true, classifier, text_model, lemmatized=True,  features=False)
+    X, y_pred, y_true, classifier, text_model, manager = fit_predict(MultiLabelClassifier("lreg", n_jobs=-1),
+                                                            BagOfWords("count", ngram_range=(1, 1)),
+                                                            DataManager(lemmatized=True, prune=True))
+    evaluate(X, y_pred, y_true, classifier, text_model, manager, features=True)
 
-    # X, y_pred, y_true, classifier, text_model = fit_predict(MultiLabelClassifier("lreg", n_jobs=-1), BagOfWords("tf-idf", ngram_range=(1, 1)), lemmatized=True)
-    # evaluate(X, y_pred, y_true, classifier, text_model, lemmatized=True,  features=True)
-    # X, y_pred, y_true, classifier, text_model = fit_predict(MultiLabelClassifier("knn", n_jobs=-1), BagOfWords("tf-idf", ngram_range=(1, 1)), lemmatized=True)
-    # evaluate(X, y_pred, y_true, classifier, text_model, lemmatized=True,  features=False)
-
-    # X, y_pred, y_true, classifier, text_model = fit_predict(MultiLabelClassifier("svm"), BagOfWords("tf-idf", ngram_range=(1, 1)), lemmatized=True)
-    # evaluate(X, y_pred, y_true, classifier, text_model, lemmatized=True,  features=False)
-    
+    """
     X, y_pred, y_true, classifier, text_model = fit_predict(
         MovieGenreClassifier(
             model_name="distilbert-base-uncased", unique_genres=UNIQUE_GENRES, num_labels=len(UNIQUE_GENRES),
@@ -172,10 +165,13 @@ def run_eval(predict=True, eval=True):
         BagOfWords("count", ngram_range=(1, 1)),
         lemmatized=False,
         fine_tune=False)
-    evaluate(X, y_pred, y_true, classifier, text_model, lemmatized=False,  features=False)
+    """
+    #evaluate(X, y_pred, y_true, classifier, text_model, lemmatized=False,  features=False)
 
     # comparative_evaluation(BagOfWords("tf-idf", ngram_range=(1, 1)))
 
 
 if __name__ == "__main__":
     run_eval()
+
+#%%

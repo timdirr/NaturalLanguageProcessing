@@ -5,10 +5,10 @@ from globals import DATA_PATH, EXPORT_PATH
 from classifier.base import MultiLabelClassifier
 
 
-def prepare_evaluate(classifier_name, model_name):
+def prepare_evaluate(classifier_name, model_name, model):
     if classifier_name == "MovieGenreClassifier":
         model_name = "raw_text"
-    dir_path = os.path.join(EXPORT_PATH, f"evaluation_{classifier_name}_{model_name}")
+    dir_path = os.path.join(EXPORT_PATH, f"evaluation_{classifier_name}_{model_name}_{str(model)}")
     if not os.path.exists(dir_path):
         os.makedirs(dir_path)
 
