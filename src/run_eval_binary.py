@@ -35,7 +35,8 @@ def evaluate(X: np.ndarray,
              classifier: MultiLabelClassifier,
              text_model: Union[BagOfWords, WordEmbeddingModel],
              model: DataManager,
-             features: bool):
+             features: bool,
+             genre: str = None):
     '''
     Wrapper function to analyse a trained model. Computes a set of matrices and plots
     Args:
@@ -52,7 +53,7 @@ def evaluate(X: np.ndarray,
     classifier_name = type(classifier).__name__
     model_name = type(text_model.model).__name__
 
-    dir_path = prepare_evaluate(classifier_name, model_name, model, binary=True)
+    dir_path = prepare_evaluate(classifier_name, model_name, model, genre=genre)
     metrics = compute_metrics(ytrue, ypred, metrics_names=['precision', 'recall', 'f1', 'accuracy'])
     metrics["lemmatized"] = model.lemmatized
     log.info(f"Metrics:\n {metrics}")
@@ -107,34 +108,18 @@ def fit_predict_binary_for_genre(classifier, text_model, manager: DataManager, g
     return X_test, y_pred, y_test, classifier, text_model, manager
 
 
-def run_eval(predict=True, eval=True):
+def run_eval(predict=True, eval=True, genre=None):
 
     # model = Word2VecModel(min_count=1)
     # model.load_pretrained('word2vec-google-news-300')
 
     X, y_pred, y_true, classifier, text_model, manager = fit_predict_binary_for_genre(LogisticRegression(),
                                                                                       BagOfWords("count", ngram_range=(1, 1)),
-                                                                                      DataManager(lemmatized=True, prune=False))
-    evaluate(X, y_pred, y_true, classifier, text_model, manager, features=True)
-
-    X, y_pred, y_true, classifier, text_model, manager = fit_predict_binary_for_genre(LogisticRegression(),
-                                                                                      BagOfWords("count", ngram_range=(1, 1)),
-                                                                                      DataManager(lemmatized=True, prune=True))
-    evaluate(X, y_pred, y_true, classifier, text_model, manager, features=True)
-
-    """
-    X, y_pred, y_true, classifier, text_model = fit_predict(
-        MovieGenreClassifier(
-            model_name="distilbert-base-uncased", unique_genres=UNIQUE_GENRES, num_labels=len(UNIQUE_GENRES),
-            seed=SEED),
-        BagOfWords("count", ngram_range=(1, 1)),
-        lemmatized=False,
-        fine_tune=False)
-    """
-    # evaluate(X, y_pred, y_true, classifier, text_model, lemmatized=False,  features=False)
-
-    # comparative_evaluation(BagOfWords("tf-idf", ngram_range=(1, 1)))
+                                                                                      DataManager(lemmatized=True, prune=False),
+                                                                                      genre=genre)
+    evaluate(X, y_pred, y_true, classifier, text_model, manager, features=True, genre=genre)
 
 
 if __name__ == "__main__":
-    run_eval()
+    # get genre from command line args
+    run_eval(genre="Romance")

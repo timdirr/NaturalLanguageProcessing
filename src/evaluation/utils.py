@@ -5,18 +5,18 @@ from globals import DATA_PATH, EXPORT_PATH
 from classifier.base import MultiLabelClassifier
 
 
-def prepare_evaluate(classifier_name, model_name, model, binary=False):
+def prepare_evaluate(classifier_name, model_name, model, genre=None):
     if classifier_name == "MovieGenreClassifier":
         model_name = "raw_text"
-    if binary:
-        dir_path = os.path.join(EXPORT_PATH, f"evaluation_{classifier_name}_{model_name}_binary_{str(model)}")
+    if genre:
+        dir_path = os.path.join(EXPORT_PATH, f"evaluation_{classifier_name}_{model_name}_binary_{str(model)}_{genre}")
     else:
         dir_path = os.path.join(EXPORT_PATH, f"evaluation_{classifier_name}_{model_name}_{str(model)}")
     if not os.path.exists(dir_path):
         os.makedirs(dir_path)
 
-    if binary:
-        log.info(f"Evaluating binary classifier {classifier_name} with {model_name}")
+    if genre:
+        log.info(f"Evaluating binary classifier {classifier_name} for {genre} Genre with {model_name}")
     else:
         log.info(f"Evaluating classifier {classifier_name} with {model_name}")
 

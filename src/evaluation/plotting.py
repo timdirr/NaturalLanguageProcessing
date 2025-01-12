@@ -423,9 +423,8 @@ def plot_bad_qualitative_results_binary(X,
     # extract predictions with very bad performance
     probabilites = clf.predict_proba(text_model.transform(X))
     sorted_combined = np.array(sorted(list(zip(probabilites[:, 1], y_true, y_pred, X)), key=lambda x: (1 - x[0]) + x[1]))
-    # get descriptions
     samples = np.concatenate([sorted_combined[-n_samples//2:], sorted_combined[:n_samples//2]])
-    print(samples)
+
     predicted_label = samples[:, 2]
     true_label = samples[:, 1]
     descriptions = samples[:, 3]
@@ -440,17 +439,6 @@ def plot_bad_qualitative_results_binary(X,
         "Probability": probas,
         "Description": descriptions
     })
-
-    try:
-        save_table_as_image(results, os.path.join(path, "bad_qualitative_results.png"))
-    except:
-        log.error("Error saving table as image")
-
-    results.to_csv(os.path.join(path, "bad_qualitative_results.csv"), index=False)
-    try:
-        save_colored_descriptions(clf, text_model, descriptions, predicted_label, path, good_example=False)
-    except:
-        log.error("Error saving colored descriptions")
 
 
 def plot_good_qualitative_results_binary(X,
@@ -467,9 +455,8 @@ def plot_good_qualitative_results_binary(X,
     # extract predictions with very good performance
     probabilites = clf.predict_proba(text_model.transform(X))
     sorted_combined = np.array(sorted(list(zip(probabilites[:, 1], y_true, y_pred, X)), key=lambda x: x[0] + x[1]))
-    # get descriptions
     samples = np.concatenate([sorted_combined[-n_samples//2:], sorted_combined[:n_samples//2]])
-    print(samples)
+
     predicted_label = samples[:, 2]
     true_label = samples[:, 1]
     descriptions = samples[:, 3]
@@ -484,15 +471,6 @@ def plot_good_qualitative_results_binary(X,
         "Probability": probas,
         "Description": descriptions
     })
-    try:
-        save_table_as_image(results, os.path.join(path, "good_qualitative_results.png"))
-    except:
-        log.error("Error saving table as image")
-    results.to_csv(os.path.join(path, "good_qualitative_results.csv"), index=False)
-    try:
-        save_colored_descriptions(clf, text_model, descriptions, predicted_label, path)
-    except:
-        log.error("Error saving colored descriptions")
 
 
 def plot_metrics_per_genre_distribution(y_true: np.ndarray,
