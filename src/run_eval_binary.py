@@ -29,36 +29,6 @@ log.basicConfig(level=log.INFO,
                 datefmt='%Y-%m-%d %H:%M:%S')
 
 
-def analyse_features(clf: MultiLabelClassifier,
-                     text_model: Union[BagOfWords, WordEmbeddingModel],
-                     top_k: int = 10,
-                     path: str = None):
-    '''
-    Analyse features for given model and text model. Saves wordclouds and feature importances for each genre under path.
-
-    Args:
-        model (MultiLabelClassifier): Model for which feature importances are to be computed.
-
-        text_model (Union[BagOfWords, WordEmbeddingModel]): Text model used to vectorize text data.
-
-        path (str): Path to directory to save results in.
-
-        top_k (int): Number of top features to consider for each genre. Default: 10.
-    '''
-
-    feature_names = text_model.get_feature_names_out()
-    feat_impts = get_feature_importances(clf)
-    classes = load_genres()
-
-    for i, (genre, feat_impt) in enumerate(zip(classes, feat_impts)):
-        indices = np.argsort(feat_impt)[::-1][:top_k]
-        feat_names = feature_names[indices]
-        importances = np.sort(feat_impt)[::-1][:top_k]
-
-        plot_feature_importances(feat_names, importances, np.max(feat_impts), genre, path)
-        plot_wordcloud(feat_names, importances, genre, path)
-
-
 def evaluate(X: np.ndarray,
              ypred: np.ndarray,
              ytrue: np.ndarray,
