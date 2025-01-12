@@ -35,10 +35,12 @@ def load_raw_data():
     return df
 
 
-def load_stratified_data(stop=None):
-    log.info(f"Checking if all initial data is loaded...")
+def load_stratified_data(stop=None, recall=False):
+    if not recall:
+        log.info(f"Checking if all initial data is loaded...")
     download()
-    log.info(f"Loading stratified data splits...")
+    if not recall:
+        log.info(f"Loading stratified data splits...")
     SPLIT_FOLDER_PATH = os.path.join(DATA_PATH, SPLIT_FOLDER)
     TEST_FILE_PATH = os.path.join(SPLIT_FOLDER_PATH, TEST_FILE)
     TRAIN_FILE_PATH = os.path.join(SPLIT_FOLDER_PATH, TRAIN_FILE)
@@ -49,7 +51,8 @@ def load_stratified_data(stop=None):
         test = __load_csv(TEST_FILE_PATH, converters=converter)
         train = __load_csv(TRAIN_FILE_PATH, converters=converter)
         dev = __load_csv(DEV_FILE_PATH, converters=converter)
-        log.info(f"Splits found and loaded.")
+        if not recall:
+            log.info(f"Splits found and loaded.")
         return train, test, dev
 
     log.info(f"No splits found, creating stratified splits...")
@@ -82,7 +85,7 @@ def load_stratified_data(stop=None):
         __save_csv(DEV_FILE_PATH, dev)
 
     log.info(f"Stratified splits created and saved.")
-    return train, test, dev
+    return load_stratified_data()
 
 
 def conllu2df(filename, stop=None):
