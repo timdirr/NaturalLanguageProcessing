@@ -68,7 +68,7 @@
             -   [x] Random Forest
             -   [x] MLP
 
--   [ ] Evaluation Script 
+-   [ ] Evaluation Script
 
     -   [x] General Metrics
     -   [x] Bar Feature Importance (Filip)
@@ -81,70 +81,90 @@
     -   Correlation matrix per row accoress classifiers (Sebastian)
     -   Plot embeddings per description in 2D space (PCA, t-SNE), color based on classes (Daniel)
     -   Random Guess
-        -   {'jaccard': 2.635, 
+        -   {'jaccard': 2.635,
             'hamming': 0.102,
             'accuracy': 0.0,
             'f1': 4.294e-05,
-            'precision': 3.904e-05, 
+            'precision': 3.904e-05,
             'recall': 4.880e-05,
             'at_least_one': 0.0001}
 
-
 -   [ ] Run Experiments (Tim)
-    -   [ ] BOW / Word2Vec + 
+
+    -   [ ] BOW / Word2Vec +
         -   [ ] Small Decision Tree (Visualize Tree)
         -   [ ] Logistic Regression
         -   [ ] Naive Bayes
         -   [ ] Support Vector Machine
 
-
 -   [ ] Deep Learning Approach (Lecture on 22.11) (Daniel, Filip)
+
     -   [ ] Simple MLP on TextModelling
-    -   [X] Finetune pretrained LLM (DistilBERT from Huggingface) on RAW dataset
+    -   [x] Finetune pretrained LLM (DistilBERT from Huggingface) on RAW dataset
 
     -   [ ] Handle Division by Zero and Low Support Classes
+
         -   [ ] Investigate division by zero and precision = 0.00 issues in low support classes.
         -   [ ] Potential solutions:
             -   [ ] Get rid of low support classes?
             -   [ ] Adjust weights of imbalanced classes.
                 -   [ ] Implement a **CustomTrainer**. Refer to Huggingface discussion: [CustomTrainer Discussion](https://discuss.huggingface.co/t/how-can-i-use-class-weights-when-training/1067).
                 -   [ ] Use `BCEWithLogitsLoss` or another suitable custom loss function.
-        -   [ ]  Run the model with more data to improve class representation.
+        -   [ ] Run the model with more data to improve class representation.
 
     -   [ ] Low Support Classes Explanation
+
         -   [ ] Document specific low support classes (e.g., "music," "musical," "western," "sport", "film-noir").
         -   [ ] Address issues related to these classes using one or more of the strategies above.
 
-    -   [X] Threshold Tuning
+    -   [x] Threshold Tuning
         -   Prob. threshold of 0.425 mproves recall while keeping precision.
         -   Select the highest probability class if no others meet the threshold.
         -   Improves performance by a few percentage points.
 
 -   [ ] Remove stop variable from start split load (just for testing so we dont need to split the whole data)
 
-
 ## Final TODO Milestone II:
 
-- [ ] Short overview of what we tried (classifiers and modelling approaches). 
-- [ ] Basic scores per modelling + classifier (confusion matrix per class, etc)
-- [ ] Take best classifier(s) and describe what we found, where is the model good and where is it bad? 
-  - Feature importance
-  - Example of good and bad examples (text)
-  - Confusion matrix and other plots
+-   [ ] Short overview of what we tried (classifiers and modelling approaches).
+-   [ ] Basic scores per modelling + classifier (confusion matrix per class, etc)
+-   [ ] Take best classifier(s) and describe what we found, where is the model good and where is it bad?
+    -   Feature importance
+    -   Example of good and bad examples (text)
+    -   Confusion matrix and other plots
 
 ## Task for Final
-- [ ] Drop Nonsense descriptions (how to detect) (maybe syntax analysis)
-- [ ] Maybe drop to short/long description
-- [ ] remove common shared words across classes (for bOw and stuff like this)
-- [ ] ??
+
+-   [ ] Drop Nonsense descriptions (how to detect) (maybe syntax analysis)
+-   [ ] Maybe drop to short/long description
+-   [ ] remove common shared words across classes (for bOw and stuff like this)
+-   [ ] ??
 
 what I got from the meeting
-- that we are not bound to any dataformat
-- There should be a way to read conllu efficiently without reading all the information into memory that we dont need 
-- it is not elegant to switch between dataformats only because one contains information we do not need 
-- Analysis of system is important, not only to get one running
-- Experiments with baseline, just printing e.g. f-score useless
-- QUALITATIVE ANALYSIS!!
-- "Looking at data and thinking about it task"
-- Where are errors, with what does the model struggle -> What to do about that -> Custom Solutions
-- 2 paragraphs of analysis, (Mardown file or whatever)
+
+-   that we are not bound to any dataformat
+-   There should be a way to read conllu efficiently without reading all the information into memory that we dont need
+-   it is not elegant to switch between dataformats only because one contains information we do not need
+-   Analysis of system is important, not only to get one running
+-   Experiments with baseline, just printing e.g. f-score useless
+-   QUALITATIVE ANALYSIS!!
+-   "Looking at data and thinking about it task"
+-   Where are errors, with what does the model struggle -> What to do about that -> Custom Solutions
+-   2 paragraphs of analysis, (Mardown file or whatever)
+
+## Final Meeting
+
+-   [ ] Normalize correlation matrix by total amount of movies in the certain genre
+-   [ ] After removing drama: analyze the genres that profited the most/worst and check for correlation and common keywords. Hypothesis: low correlation and high common keywords (similarity) profit the most (Daniel)
+-   [ ] Further analysis in regards to removing drama and maybe other genres (like romance) for DL model but also logistic regression (Daniel)
+-   [ ] Binary classifiers for certain genres and do some analysis if and why it did get better/or not (Filip/Tim)
+-   [ ] Remove strange descriptions and also again take a look at performance over description length and clip out certain samples (< or > certain length) (Sebastian)
+-   [ ] Take a look at the dip in performance that happens somewhere at description length 400 (Sebastian)
+-   [ ] Oversampling techniques for minority classes, or SMOTE (Daniel)
+-   [ ] Crawl IMDB for reviews per movie
+-   [ ] We have title for movies -> add them
+-   [ ] Apply LIME to deep learning model
+-   [ ] CODE CLEANUP and comments (remove legacy code, merge certain files and maybe move around methods), check for config.json if all needed parameters are supported
+-   [ ] EVERYONE: when you do stuff, start writing down thoughts and insights for the management summary
+-   [ ] Update readme and add explanation of repository structure and explain how to reproduce results
+-   [ ] We could also do some smart stopword removal

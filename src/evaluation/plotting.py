@@ -11,7 +11,7 @@ from collections import defaultdict
 import matplotlib.pyplot as plt
 import numpy as np
 import textwrap
-from evaluation.metrics import compute_metrics, confusion_matrix, score_per_sample
+from evaluation.metrics import compute_metrics, confusion_matrix, get_scorer, score_per_sample
 from evaluation.colored_text_plot import save_colored_descriptions
 from helper import decode_genres, load_genres
 from text_modelling.modelling import BagOfWords, WordEmbeddingModel
@@ -374,6 +374,125 @@ def plot_metrics_per_length(X: np.ndarray,
     plt.tight_layout()
     plt.savefig(os.path.join(path, 'metrics_per_length.png'))
     plt.close()
+
+
+def plot_metrics_per_length_binary(X: np.ndarray,
+                                   y_true: np.ndarray,
+                                   y_pred: np.ndarray,
+                                   path: str,
+                                   metric: str = 'jaccard'):
+    '''
+    Plots metrics per length of the input text. Saved under path/metrics_per_length.png
+    '''
+
+    log.info("Plotting metrics per length...")
+    path = os.path.join(path, 'metrics_per_length')
+    if not os.path.exists(path):
+        os.makedirs(path)
+    # sort x, y_true, y_pred by
+    lengths = np.array([len(text.split()) for text in X])
+    sorted_combined = np.array(sorted(list(zip(lengths, y_true, y_pred)), key=lambda x: x[0]))
+    # split into bins
+    bins = np.array_split(sorted_combined, 20, axis=0)
+
+    scorer = get_scorer(metric)
+    metrics_per_bin = [scorer(b[:, 1], b[:, 2]) for b in bins]
+    bin_ranges = [f"{int(b[0][0])}-{int(b[-1][0])}" for b in bins]
+
+    plt.figure(figsize=(20, 5))
+    plt.bar(bin_ranges, metrics_per_bin)
+    plt.xlabel('Length of input text')
+    plt.ylabel('Average Score')
+    plt.title('Metrics per length of input text')
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+    plt.savefig(os.path.join(path, 'metrics_per_length.png'))
+
+
+def plot_bad_qualitative_results_binary(X,
+                                        y_true: np.ndarray,
+                                        y_pred: np.ndarray,
+                                        clf: MultiLabelClassifier,
+                                        text_model: Union[BagOfWords, WordEmbeddingModel],
+                                        n_samples: int = 30,
+                                        path: str = None):
+
+    path = os.path.join(path, "qualitative_results")
+    if not os.path.exists(path):
+        os.makedirs(path)
+    # extract predictions with very bad performance
+    probabilites = clf.predict_proba(text_model.transform(X))
+    sorted_combined = np.array(sorted(list(zip(probabilites[:, 1], y_true, y_pred, X)), key=lambda x: (1 - x[0]) + x[1]))
+    # get descriptions
+    samples = np.concatenate([sorted_combined[-n_samples//2:], sorted_combined[:n_samples//2]])
+    print(samples)
+    predicted_label = samples[:, 2]
+    true_label = samples[:, 1]
+    descriptions = samples[:, 3]
+    probas = samples[:, 0]
+
+    if not isinstance(descriptions[0], str):
+        descriptions = np.array(list(map(' '.join, descriptions)))
+
+    results = pd.DataFrame({
+        "True Labels": true_label,
+        "Predicted Labels": predicted_label,
+        "Probability": probas,
+        "Description": descriptions
+    })
+
+    try:
+        save_table_as_image(results, os.path.join(path, "bad_qualitative_results.png"))
+    except:
+        log.error("Error saving table as image")
+
+    results.to_csv(os.path.join(path, "bad_qualitative_results.csv"), index=False)
+    try:
+        save_colored_descriptions(clf, text_model, descriptions, predicted_label, path, good_example=False)
+    except:
+        log.error("Error saving colored descriptions")
+
+
+def plot_good_qualitative_results_binary(X,
+                                         y_true: np.ndarray,
+                                         y_pred: np.ndarray,
+                                         clf: MultiLabelClassifier,
+                                         text_model: Union[BagOfWords, WordEmbeddingModel],
+                                         n_samples: int = 30,
+                                         path: str = None):
+
+    path = os.path.join(path, "qualitative_results")
+    if not os.path.exists(path):
+        os.makedirs(path)
+    # extract predictions with very good performance
+    probabilites = clf.predict_proba(text_model.transform(X))
+    sorted_combined = np.array(sorted(list(zip(probabilites[:, 1], y_true, y_pred, X)), key=lambda x: x[0] + x[1]))
+    # get descriptions
+    samples = np.concatenate([sorted_combined[-n_samples//2:], sorted_combined[:n_samples//2]])
+    print(samples)
+    predicted_label = samples[:, 2]
+    true_label = samples[:, 1]
+    descriptions = samples[:, 3]
+    probas = samples[:, 0]
+
+    if not isinstance(descriptions[0], str):
+        descriptions = np.array(list(map(' '.join, descriptions)))
+
+    results = pd.DataFrame({
+        "True Labels": true_label,
+        "Predicted Labels": predicted_label,
+        "Probability": probas,
+        "Description": descriptions
+    })
+    try:
+        save_table_as_image(results, os.path.join(path, "good_qualitative_results.png"))
+    except:
+        log.error("Error saving table as image")
+    results.to_csv(os.path.join(path, "good_qualitative_results.csv"), index=False)
+    try:
+        save_colored_descriptions(clf, text_model, descriptions, predicted_label, path)
+    except:
+        log.error("Error saving colored descriptions")
 
 
 def plot_metrics_per_genre_distribution(y_true: np.ndarray,
