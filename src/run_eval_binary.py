@@ -35,8 +35,8 @@ def evaluate(X: np.ndarray,
              classifier: MultiLabelClassifier,
              text_model: Union[BagOfWords, WordEmbeddingModel],
              model: DataManager,
-             features: bool,
-             genre: str = None):
+             genre: str = None,
+             balanced: bool = True):
     '''
     Wrapper function to analyse a trained model. Computes a set of matrices and plots
     Args:
@@ -53,8 +53,8 @@ def evaluate(X: np.ndarray,
     classifier_name = type(classifier).__name__
     model_name = type(text_model.model).__name__
 
-    dir_path = prepare_evaluate(classifier_name, model_name, model, genre=genre)
-    metrics = compute_metrics(ytrue, ypred, metrics_names=['precision', 'recall', 'f1', 'accuracy'])
+    dir_path = prepare_evaluate(classifier_name, model_name, model, genre=genre, balanced=balanced)
+    metrics = compute_metrics(ytrue, ypred, metrics_names=['precision', 'recall', 'f1', 'accuracy', 'balanced_accuracy'])
     metrics["lemmatized"] = model.lemmatized
     log.info(f"Metrics:\n {metrics}")
 
@@ -68,7 +68,7 @@ def evaluate(X: np.ndarray,
         json.dump(metrics, file, indent=4)
 
 
-def fit_predict_binary_for_genre(classifier, text_model, manager: DataManager, genre="Comedy", fine_tune=False):
+def fit_predict_binary_for_genre(classifier, text_model, manager: DataManager, genre="Comedy", balanced=True):
     # load stratified data
     _, test, dev = load_stratified_data()
 
@@ -83,23 +83,18 @@ def fit_predict_binary_for_genre(classifier, text_model, manager: DataManager, g
     y_test = y_test[:, genre_idx]
     y_dev = y_dev[:, genre_idx]
 
-    # Balance the dataset
-    y_dev_pos = np.argwhere(y_dev == 1)
-    y_dev_neg = np.argwhere(y_dev == 0)
-    y_dev_neg = y_dev_neg[:len(y_dev_pos)]
+    # Balance the train set
+    if balanced:
+        y_dev_pos = np.argwhere(y_dev == 1)
+        y_dev_neg = np.argwhere(y_dev == 0)
+        y_dev_neg = y_dev_neg[:len(y_dev_pos)]
 
-    y_test_pos = np.argwhere(y_test == 1)
-    y_test_neg = np.argwhere(y_test == 0)
-    y_test_neg = y_test_neg[:len(y_test_pos)]
-
-    y_dev = y_dev[np.concatenate([y_dev_pos, y_dev_neg]).flatten()]
-    X_dev = X_dev[np.concatenate([y_dev_pos, y_dev_neg]).flatten()]
-    y_test = y_test[np.concatenate([y_test_pos, y_test_neg]).flatten()]
-    X_test = X_test[np.concatenate([y_test_pos, y_test_neg]).flatten()]
+        y_dev = y_dev[np.concatenate([y_dev_pos, y_dev_neg]).flatten()]
+        X_dev = X_dev[np.concatenate([y_dev_pos, y_dev_neg]).flatten()]
 
     log.info(f"Genre: {genre}")
-    log.info(f"Length balanced train set: {len(y_dev)}")
-    log.info(f"Length balanced test set: {len(y_test)}")
+    log.info(f"Length train set: {len(y_dev)}")
+    log.info(f"Length test set: {len(y_test)}")
 
     transformed_data = text_model.fit_transform(X_dev)
     classifier = classifier.fit(transformed_data, y_dev)
@@ -113,13 +108,22 @@ def run_eval(predict=True, eval=True, genre=None):
     # model = Word2VecModel(min_count=1)
     # model.load_pretrained('word2vec-google-news-300')
 
+    # testing once with balanced data
     X, y_pred, y_true, classifier, text_model, manager = fit_predict_binary_for_genre(LogisticRegression(),
                                                                                       BagOfWords("count", ngram_range=(1, 1)),
                                                                                       DataManager(lemmatized=True, prune=False),
                                                                                       genre=genre)
-    evaluate(X, y_pred, y_true, classifier, text_model, manager, features=True, genre=genre)
+    evaluate(X, y_pred, y_true, classifier, text_model, manager, genre=genre)
+
+    # testing once with unbalanced data
+    X, y_pred, y_true, classifier, text_model, manager = fit_predict_binary_for_genre(LogisticRegression(),
+                                                                                      BagOfWords("count", ngram_range=(1, 1)),
+                                                                                      DataManager(lemmatized=True, prune=False),
+                                                                                      genre=genre,
+                                                                                      balanced=False)
+    evaluate(X, y_pred, y_true, classifier, text_model, manager, genre=genre, balanced=False)
 
 
 if __name__ == "__main__":
     # get genre from command line args
-    run_eval(genre="Romance")
+    run_eval(genre="War")
