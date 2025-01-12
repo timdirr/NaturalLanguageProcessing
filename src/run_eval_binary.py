@@ -53,7 +53,7 @@ def evaluate(X: np.ndarray,
     classifier_name = type(classifier).__name__
     model_name = type(text_model.model).__name__
 
-    dir_path = prepare_evaluate(classifier_name, model_name, model, genre=genre, balanced=balanced)
+    dir_path = prepare_evaluate(classifier_name, model_name, model, genre=genre, balanced_train=balanced)
     metrics = compute_metrics(ytrue, ypred, metrics_names=['precision', 'recall', 'f1', 'accuracy', 'balanced_accuracy'])
     metrics["lemmatized"] = model.lemmatized
     log.info(f"Metrics:\n {metrics}")
@@ -68,36 +68,40 @@ def evaluate(X: np.ndarray,
         json.dump(metrics, file, indent=4)
 
 
-def fit_predict_binary_for_genre(classifier, text_model, manager: DataManager, genre="Comedy", balanced=True):
+def fit_predict_binary_for_genre(classifier, text_model, manager: DataManager, genre="Comedy", balanced=True, dev=True):
     # load stratified data
-    _, test, dev = load_stratified_data()
+    if dev:
+        _, test, train = load_stratified_data()
+    else:
+        train, test, _ = load_stratified_data()
+        manager.train_set = 'full'
 
     genres = load_genres()
 
     genre_idx = genres.index(genre)
 
     manager.test = test
-    manager.dev = dev
-    X_dev, y_dev = manager.dev
+    manager.train = train
+    X_train, y_train = manager.train
     X_test, y_test = manager.test
     y_test = y_test[:, genre_idx]
-    y_dev = y_dev[:, genre_idx]
+    y_train = y_train[:, genre_idx]
 
     # Balance the train set
     if balanced:
-        y_dev_pos = np.argwhere(y_dev == 1)
-        y_dev_neg = np.argwhere(y_dev == 0)
-        y_dev_neg = y_dev_neg[:len(y_dev_pos)]
+        y_train_pos = np.argwhere(y_train == 1)
+        y_train_neg = np.argwhere(y_train == 0)
+        y_train_neg = y_train_neg[:len(y_train_pos)]
 
-        y_dev = y_dev[np.concatenate([y_dev_pos, y_dev_neg]).flatten()]
-        X_dev = X_dev[np.concatenate([y_dev_pos, y_dev_neg]).flatten()]
+        y_train = y_train[np.concatenate([y_train_pos, y_train_neg]).flatten()]
+        X_train = X_train[np.concatenate([y_train_pos, y_train_neg]).flatten()]
 
     log.info(f"Genre: {genre}")
-    log.info(f"Length train set: {len(y_dev)}")
+    log.info(f"Length train set: {len(y_train)}")
     log.info(f"Length test set: {len(y_test)}")
 
-    transformed_data = text_model.fit_transform(X_dev)
-    classifier = classifier.fit(transformed_data, y_dev)
+    transformed_data = text_model.fit_transform(X_train)
+    classifier = classifier.fit(transformed_data, y_train)
     y_pred = classifier.predict(text_model.transform(X_test))
 
     return X_test, y_pred, y_test, classifier, text_model, manager
@@ -112,7 +116,8 @@ def run_eval(predict=True, eval=True, genre=None):
     X, y_pred, y_true, classifier, text_model, manager = fit_predict_binary_for_genre(LogisticRegression(),
                                                                                       BagOfWords("count", ngram_range=(1, 1)),
                                                                                       DataManager(lemmatized=True, prune=False),
-                                                                                      genre=genre)
+                                                                                      genre=genre,
+                                                                                      balanced=True)
     evaluate(X, y_pred, y_true, classifier, text_model, manager, genre=genre)
 
     # testing once with unbalanced data

@@ -84,7 +84,7 @@ def evaluate(X: np.ndarray,
         classifier_name = type(classifier.multi_output_clf_.estimators_[0]).__name__
         model_name = type(text_model.model).__name__
 
-    dir_path = prepare_evaluate(classifier_name, model_name, model)
+    dir_path = prepare_evaluate(classifier_name, model_name, model, balanced_train=classifier.balanced_fitting)
     metrics = compute_metrics(ytrue, ypred, metrics_names=['jaccard', 'hamming', 'precision', 'recall', 'at_least_one', 'at_least_two'])
     metrics["lemmatized"] = model.lemmatized
     log.info(f"Metrics:\n {metrics}")
@@ -107,23 +107,24 @@ def evaluate(X: np.ndarray,
         json.dump(metrics, file, indent=4)
 
 
-def fit_predict(classifier, text_model, manager: DataManager, fine_tune=False):
-    # load stratified data
-    _, test, dev = load_stratified_data()
+def fit_predict(classifier, text_model, manager: DataManager, fine_tune=False, dev=True):
+    if dev:
+        _, test, train = load_stratified_data()
+    else:
+        train, test, _ = load_stratified_data()
+        manager.train_set = 'full'
 
     manager.test = test
-    manager.dev = dev
-    X_dev, y_dev = manager.dev
+    manager.train = train
+    X_train, y_train = manager.train
     X_test, y_test = manager.test
-
-    print(len(y_test))
 
     if type(classifier).__name__ == "MovieGenreClassifier":
         output_dir = os.path.join(MODEL_PATH, "distilbert_movie_genres")
-        X_dev = X_dev.reshape(-1, 1)
-        X_dev_train, y_dev_train, X_dev_val, y_dev_val = iterative_train_test_split(X_dev, y_dev, test_size=0.2)
-        train_data = pd.DataFrame({'description': X_dev_train.reshape(-1), 'genre': pd.Series(list(y_dev_train))})
-        val_data = pd.DataFrame({'description': X_dev_val.reshape(-1), 'genre': pd.Series(list(y_dev_val))})
+        X_train = X_train.reshape(-1, 1)
+        _X_train, _y_train, X_val, y_val = iterative_train_test_split(X_train, y_train, test_size=0.2)
+        train_data = pd.DataFrame({'description': _X_train.reshape(-1), 'genre': pd.Series(list(_y_train))})
+        val_data = pd.DataFrame({'description': X_val.reshape(-1), 'genre': pd.Series(list(y_val))})
         test_data = pd.DataFrame({'description': X_test, 'genre': pd.Series(list(y_test))})
 
         if fine_tune:
@@ -135,43 +136,24 @@ def fit_predict(classifier, text_model, manager: DataManager, fine_tune=False):
         log.info(f"Loaded best model (Path: {os.path.join(output_dir, 'best')})")
         y_pred = classifier.predict(test_data)
     else:
-        transformed_data = text_model.fit_transform(X_dev)
-        classifier = classifier.fit(transformed_data, y_dev)
+        transformed_data = text_model.fit_transform(X_train)
+        classifier = classifier.fit(transformed_data, y_train)
         y_pred = classifier.predict_at_least_1(text_model.transform(X_test))
 
     return X_test, y_pred, y_test, classifier, text_model, manager
 
 
-def run_eval(predict=True, eval=True):
+def run_eval(predict=True, eval=True, dev=True):
+    # X, y_pred, y_true, classifier, text_model, manager = fit_predict(MultiLabelClassifier("lreg", n_jobs=-1, balanced_fitting=False),
+    #                                                                  BagOfWords("count", ngram_range=(1, 1)),
+    #                                                                  DataManager(lemmatized=True, prune=False), dev=dev)
+    # evaluate(X, y_pred, y_true, classifier, text_model, manager, features=True)
 
-    # model = Word2VecModel(min_count=1)
-    # model.load_pretrained('word2vec-google-news-300')
-
-    X, y_pred, y_true, classifier, text_model, manager = fit_predict(MultiLabelClassifier("lreg", n_jobs=-1),
-                                                            BagOfWords("count", ngram_range=(1, 1)),
-                                                            DataManager(lemmatized=True, prune=False))
+    X, y_pred, y_true, classifier, text_model, manager = fit_predict(MultiLabelClassifier("lreg", n_jobs=-1, balanced_fitting=True),
+                                                                     BagOfWords("count", ngram_range=(1, 1)),
+                                                                     DataManager(lemmatized=True, prune=False), dev=dev)
     evaluate(X, y_pred, y_true, classifier, text_model, manager, features=True)
-
-    X, y_pred, y_true, classifier, text_model, manager = fit_predict(MultiLabelClassifier("lreg", n_jobs=-1),
-                                                            BagOfWords("count", ngram_range=(1, 1)),
-                                                            DataManager(lemmatized=True, prune=True))
-    evaluate(X, y_pred, y_true, classifier, text_model, manager, features=True)
-
-    """
-    X, y_pred, y_true, classifier, text_model = fit_predict(
-        MovieGenreClassifier(
-            model_name="distilbert-base-uncased", unique_genres=UNIQUE_GENRES, num_labels=len(UNIQUE_GENRES),
-            seed=SEED),
-        BagOfWords("count", ngram_range=(1, 1)),
-        lemmatized=False,
-        fine_tune=False)
-    """
-    #evaluate(X, y_pred, y_true, classifier, text_model, lemmatized=False,  features=False)
-
-    # comparative_evaluation(BagOfWords("tf-idf", ngram_range=(1, 1)))
 
 
 if __name__ == "__main__":
-    run_eval()
-
-#%%
+    run_eval(dev=False)

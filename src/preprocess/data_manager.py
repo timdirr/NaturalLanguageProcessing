@@ -1,5 +1,6 @@
 from helper import pandas_ndarray_series_to_numpy
 
+
 class DataManager:
     def __init__(self, lemmatized=False, prune=False, upper=200, lower=10):
         self.lemmatized = lemmatized
@@ -7,6 +8,7 @@ class DataManager:
 
         self.upper = upper
         self.lower = lower
+        self.train_set = 'dev'  # default dev, can be changed to full
 
     def __prune_description(self, data):
         data["len"] = data[['description']].apply(lambda x: len(x.values[0].split(' ')), axis=1)
@@ -67,4 +69,3 @@ class DataManager:
 
     def __str__(self):
         return f"lemma={self.lemmatized}_prune={self.prune}"
-

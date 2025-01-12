@@ -1,8 +1,9 @@
+from joblib import Parallel, delayed
 import numpy as np
 from sklearn.base import BaseEstimator, ClassifierMixin
 from sklearn.ensemble import RandomForestClassifier, BaggingClassifier
 from sklearn.linear_model import LogisticRegression
-from sklearn.multioutput import MultiOutputClassifier
+from sklearn.multioutput import _MultiOutputEstimator, MultiOutputClassifier
 from sklearn.naive_bayes import MultinomialNB
 from sklearn.neighbors import KNeighborsClassifier
 from sklearn.neural_network import MLPClassifier
@@ -14,9 +15,11 @@ from sklearn.tree import DecisionTreeClassifier
 import helper
 from globals import SEED
 
+from classifier.balanced_fit import balanced_fit
+
 
 class MultiLabelClassifier(BaseEstimator, ClassifierMixin):
-    def __init__(self, estimator_name, verbose=True, **kwargs):
+    def __init__(self, estimator_name, verbose=True, balanced_fitting=True, **kwargs):
         if verbose:
             log.info(f"Creating multilabel classifier {estimator_name}")
 
@@ -49,6 +52,10 @@ class MultiLabelClassifier(BaseEstimator, ClassifierMixin):
             self._has_predict_proba = True
         except AttributeError:
             self._has_predict_proba = False
+
+        self.balanced_fitting = balanced_fitting
+        if balanced_fitting:
+            _MultiOutputEstimator.fit = balanced_fit
 
     def fit(self, X, y):
         if isinstance(y, pd.Series):
