@@ -144,12 +144,12 @@ def fit_predict(classifier, text_model, manager: DataManager, fine_tune=False, d
 
 
 def run_eval(predict=True, eval=True, dev=True):
-    X, y_pred, y_true, classifier, text_model, manager = fit_predict(MultiLabelClassifier("lreg", n_jobs=-1, balancing_ratio=None, solver='newton-cholesky'),
+    X, y_pred, y_true, classifier, text_model, manager = fit_predict(MultiLabelClassifier("lreg", n_jobs=-1, balancing_ratio=None, solver='liblinear', max_iter=1000),
                                                                      BagOfWords("count", ngram_range=(1, 1)),
                                                                      DataManager(lemmatized=True, prune=False), dev=dev)
     evaluate(X, y_pred, y_true, classifier, text_model, manager, features=True)
 
-    X, y_pred, y_true, classifier, text_model, manager = fit_predict(MultiLabelClassifier("lreg", n_jobs=-1, balancing_ratio=1, solver='newton-cholesky'),
+    X, y_pred, y_true, classifier, text_model, manager = fit_predict(MultiLabelClassifier("lreg", n_jobs=-1, balancing_ratio=1, solver='liblinear', max_iter=1000),
                                                                      BagOfWords("count", ngram_range=(1, 1)),
                                                                      DataManager(lemmatized=True, prune=False), dev=dev)
     evaluate(X, y_pred, y_true, classifier, text_model, manager, features=True)
