@@ -1,3 +1,4 @@
+import functools
 from joblib import Parallel, delayed
 import numpy as np
 from sklearn.base import BaseEstimator, ClassifierMixin
@@ -19,7 +20,7 @@ from classifier.balanced_fit import balanced_fit
 
 
 class MultiLabelClassifier(BaseEstimator, ClassifierMixin):
-    def __init__(self, estimator_name, verbose=True, balanced_fitting=True, **kwargs):
+    def __init__(self, estimator_name, verbose=True, balancing_ratio=None, **kwargs):
         if verbose:
             log.info(f"Creating multilabel classifier {estimator_name}")
 
@@ -53,14 +54,24 @@ class MultiLabelClassifier(BaseEstimator, ClassifierMixin):
         except AttributeError:
             self._has_predict_proba = False
 
-        self.balanced_fitting = balanced_fitting
-        if balanced_fitting:
-            _MultiOutputEstimator.fit = balanced_fit
+        self.balancing_ratio = balancing_ratio
 
     def fit(self, X, y):
         if isinstance(y, pd.Series):
             y = helper.pandas_ndarray_series_to_numpy(y)
-        self.multi_output_clf_.fit(X, y)
+        if self.balancing_ratio:
+            # save MultiOutputEstimator.fit method
+            _temp = _MultiOutputEstimator.fit
+            # monkey patch MultiOutputEstimator.fit method
+            _MultiOutputEstimator.fit = balanced_fit
+            _MultiOutputEstimator.fit.__defaults__ = (0.5, self.balancing_ratio,)
+            # fit the model
+            self.multi_output_clf_.fit(X, y)
+            # restore MultiOutputEstimator.fit method
+            _MultiOutputEstimator.fit = _temp
+            _MultiOutputEstimator.fit.__defaults__ = (0.5,)
+        else:
+            self.multi_output_clf_.fit(X, y)
         return self
 
     def predict(self, X):

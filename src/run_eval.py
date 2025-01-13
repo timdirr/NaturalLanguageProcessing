@@ -84,7 +84,7 @@ def evaluate(X: np.ndarray,
         classifier_name = type(classifier.multi_output_clf_.estimators_[0]).__name__
         model_name = type(text_model.model).__name__
 
-    dir_path = prepare_evaluate(classifier_name, model_name, model, balanced_train=classifier.balanced_fitting)
+    dir_path = prepare_evaluate(classifier_name, model_name, model, balancing_ratio=classifier.balancing_ratio)
     metrics = compute_metrics(ytrue, ypred, metrics_names=['jaccard', 'hamming', 'precision', 'recall', 'at_least_one', 'at_least_two'])
     metrics["lemmatized"] = model.lemmatized
     log.info(f"Metrics:\n {metrics}")
@@ -144,12 +144,12 @@ def fit_predict(classifier, text_model, manager: DataManager, fine_tune=False, d
 
 
 def run_eval(predict=True, eval=True, dev=True):
-    # X, y_pred, y_true, classifier, text_model, manager = fit_predict(MultiLabelClassifier("lreg", n_jobs=-1, balanced_fitting=False),
+    # X, y_pred, y_true, classifier, text_model, manager = fit_predict(MultiLabelClassifier("lreg", n_jobs=-1, balancing_ratio=None),
     #                                                                  BagOfWords("count", ngram_range=(1, 1)),
     #                                                                  DataManager(lemmatized=True, prune=False), dev=dev)
     # evaluate(X, y_pred, y_true, classifier, text_model, manager, features=True)
 
-    X, y_pred, y_true, classifier, text_model, manager = fit_predict(MultiLabelClassifier("lreg", n_jobs=-1, balanced_fitting=True),
+    X, y_pred, y_true, classifier, text_model, manager = fit_predict(MultiLabelClassifier("lreg", n_jobs=-1, balancing_ratio=0.8),
                                                                      BagOfWords("count", ngram_range=(1, 1)),
                                                                      DataManager(lemmatized=True, prune=False), dev=dev)
     evaluate(X, y_pred, y_true, classifier, text_model, manager, features=True)

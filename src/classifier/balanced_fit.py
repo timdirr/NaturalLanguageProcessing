@@ -1,3 +1,4 @@
+import logging as log
 from joblib import Parallel, delayed
 import numpy as np
 from sklearn.base import is_classifier
@@ -8,8 +9,10 @@ from sklearn.utils._bunch import Bunch
 from sklearn.multioutput import _fit_estimator
 from imblearn.over_sampling import SMOTE
 
+from helper import load_genres
 
-def balanced_fit(self, X, y, sample_weight=None, **fit_params):
+
+def balanced_fit(self, X, y, sample_weight=0.5, balancing_ratio=0.5, **fit_params):
     """Fit the model to data, separately for each output variable.
 
     Parameters
@@ -76,20 +79,28 @@ def balanced_fit(self, X, y, sample_weight=None, **fit_params):
     Xs_new = []
     ys_new = []
 
-    for y in ys:
-        y_pos = np.argwhere(y == 1)
-        y_neg = np.argwhere(y == 0)
-        y_neg = y_neg[:len(y_pos)*2]
+    log.info(f"Balancing ratio: {balancing_ratio}")
+    smote = SMOTE(random_state=42, sampling_strategy=balancing_ratio)
+    genres = load_genres()
+    for i, y in enumerate(ys):
+        log.info(f"Resampling for Genre: {genres[i]}")
+        log.info(f"Num positive samples: {np.sum(y)}")
+        log.info(f"Num total sumples: {len(y)}")
+        if np.sum(y) > (balancing_ratio/(1 + balancing_ratio)) * len(y):
+            log.info("Skipping SMOTE")
+            ys_new.append(y)
+            Xs_new.append(X)
+            continue
 
-        y_new = y[np.concatenate([y_pos, y_neg]).flatten()]
-        X_new = X[np.concatenate([y_pos, y_neg]).flatten()]
+        X_smote, y_smote = smote.fit_resample(X, y)
 
-        idx = np.random.permutation(len(y_new))
-        y_new = y_new[idx]
-        X_new = X_new[idx]
+        log.info(f"Num positive samples after resampling: {np.sum(y_smote)}")
+        log.info(f"Num total sumples after resampling: {len(y_smote)}")
 
-        ys_new.append(y_new)
-        Xs_new.append(X_new)
+        ys_new.append(y_smote)
+        Xs_new.append(X_smote)
+
+    log.info("Resampling finished")
 
     self.estimators_ = Parallel(n_jobs=self.n_jobs)(
         delayed(_fit_estimator)(

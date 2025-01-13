@@ -2,27 +2,19 @@ import os
 import json
 import numpy as np
 import logging as log
-import pandas as pd
 from sklearn.linear_model import LogisticRegression
-from tqdm import tqdm
 
 from typing import Union
-from globals import DATA_PATH, EXPORT_PATH, SEED, MODEL_PATH,  UNIQUE_GENRES
-from helper import pandas_ndarray_series_to_numpy, load_genres
+from helper import load_genres
 from preprocess.dataloader import load_stratified_data
 from preprocess.data_manager import DataManager
 from classifier.base import MultiLabelClassifier
-from classifier.dl import MovieGenreClassifier
-from text_modelling.modelling import BagOfWords, WordEmbeddingModel, Word2VecModel
+from text_modelling.modelling import BagOfWords, WordEmbeddingModel
 
-from evaluation.metrics import compute_metrics, score_per_sample
-from evaluation.plotting import plot_bad_qualitative_results_binary, plot_bad_qualitative_results_binary, plot_decision_tree, plot_feature_importances, plot_good_qualitative_results_binary, plot_metrics_per_length_binary, plot_wordcloud, plot_bad_qualitative_results, plot_good_qualitative_results, plot_cfm, plot_metrics_per_genre, plot_metrics_per_length, plot_metrics_per_genre_distribution
-from evaluation.utils import get_feature_importances, prepare_evaluate
-
-from skmultilearn.model_selection.iterative_stratification import iterative_train_test_split
-
-from iterstrat.ml_stratifiers import MultilabelStratifiedKFold
-
+from evaluation.metrics import compute_metrics
+from evaluation.plotting import plot_bad_qualitative_results_binary, plot_bad_qualitative_results_binary, plot_good_qualitative_results_binary, plot_metrics_per_length_binary, plot_cfm
+from evaluation.utils import prepare_evaluate
+from imblearn.over_sampling import SMOTE
 
 log.basicConfig(level=log.INFO,
                 format='%(asctime)s: %(levelname)s: %(message)s',
@@ -36,7 +28,7 @@ def evaluate(X: np.ndarray,
              text_model: Union[BagOfWords, WordEmbeddingModel],
              model: DataManager,
              genre: str = None,
-             balanced: bool = True):
+             balancing_ratio=None):
     '''
     Wrapper function to analyse a trained model. Computes a set of matrices and plots
     Args:
@@ -53,7 +45,7 @@ def evaluate(X: np.ndarray,
     classifier_name = type(classifier).__name__
     model_name = type(text_model.model).__name__
 
-    dir_path = prepare_evaluate(classifier_name, model_name, model, genre=genre, balanced_train=balanced)
+    dir_path = prepare_evaluate(classifier_name, model_name, model, genre=genre, balancing_ratio=balancing_ratio)
     metrics = compute_metrics(ytrue, ypred, metrics_names=['precision', 'recall', 'f1', 'accuracy', 'balanced_accuracy'])
     metrics["lemmatized"] = model.lemmatized
     log.info(f"Metrics:\n {metrics}")
@@ -68,7 +60,7 @@ def evaluate(X: np.ndarray,
         json.dump(metrics, file, indent=4)
 
 
-def fit_predict_binary_for_genre(classifier, text_model, manager: DataManager, genre="Comedy", balanced=True, dev=True):
+def fit_predict_binary_for_genre(classifier, text_model, manager: DataManager, genre="Comedy", balancing_ratio=None, dev=True):
     # load stratified data
     if dev:
         _, test, train = load_stratified_data()
@@ -86,21 +78,25 @@ def fit_predict_binary_for_genre(classifier, text_model, manager: DataManager, g
     X_test, y_test = manager.test
     y_test = y_test[:, genre_idx]
     y_train = y_train[:, genre_idx]
+    transformed_data = text_model.fit_transform(X_train)
 
-    # Balance the train set
-    if balanced:
-        y_train_pos = np.argwhere(y_train == 1)
-        y_train_neg = np.argwhere(y_train == 0)
-        y_train_neg = y_train_neg[:len(y_train_pos)]
-
-        y_train = y_train[np.concatenate([y_train_pos, y_train_neg]).flatten()]
-        X_train = X_train[np.concatenate([y_train_pos, y_train_neg]).flatten()]
+    if balancing_ratio:
+        smote = SMOTE(random_state=42, sampling_strategy=balancing_ratio)
+        genres = load_genres()
+        log.info(f"Resampling")
+        log.info(f"Num positive samples: {np.sum(y_train)}")
+        log.info(f"Num total sumples: {len(y_train)}")
+        if np.sum(y_train) > (balancing_ratio/(1 + balancing_ratio)) * len(y_train):
+            log.info("Skipping SMOTE")
+        else:
+            transformed_data, y_train = smote.fit_resample(transformed_data, y_train)
+        log.info(f"Num positive samples after resampling: {np.sum(y_train)}")
+        log.info(f"Num total sumples after resampling: {len(y_train)}")
 
     log.info(f"Genre: {genre}")
     log.info(f"Length train set: {len(y_train)}")
     log.info(f"Length test set: {len(y_test)}")
 
-    transformed_data = text_model.fit_transform(X_train)
     classifier = classifier.fit(transformed_data, y_train)
     y_pred = classifier.predict(text_model.transform(X_test))
 
@@ -117,16 +113,16 @@ def run_eval(predict=True, eval=True, genre=None):
                                                                                       BagOfWords("count", ngram_range=(1, 1)),
                                                                                       DataManager(lemmatized=True, prune=False),
                                                                                       genre=genre,
-                                                                                      balanced=True)
-    evaluate(X, y_pred, y_true, classifier, text_model, manager, genre=genre)
+                                                                                      balancing_ratio=0.5)
+    evaluate(X, y_pred, y_true, classifier, text_model, manager, genre=genre, balancing_ratio=0.5)
 
     # testing once with unbalanced data
     X, y_pred, y_true, classifier, text_model, manager = fit_predict_binary_for_genre(LogisticRegression(),
                                                                                       BagOfWords("count", ngram_range=(1, 1)),
                                                                                       DataManager(lemmatized=True, prune=False),
                                                                                       genre=genre,
-                                                                                      balanced=False)
-    evaluate(X, y_pred, y_true, classifier, text_model, manager, genre=genre, balanced=False)
+                                                                                      balancing_ratio=None)
+    evaluate(X, y_pred, y_true, classifier, text_model, manager, genre=genre, balancing_ratio=None)
 
 
 if __name__ == "__main__":
