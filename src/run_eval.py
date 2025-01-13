@@ -144,16 +144,16 @@ def fit_predict(classifier, text_model, manager: DataManager, fine_tune=False, d
 
 
 def run_eval(predict=True, eval=True, dev=True):
-    # X, y_pred, y_true, classifier, text_model, manager = fit_predict(MultiLabelClassifier("lreg", n_jobs=-1, balancing_ratio=None),
-    #                                                                  BagOfWords("count", ngram_range=(1, 1)),
-    #                                                                  DataManager(lemmatized=True, prune=False), dev=dev)
-    # evaluate(X, y_pred, y_true, classifier, text_model, manager, features=True)
+    X, y_pred, y_true, classifier, text_model, manager = fit_predict(MultiLabelClassifier("lreg", n_jobs=-1, balancing_ratio=None, solver='newton-cholesky'),
+                                                                     BagOfWords("count", ngram_range=(1, 1)),
+                                                                     DataManager(lemmatized=True, prune=False), dev=dev)
+    evaluate(X, y_pred, y_true, classifier, text_model, manager, features=True)
 
-    X, y_pred, y_true, classifier, text_model, manager = fit_predict(MultiLabelClassifier("lreg", n_jobs=-1, balancing_ratio=0.8),
+    X, y_pred, y_true, classifier, text_model, manager = fit_predict(MultiLabelClassifier("lreg", n_jobs=-1, balancing_ratio=1, solver='newton-cholesky'),
                                                                      BagOfWords("count", ngram_range=(1, 1)),
                                                                      DataManager(lemmatized=True, prune=False), dev=dev)
     evaluate(X, y_pred, y_true, classifier, text_model, manager, features=True)
 
 
 if __name__ == "__main__":
-    run_eval(dev=False)
+    run_eval(dev=True)

@@ -55,23 +55,17 @@ class MultiLabelClassifier(BaseEstimator, ClassifierMixin):
             self._has_predict_proba = False
 
         self.balancing_ratio = balancing_ratio
+        # monkey patch the fit method to use the balanced_fit method
+        _MultiOutputEstimator.fit = balanced_fit
 
     def fit(self, X, y):
         if isinstance(y, pd.Series):
             y = helper.pandas_ndarray_series_to_numpy(y)
-        if self.balancing_ratio:
-            # save MultiOutputEstimator.fit method
-            _temp = _MultiOutputEstimator.fit
-            # monkey patch MultiOutputEstimator.fit method
-            _MultiOutputEstimator.fit = balanced_fit
-            _MultiOutputEstimator.fit.__defaults__ = (0.5, self.balancing_ratio,)
-            # fit the model
-            self.multi_output_clf_.fit(X, y)
-            # restore MultiOutputEstimator.fit method
-            _MultiOutputEstimator.fit = _temp
-            _MultiOutputEstimator.fit.__defaults__ = (0.5,)
-        else:
-            self.multi_output_clf_.fit(X, y)
+
+        # hack to set the balancing_ratio of the balanced_fit method
+        _MultiOutputEstimator.fit.__defaults__ = (0.5, self.balancing_ratio,)
+        # fit the model
+        self.multi_output_clf_.fit(X, y)
         return self
 
     def predict(self, X):

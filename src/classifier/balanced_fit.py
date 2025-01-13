@@ -12,7 +12,7 @@ from imblearn.over_sampling import SMOTE
 from helper import load_genres
 
 
-def balanced_fit(self, X, y, sample_weight=0.5, balancing_ratio=0.5, **fit_params):
+def balanced_fit(self, X, y, sample_weight=0.5, balancing_ratio=None, **fit_params):
     """Fit the model to data, separately for each output variable.
 
     Parameters
@@ -75,38 +75,45 @@ def balanced_fit(self, X, y, sample_weight=0.5, balancing_ratio=0.5, **fit_param
             routed_params.estimator.fit["sample_weight"] = sample_weight
 
     ys = [y[:, i] for i in range(y.shape[1])]
+    Xs = [X for _ in range(y.shape[1])]
 
-    Xs_new = []
-    ys_new = []
+    if balancing_ratio:
+        Xs_resampled = []
+        ys_resampled = []
 
-    log.info(f"Balancing ratio: {balancing_ratio}")
-    smote = SMOTE(random_state=42, sampling_strategy=balancing_ratio)
-    genres = load_genres()
-    for i, y in enumerate(ys):
-        log.info(f"Resampling for Genre: {genres[i]}")
-        log.info(f"Num positive samples: {np.sum(y)}")
-        log.info(f"Num total sumples: {len(y)}")
-        if np.sum(y) > (balancing_ratio/(1 + balancing_ratio)) * len(y):
-            log.info("Skipping SMOTE")
-            ys_new.append(y)
-            Xs_new.append(X)
-            continue
+        log.info(f"Balancing ratio: {balancing_ratio}")
+        smote = SMOTE(random_state=42, sampling_strategy=balancing_ratio)
+        genres = load_genres()
+        for i, y in enumerate(ys):
+            log.info(f"Resampling for Genre: {genres[i]}")
+            log.info(f"Num positive samples: {np.sum(y)}")
+            log.info(f"Num total sumples: {len(y)}")
+            if np.sum(y) > (balancing_ratio/(1 + balancing_ratio)) * len(y):
+                log.info("Skipping SMOTE")
+                ys_resampled.append(y)
+                Xs_resampled.append(X)
+                continue
 
-        X_smote, y_smote = smote.fit_resample(X, y)
+            X_smote, y_smote = smote.fit_resample(X, y)
 
-        log.info(f"Num positive samples after resampling: {np.sum(y_smote)}")
-        log.info(f"Num total sumples after resampling: {len(y_smote)}")
+            log.info(f"Num positive samples after resampling: {np.sum(y_smote)}")
+            log.info(f"Num total sumples after resampling: {len(y_smote)}")
 
-        ys_new.append(y_smote)
-        Xs_new.append(X_smote)
+            ys_resampled.append(y_smote)
+            Xs_resampled.append(X_smote)
 
-    log.info("Resampling finished")
+        log.info("Resampling finished")
+
+        ys = ys_resampled
+        Xs = Xs_resampled
+    else:
+        log.info("No resampling")
 
     self.estimators_ = Parallel(n_jobs=self.n_jobs)(
         delayed(_fit_estimator)(
-            self.estimator, Xs_new[i], ys_new[i], **routed_params.estimator.fit
+            self.estimator, Xs[i], ys[i], **routed_params.estimator.fit
         )
-        for i in range(len(ys_new))
+        for i in range(len(ys))
     )
 
     if hasattr(self.estimators_[0], "n_features_in_"):
