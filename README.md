@@ -73,7 +73,7 @@ Further, we compared the "good" predictions with "bad" predictions based on the 
 
 <p>
   <img src="./images/cooccurrence_matrix.png" title="Co-occurrence matrix" width="550" />
-  <img src="./images/genre_distribution.png" width="550" />
+  <img src="./images/genre_distribution.png" title= "Dist_graph" width="550" />
 </p>
 
 Taking a look at the two plots above one can see that we tend to have some strong class imbalance towards the Drama genre. Additionally, this genre tends to occur quite often with other genres. 
@@ -408,3 +408,454 @@ Summarizing lengthy inputs
 might help eliminate noise and improve performance for problematic ranges. -->
 
 4. **Remove common keywords:** Eliminate generic words (e.g., "movie," "story") shared across genres to encourage the model to learn deeper semantic patterns (see [wordclouds](plots/) and [feature importance graphs](images/)).
+
+
+# Milestone 3
+
+## Addressing Class Imbalance
+
+### Removing the 'Drama' genre
+
+To address the class imbalance issue, we experimented with removing the **Drama** genre from the dataset. The **Drama** genre is the most prevalent in the dataset, and its dominance could lead to biases in the model's predictions. By removing **Drama**, we aimed to reduce the model's reliance on this genre and improve predictions for other genres. Drama had no single label ground truths, only co-occurred with other genres, so the size of the dataset remained the same.
+
+The following metrics are based on the full dataset (with just Drama removed).
+
+### Results
+
+|     **Metric**      | **Original** | **No Drama** |
+|:-------------------:|:--------------:|:------------:|
+| **Jaccard**           | 0.42         | 0.43         |
+| **Hamming Loss**      | 0.09         | 0.07         |
+| **Accuracy**          | 0.14         | 0.22         |
+| **Precision**         | 0.62         | 0.60         |
+| **Recall**            | 0.50         | 0.48         |
+| **At Least One**      | 0.79         | 0.68         |
+| **At Least Two**      | 0.24         | 0.09         |
+
+### Analysis
+
+
+<!-- - **Precision and Recall:** Both precision and recall decreased slightly, but the model maintained a good balance between the two metrics.
+- **At Least One and At Least Two:** The model's performance for predicting at least one and at least two genres decreased after removing 'Drama', indicating that the model may have become less confident in its predictions. -->
+
+- **Jaccard Score**: A slight increase from 0.42 to 0.43 suggests improved alignment between predictions and true labels, likely because removing Drama reduces overgeneralization caused by its dominance.
+
+- **Hamming Loss**: The Hamming loss decreased, suggesting that the model made fewer incorrect predictions.
+
+- **Accuracy**: A notable increase from 0.14 to 0.22 reflects improved exact match accuracy for the predictions. Removing Drama likely allows the model to focus on other genres more effectively.
+
+- **Precision**: The slight decrease from 0.63 to 0.60 could mean the model is less selective without Drama, leading to slightly more false positives.
+
+- **Recall**: The decrease from 0.50 to 0.48 suggests the model might miss some true positives in less-prevalent genres without the general fallback of Drama.
+
+- **"At Least One" and "At Least Two"**: The sharp decline in these metrics highlights that Drama’s removal significantly impacts predictions where the model is unsure, revealing how heavily the model relied on Drama as a "fallback" genre.
+
+### Genre-Specific Analysis
+
+Since very low-support genres (see the [distribution graph](images/genre_distribution.png)) like **Music, Musical, Sport, Film-Noir and Western** achieved zero true positives, we are not showing them in the graphs. We also decided that the genre **Comedy** is not intersting for us, since like **Drama** it co-occurs with a lot of other genres, is common in the dataset and is very general. Also like Drama it has no single-label ground truths (only co-occurs with other genres).
+
+The next step is to train the model on a smaller dataset with the genres in question removed to see if the model's performance improves further. However, as for the metrics above, also the graphs below show performance for the full dataset (with just Drama removed).
+
+<div id="dl_diff">
+  <img src="images/jaccard_diff_nodrama_orig_long.svg" style="width: 50%;"/>
+</div>
+
+<div>
+  <img src="images/genre_metrics_diff_nodrama_orig_long_1.svg" style="width: 50%;" />
+</div>
+
+The graphs reveals some interesting results, for example low-support genres like **Biography, History, War** and **Animation** all saw a big impact on their performnace, where only only **Animation** saw a decrease in both precison (altought pretty small) and recall. On the other hand higher-support genres like **Action, Crime** or **Romance** saw a more conservative difference in metrics.
+Overall precision decreased significantly while recall increased.
+
+#### Possible reasons behind the precision/recall changes
+The absence of **Drama** redistributes the model's focus to less dominant genres, enhancing recall for those labels, but at the cost of more frequent misclassifications. 
+In other words, the model compensates by predicting other genres more liberally, capturing more true positives and increasing recall which goes hand in hand with more false positivies, thus decreasing precision. 
+Additionally, the **Drama** label could have acted as a strong signal to help the model distinguish between genres that overlap with it and those that don't. Removing this signal may have led to more incorrect predictions (false positives), further lowering precision.
+
+In the next chapter we will try to further analyse and find reasons for these changes.
+
+### Reasons for Changes in Performance Metrics
+This chapter investigates the impact of removing the Drama label on model performance metrics by analyzing genre co-occurrence patterns and feature contributions. 
+
+**Hypothesis**: Low co-occurence genres that share common keywords/feature importances with Drama will see the biggest increase in performance.
+
+
+<div id="drama_cooccurence_matrix">
+  <img src="images/cooccurence_matrix_norm_less.svg" style="width: 50%;" />
+</div>
+
+
+The occurence above is **normalized** by the total occurence of each genre column-wise. The highlighted row shows relative co-occurence of genres (columns) with Drama (row).
+
+Reading the heatmap we can see that genres that have a **High co-occurence** with drama and are silmultaneously [**Low-support**](images/genre_distribution.png) (**War, History, Biography**) saw the biggest jump in performance. On the other hand **Animation** (also low-support), a genre with the lowest co-occurence with Drama, saw an overall worst decrease in performance out of all the genres (when comparing by Jaccard Score diff., altough the diff. in precision/recall is modest). 
+
+Romance saw the biggest impact from the higher-support genres, while having the highest co-occurence with Drama. Romance is also interesting in a sense that apart from Drama it does not co-occur much with other genres, which could explain the bigger impact on performance.
+
+Overall we can see that both the support (inversely) of a genre and its co-occurence with Drama play a role in its preformance. Which makes sense, since low-support and high co-occurence genres saw the biggest performance changes, while high-support genres with lower co-occurence with Drama saw a more conservative change in performance.
+
+### Changes in Metric for the Logistic Regression Model
+
+The logistic regression model was also evaluated on the dataset with the Drama label removed to compare the performance differences with the DL model.
+
+#### CountVectorizer model
+
+<div>
+  <img src="images/jaccard_diff_nodrama_orig_long_logregCount.svg" style="width: 50%;" />
+</div>
+
+<div>
+  <img src="images/genre_metrics_diff_nodrama_orig_long_1_logregCount.svg" style="width: 50%;" />
+</div>
+
+#### TfidfVectorizer model
+
+<div>
+  <img src="images/jaccard_diff_nodrama_orig_long_logregTfidf.svg" style="width: 50%;" />
+</div>
+
+<div id="logreg_tfidf_diff">
+  <img src="images/genre_metrics_diff_nodrama_orig_long_1_logregTdidf.svg" style="width: 50%;" />
+</div>
+
+The distribution of the metric differences seems to be the similiar to the **DL model**, while the **CountVectorizer** seems to be more uniform across all genres and **TfidfVectorizer** more extreme in its changes (the differences in precison/recall are bigger in magnitude). Also worth mentioning is the fact that the Jaccard score differences are only positive for the **LogReg** model, while the [**DL model**](#dl_diff) saw a decrease in Jaccard score for some genres. Another interesting fact is that only the **History** genre saw an increase in both recall and precision (**TfidfVectorizer** model).
+
+The **TfidfVectorizer** shows more extreme differences because it emphasizes unique terms, amplifying genre-specific variations, while the **CountVectorizer** produces more uniform results by treating all terms equally. Jaccard score differences after removing Drama decrease for genres like **Animation**, which rarely [co-occur with Drama](#drama_cooccurence_matrix), and **Mystery**, where feature importance vectors [differ significantly](#second_row) in magnitude. Despite these changes, the order of Jaccard score differences remains similar across all models, reflecting consistent relative difficulty among genres.
+
+<!-- while the CountVectorizer model saw a bigger decrease in precision and recall for the low-support genres, the TfidfVectorizer model saw a bigger decrease in precision and recall for the high-support genres. This could be due to the fact that the CountVectorizer model is more prone to overfitting, while the TfidfVectorizer model is more robust to overfitting. -->
+
+### Feature Importance Analysis
+
+To further understand the changes in performance metrics, we analyzed the feature importances of the logistic regression model. The feature importances provide insights into the model's decision-making process and can help identify common keywords that influence genre predictions.
+
+<table align="center" id="first_row">
+<td align="center">
+
+<h4><center>Number of top 500 Features shared between Drama and other Genres</center></h4>
+<hr></hr>
+
+| Genre      | Relative # of Shared Features |
+|:----------:|:-----------------------------:|
+| Crime      | 0.046                         |
+| Biography  | 0.041                         |
+| War        | 0.038                         |
+| History    | 0.035                         |
+| Mystery    | 0.034                         |
+| Romance    | 0.034                         |
+| Action     | 0.021                         |
+| Family     | 0.021                         |
+| Fantasy    | 0.020                         |
+| Thriller   | 0.017                         |
+| Adventure  | 0.016                         |
+| Sci-Fi     | 0.015                         |
+| Horror     | 0.011                         |
+| Animation  | 0.010                         |
+
+</td>
+<td align="center">
+
+<h4><center>Cosine Similarity between full Feature Importance vectors of Drama and other Genres</center></h4>
+<hr></hr>
+
+| Genre      | Cosine Similarity |
+|:----------:|:-----------------:|
+| Crime      | 0.095             |
+| Romance    | 0.081             |
+| War        | 0.073             |
+| Biography  | 0.070             |
+| History    | 0.067             |
+| Mystery    | 0.027             |
+| Family     | -0.025            |
+| Fantasy    | -0.040            |
+| Sci-Fi     | -0.054            |
+| Action     | -0.070            |
+| Thriller   | -0.073            |
+| Adventure  | -0.079            |
+| Animation  | -0.087            |
+| Horror     | -0.152            |
+
+</td>
+</table>
+
+<h4><center>Similiarity between top 100 + worst 100 features of each genre against Drama</center></h4>
+<table align="center" id="second_row">
+<tr></tr>
+<td>
+
+| Genre      | Cosine Similarity |
+|:----------:|:-----------------:|
+| War        | 0.36              |
+| Biography  | 0.35              |
+| History    | 0.32              |
+| Crime      | 0.30              |
+| Romance    | 0.21              |
+| Family     | -0.02             |
+| Adventure  | -0.03             |
+| Mystery    | -0.10             |
+| Sci-Fi     | -0.13             |
+| Fantasy    | -0.17             |
+| Thriller   | -0.20             |
+| Animation  | -0.25             |
+| Action     | -0.26             |
+| Horror     | -0.52             |
+
+</td>
+<td>
+
+| Genre      | Euclidean Distance |
+|:----------:|:------------------:|
+| Biography  | 6.957              |
+| War        | 7.432              |
+| Crime      | 7.834              |
+| History    | 8.485              |
+| Sci-Fi     | 8.912              |
+| Animation  | 8.971              |
+| Family     | 9.203              |
+| Romance    | 9.269              |
+| Thriller   | 9.857              |
+| Fantasy    | 9.921              |
+| Adventure  | 10.027             |
+| Action     | 10.077             |
+| Mystery    | 10.528             |
+| Horror     | 10.930             |
+
+</td>
+</tr>
+</table>
+
+The [fisrt row of tables](#first_row) shows the **relative number of shared features** between Drama and other genres, as well as the **cosine similarity** between their **full feature importance vectors** (full vocab. of ~32k words).  
+
+The [second row of tables](#second_row) shows the **cosine similarity** between the top 100 and worst 100 features of each genre against Drama, as well as the **Euclidean distance** between them. The **magnitudes** of the feature importances were **normalized** between 1 and -1 using the formula $\mathbf{\frac{X - min(X)}{max(X) - min(X)}}$ for the positive features and $\mathbf{-\frac{X - max(X)}{min(X) - max(X)}}$ for the negative features. The top 100 and worst 100 features were chosen based on their importance values. "Top" features are those with the highest positive importance values, while "worst" features are those with the highest negative importance values. So the top 100 features are the most important features for the model to choose the given genre, while the worst 100 features are the most important features for the genre not to be chosen.
+
+We thought **Euclidean distance** could provide some additional insights, since the magnitude of the feature importance vectors could also be relevant, e.g. when a feature has a higher importance number it probably means its more imporant to the decision boundary of the genre. 
+
+#### Conlusion
+
+The case of **Mystery** is particularly interesting. It exhibits the second-highest Euclidean distance from Drama, which may explain the slight drop in performance observed when Drama is removed. Otherwise the tables align with the insights from the co-occurrence heatmap.
+
+We also tried L2 normalization of the feature importance vectors and other approaches, yielding similar results. Although the feature importances are derived from the logistic regression model, they are also relevant to the deep learning model, as their [performance distribution](images/metrics_per_genre_distribution.svg) is similar. 
+
+<!-- The results show that genres with higher cosine similarity and lower Euclidean distance to Drama have more overlapping signals, potentially leading to more misclassifications after Drama's removal. For example, **War, Biography, and History** have high cosine similarity and low Euclidean distance to Drama, indicating significant feature overlap. This overlap could explain the increase in recall for these genres after Drama's removal, as the model can better identify them without Drama's dominant signals. On the other hand, **Animation** has low cosine similarity and high Euclidean distance to Drama, suggesting distinct features with little overlap. This lack of overlap could explain the decrease in recall for Animation, as the altered decision boundaries may lead to misclassification or deprioritization. The results underline the need for strategies to address class imbalance and improve contextual understanding without relying on dominant genres.  -->
+
+
+<!-- The cosine similarity and Euclidean distance between feature importance vectors can provide insights into the model's decision-making process. Genres with higher cosine similarity and lower Euclidean distance to Drama may have more overlapping signals, potentially leading to more misclassifications after Drama's removal. -->
+
+### TF-IDF Vector Comparison
+
+To further investigate the impact of removing Drama on the model's predictions, we compared the **TF-IDF vectors** of the descriptions for each genre. The TF-IDF vectors provide insights into the unique features that distinguish each genre and how they differ from Drama.
+
+<table align="center">
+<tr>
+<td align="center">
+
+#### TF-IDF sublinear_tf=True AVG top 100
+<hr></hr>
+
+| Genre      | Cosine Similarity |
+|:----------:|:-----------------:|
+| Thriller   | 0.9847            |
+| Romance    | 0.9826            |
+| Action     | 0.9727            |
+| Family     | 0.9718            |
+| Fantasy    | 0.9716            |
+| Adventure  | 0.9702            |
+| Crime      | 0.9628            |
+| Mystery    | 0.9589            |
+| Horror     | 0.9574            |
+| Animation  | 0.9244            |
+| History    | 0.9182            |
+| Sci-Fi     | 0.8987            |
+| Biography  | 0.8965            |
+| War        | 0.8299            |
+
+</td>
+<td align="center">
+
+#### TF-IDF sublinear_tf=True SUPERDOC top 100
+<hr></hr>
+
+
+| Genre      | Cosine Similarity |
+|:----------:|:-----------------:|
+| History    | 0.8818            |
+| Crime      | 0.8645            |
+| War        | 0.8452            |
+| Biography  | 0.8096            |
+| Family     | 0.7979            |
+| Sci-Fi     | 0.7844            |
+| Thriller   | 0.7277            |
+| Action     | 0.7270            |
+| Mystery    | 0.7162            |
+| Romance    | 0.7060            |
+| Fantasy    | 0.6719            |
+| Adventure  | 0.6530            |
+| Horror     | 0.6279            |
+| Animation  | 0.5010            |
+
+</td>
+</tr>
+</table>
+
+<!-- Two approaches were used to compare the TF-IDF vectors:
+superdocument fo each genre
+avg. tf-idf vector for each genre
+
+furthermore, the highest 100 TF-IDF trems were used for the comparison. Similiarly to the feature importance analysis, the cosine similarity was used to compare the vectors. Highest 100 of TF-IDF terms of each genre were compared to the tf-idf of the same terms of the Drama genre.
+
+Sublinear TF scaling formula $\mathbf{1 + log(TF)}$ was used for the TF-IDF vectorization. It is a common approach to reduce the impact of very frequent words in the dataset. TfidfVectorizer has a setting sublinear_tf=True, which applies this formula to the term frequency part of the TF-IDF calculation.
+
+
+CounVectorizer L2 normalised (TfidfVectorizer L2 normalises bey default) was also tried, but the results were similar.
+many other setting were tried, but the results were similar.
+
+History in th second table is an outlier out of all the settings, showing the highest cosine similarity to Drama. This could be due to the genre's historical context, which may share common keywords with Drama. 
+
+#### Conlusion
+
+Both TF-IDF and Feature Importance show that the numbers confirm the observations we made previously using the Drama co-occurence heatmap and support distribution. The impact on performance is impacted by both these factors. This also translaets to the TF-IDF and Feature importance comparrsion, where the tables show that both of these are some combination of the former. -->
+
+Two approaches were employed to compare the TF-IDF vectors:  
+1. **Superdocument for each genre**: A single combined document representing all text from a genre (SUPERDOC).  
+2. **Average TF-IDF vector for each genre**: The mean TF-IDF vector across all documents in the genre (AVG).  
+
+The top 100 TF-IDF terms were selected for comparison. Similar to the feature importance analysis, cosine similarity was used to compare these vectors. Specifically, the top 100 TF-IDF terms for each genre were compared to their corresponding values in the Drama genre.  
+
+Sublinear TF scaling, using the formula $\mathbf{1 + \log(TF)}$, was applied for TF-IDF vectorization. This common technique reduces the impact of extremely frequent terms within the dataset. The `TfidfVectorizer` implementation automatically supports this approach when the `sublinear_tf=True` parameter is set.  
+
+For comparison, `CountVectorizer` with L2 normalization (to mirror TfidfVectorizer’s default normalization) was also tested. However, the results remained consistent across both methods. Similarly, numerous parameter variations were explored, had various effect on the outcomes (however the order remained consistent). The SUPERDOC top 100 with sublinear TF scaling was the most outlying config.
+
+#### Observations
+
+The **History** genre emerges as an outlier across all configurations, displaying the highest cosine similarity to Drama. This may be attributed to shared thematic or linguistic elements, such as historical context and terminology, which overlap significantly with Drama. This could explain why the Logistic Regression with TF-IDF model have shown an increase in both precison and recall only for the History genre after Drama's removal ([see here](#logreg_tfidf_diff)).
+
+#### Conclusion
+
+The results of both TF-IDF and feature importance analyses align closely with previous insights derived from the Drama co-occurrence heatmap and support distribution. These findings confirm that the impact on performance is influenced by a combination of these factors. This relationship is further corroborated by the TF-IDF and feature importance comparisons, where the data highlights their interconnected nature.  
+ 
+<!-- ### SHAP values
+
+To further understand the DL model's decision-making process, we used SHAP (SHapley Additive exPlanations) values to analyze the impact of individual features on the model's predictions. SHAP values provide insights into how each feature contributes to the model's output, helping identify the most influential keywords for each genre also for the DL model. -->
+
+<div>
+  <img src="images/shap_values.png" style="width: 50%;" />
+</div>
+
+<!-- The superdocument approach concatenates all descriptions for a given genre into a single document, while the average approach calculates the average TF-IDF vector for each genre. The superdocument approach provides a comprehensive overview of the genre's unique features, while the average approach offers a more generalized representation. -->
+
+<!-- The results show that genres with higher cosine similarity to Drama in the TF-IDF vectors have more overlapping signals, potentially leading to more misclassifications after Drama's removal. For example, **Thriller, Romance, and Action** have high cosine similarity to Drama, indicating significant feature overlap. This overlap could explain the decrease in precision for these genres after Drama's removal, as the model may struggle to distinguish them from Drama. On the other hand, **War, Biography, and History** have lower cosine similarity to Drama, suggesting distinct features with little overlap. This lack of overlap could explain the increase in recall for these genres after Drama's removal, as the model can better identify them without Drama's dominant signals. The results underline the need for strategies to address class imbalance and improve contextual understanding without relying on dominant genres. -->
+
+are the logreg weigths normalized?
+are the tf-idf vectors normalized by default?
+
+real co-occurence from predictions
+keywords specific to differntiate drama and other genres
+SHAP
+graphs for logreg [done] tables for feature importance maybe
+tf-idf comparison [done]
+logreg balanced weights
+logreg normalized tf-idf
+<!-- #### **Low-Support Genres**
+
+Low-support genres saw a big jump in performance, where genres that have a high co-occurence with drama (**War, History, Biography**) saw a significant increase in performance (precision slightly down, recall significantly up). On the other hand **Animation**, with relatively low co-occurence with Drama, saw an overall worst decrease in performance out of all the genres (recall dramatically down, precison up). 
+
+<!-- This is likely due to the model not defaulting to Drama when unsure, and instead making more accurate predictions for these genres.
+
+
+| Genre | Precision diff. | Recall diff. | Drama co-occurence |
+|:-------:|:-----------:|:--------:|:--------------------:|
+| War   | -0.07      | +0.19   | 0.68               |
+| History | -0.03    | +0.07   | 0.69               |
+| Biography | -0.07  | +0.13   | 0.64               |
+| Animation | +0.13  | -0.08   | 0.12               |
+
+War, History and Biography overlap significantly with Drama, so removing Drama shifts the model’s focus to their unique features. This results in increased recall, as the model better identifies these genres without Drama dominating shared signals, but decreased precision due to over-prediction and more false positives.
+
+Animation has distinct features with little overlap with Drama, but Drama’s removal still indirectly affects it. Recall decreases as the altered decision boundaries may lead to misclassification or deprioritization, while precision increases as the model becomes more conservative, reducing false positives but missing true positives.
+
+### Conclusion:
+The removal of Drama improves label-specific performance and reduces bias but challenges the model's ability to handle multi-label predictions, particularly for genres that co-occur with Drama.  -->
+<!-- These results underline the need for strategies to address class imbalance and improve contextual understanding without relying on dominant genres. -->
+
+
+<!-- | Genre      | Cosine Similarity |
+|:----------:|:-----------------:|
+| Crime      | 0.89              |
+| Romance    | 0.78              |
+| War        | 0.73              |
+| Biography  | 0.70              |
+| History    | 0.68              |
+| Mystery    | 0.39              |
+| Family     | -0.00             |
+| Fantasy    | -0.11             |
+| Sci-Fi     | -0.22             |
+| Action     | -0.34             |
+| Thriller   | -0.35             |
+| Adventure  | -0.40             |
+| Animation  | -0.46             |
+| Horror     | -0.94             | -->
+
+
+<!-- #### Cosine similiarity between top 100 + worst 100 features of each genre against Drama
+War: 0.36
+Biography: 0.35
+History: 0.32
+Crime: 0.30
+Romance: 0.21
+Family: -0.02
+Adventure: -0.03
+Mystery: -0.10
+Sci-Fi: -0.13
+Fantasy: -0.17
+Thriller: -0.20
+Animation: -0.25
+Action: -0.26
+Horror: -0.52
+
+#### Euclidean distance between top 100 + worst 100 features of each genre against Drama
+Biography: 6.957
+War: 7.432
+Crime: 7.834
+History: 8.485
+Sci-Fi: 8.912
+Animation: 8.971
+Family: 9.203
+Romance: 9.269
+Thriller: 9.857
+Fantasy: 9.921
+Adventure: 10.027
+Action: 10.077
+Mystery: 10.528
+Horror: 10.930 -->
+
+<!-- | Genre      | Relative # of Shared Features |
+|:----------:|:-----------------------------:|
+| Crime      | 0.046                         |
+| Biography  | 0.041                         |
+| War        | 0.038                         |
+| History    | 0.035                         |
+| Mystery    | 0.034                         |
+| Romance    | 0.034                         |
+| Action     | 0.021                         |
+| Family     | 0.021                         |
+| Fantasy    | 0.020                         |
+| Thriller   | 0.017                         |
+| Adventure  | 0.016                         |
+| Sci-Fi     | 0.015                         |
+| Horror     | 0.011                         |
+| Animation  | 0.010                         | -->
+
+<!-- | Genre      | Cosine Similarity |
+|:----------:|:-----------------:|
+| Crime      | 0.89              |
+| Romance    | 0.78              |
+| War        | 0.73              |
+| Biography  | 0.70              |
+| History    | 0.68              |
+| Mystery    | 0.39              |
+| Family     | -0.00             |
+| Fantasy    | -0.11             |
+| Sci-Fi     | -0.22             |
+| Action     | -0.34             |
+| Thriller   | -0.35             |
+| Adventure  | -0.40             |
+| Animation  | -0.46             |
+| Horror     | -0.94             | -->
