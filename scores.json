@@ -124,5 +124,23 @@
         "at_least_one": 0.8768953272081619,
         "at_least_two": 0.42336959585141765,
         "lemmatized": true
+    },
+    "full tf-idf 0.75": {
+        "jaccard": 0.3771833561036537,
+        "hamming": 0.11278689932655324,
+        "precision": 0.4958217580476754,
+        "recall": 0.5732183454521541,
+        "at_least_one": 0.8198523194859365,
+        "at_least_two": 0.3315483907333296,
+        "lemmatized": true
+    },
+    "full count 0.75": {
+        "jaccard": 0.36236881851277886,
+        "hamming": 0.13496581767817886,
+        "precision": 0.4433200465118057,
+        "recall": 0.6437583375608289,
+        "at_least_one": 0.8696240347218308,
+        "at_least_two": 0.4104616425229694,
+        "lemmatized": true
     }
 }
