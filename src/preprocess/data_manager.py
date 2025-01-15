@@ -14,6 +14,11 @@ class DataManager:
         data["len"] = data[['description']].apply(lambda x: len(x.values[0].split(' ')), axis=1)
         data = data[(data["len"] > self.lower) & (data["len"] < self.upper)]
         data.drop(columns=["len"], inplace=True)
+
+        summary_marker = ["directed by", "produced by", "starring", "stars as ", "filmed in ", "acted by "]
+        pattern = '|'.join(summary_marker)
+
+        data = data[~data['description'].str.contains(pattern, case=False, regex=True)]
         return data
 
     @property

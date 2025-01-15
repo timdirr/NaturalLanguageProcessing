@@ -13,6 +13,7 @@ from preprocess.data_manager import DataManager
 from classifier.base import MultiLabelClassifier
 from classifier.dl import MovieGenreClassifier
 from text_modelling.modelling import BagOfWords, WordEmbeddingModel, Word2VecModel
+from sklearn.preprocessing import MaxAbsScaler
 
 from evaluation.metrics import compute_metrics, score_per_sample
 from evaluation.plotting import plot_decision_tree, plot_feature_importances, plot_wordcloud, plot_bad_qualitative_results, plot_good_qualitative_results, plot_cfm, plot_metrics_per_genre, plot_metrics_per_length, plot_metrics_per_genre_distribution
@@ -137,22 +138,41 @@ def fit_predict(classifier, text_model, manager: DataManager, fine_tune=False, d
         y_pred = classifier.predict(test_data)
     else:
         transformed_data = text_model.fit_transform(X_train)
+        scaler = MaxAbsScaler()
+        transformed_data = scaler.fit_transform(transformed_data)
         classifier = classifier.fit(transformed_data, y_train)
-        y_pred = classifier.predict_at_least_1(text_model.transform(X_test))
+        y_pred = classifier.predict_at_least_1(scaler.transform(text_model.transform(X_test)))
 
     return X_test, y_pred, y_test, classifier, text_model, manager
 
 
 def run_eval(predict=True, eval=True, dev=True):
-    X, y_pred, y_true, classifier, text_model, manager = fit_predict(MultiLabelClassifier("lreg", n_jobs=-1, balancing_ratio=None, solver='liblinear', max_iter=1000),
+    #X, y_pred, y_true, classifier, text_model, manager = fit_predict(MultiLabelClassifier("lreg", n_jobs=-1, balancing_ratio=None, solver='liblinear', max_iter=1000),
+                                                                     #BagOfWords("count", ngram_range=(1, 3)),
+                                                                    # DataManager(lemmatized=True, prune=False), dev=dev)
+    #evaluate(X, y_pred, y_true, classifier, text_model, manager, features=True)
+
+    X, y_pred, y_true, classifier, text_model, manager = fit_predict(MultiLabelClassifier("lreg", n_jobs=-1, balancing_ratio=None, solver='lbfgs', max_iter=1000),
                                                                      BagOfWords("count", ngram_range=(1, 1)),
                                                                      DataManager(lemmatized=True, prune=False), dev=dev)
     evaluate(X, y_pred, y_true, classifier, text_model, manager, features=True)
 
-    X, y_pred, y_true, classifier, text_model, manager = fit_predict(MultiLabelClassifier("lreg", n_jobs=-1, balancing_ratio=1, solver='liblinear', max_iter=1000),
+    X, y_pred, y_true, classifier, text_model, manager = fit_predict(MultiLabelClassifier("lreg", n_jobs=-1, balancing_ratio=None, solver='lbfgs', max_iter=1000),
                                                                      BagOfWords("count", ngram_range=(1, 1)),
-                                                                     DataManager(lemmatized=True, prune=False), dev=dev)
+                                                                     DataManager(lemmatized=True, prune=True), dev=dev)
     evaluate(X, y_pred, y_true, classifier, text_model, manager, features=True)
+
+    X, y_pred, y_true, classifier, text_model, manager = fit_predict(MultiLabelClassifier("lreg", n_jobs=-1, balancing_ratio=1, solver='lbfgs', max_iter=1000),
+                                                                     BagOfWords("count", ngram_range=(1, 1)),
+                                                                     DataManager(lemmatized=True, prune=True), dev=dev)
+    evaluate(X, y_pred, y_true, classifier, text_model, manager, features=True)
+
+    X, y_pred, y_true, classifier, text_model, manager = fit_predict(MultiLabelClassifier("lreg", n_jobs=-1, balancing_ratio=1, solver='lbfgs', max_iter=1000),
+                                                                     BagOfWords("tf-idf", ngram_range=(1, 1)),
+                                                                     DataManager(lemmatized=True, prune=True), dev=dev)
+    evaluate(X, y_pred, y_true, classifier, text_model, manager, features=True)
+
+
 
 
 if __name__ == "__main__":
