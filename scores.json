@@ -1,0 +1,128 @@
+{
+    "Baseline lreg tf-idf w/o lemmatized": {
+        "jaccard": 0.33312675107280915,
+        "hamming": 0.0880362145922312,
+        "precision": 0.5187892328971168,
+        "recall": 0.3864985636769869,
+        "at_least_one": 0.6246941163953612,
+        "at_least_two": 0.15996382593892966,
+        "lemmatized": false
+    },
+    "Baseline lreg count w/o lemmatized": {
+        "jaccard": 0.29974212048900845,
+        "hamming": 0.09046048465135602,
+        "precision": 0.4736035748483881,
+        "recall": 0.3497597262120084,
+        "at_least_one": 0.5697414618576444,
+        "at_least_two": 0.1373018406213427,
+        "lemmatized": false
+    },
+    "Baseline lreg tf-idf": {
+        "jaccard": 0.3337306653696695,
+        "hamming": 0.0875701062423054,
+        "precision": 0.5211050821009326,
+        "recall": 0.38468720076603896,
+        "at_least_one": 0.622832216193212,
+        "at_least_two": 0.158580700074476,
+        "lemmatized": true
+    },
+    "Baseline lreg count": {
+        "jaccard": 0.29978746472522405,
+        "hamming": 0.0896042638781228,
+        "precision": 0.47425435329999643,
+        "recall": 0.3478419690037947,
+        "at_least_one": 0.5663900414937759,
+        "at_least_two": 0.1357059261623577,
+        "lemmatized": true
+    },
+    "atleast1 tf-idf": {
+        "jaccard": 0.37722376747273006,
+        "hamming": 0.08827433516230197,
+        "precision": 0.6127105720466716,
+        "recall": 0.4281803028690995,
+        "at_least_one": 0.714437706138951,
+        "at_least_two": 0.158580700074476,
+        "lemmatized": true
+    },
+    "atleast1 count": {
+        "jaccard": 0.3622471235541775,
+        "hamming": 0.08996144473322897,
+        "precision": 0.6082047735574706,
+        "recall": 0.41030162783274815,
+        "at_least_one": 0.7003404617512501,
+        "at_least_two": 0.1357059261623577,
+        "lemmatized": true
+    },
+    "atleast1, prune tf-idf": {
+        "jaccard": 0.37829281647837537,
+        "hamming": 0.08843920861281776,
+        "precision": 0.6129690171542378,
+        "recall": 0.4299325479585893,
+        "at_least_one": 0.7164759596415083,
+        "at_least_two": 0.16227946564455217,
+        "lemmatized": true
+    },
+    "atleast1, prune count": {
+        "jaccard": 0.3678095667555112,
+        "hamming": 0.08967927399808354,
+        "precision": 0.61050767525318,
+        "recall": 0.4176258384533003,
+        "at_least_one": 0.7065554365593822,
+        "at_least_two": 0.1453131165097796,
+        "lemmatized": true
+    },
+    "atleast1, balancing tf-idf 0.5": {
+        "jaccard": 0.37843054056747005,
+        "hamming": 0.09759650216081751,
+        "precision": 0.5542600783264683,
+        "recall": 0.486883356385431,
+        "at_least_one": 0.7530056388977551,
+        "at_least_two": 0.23156718799872328,
+        "lemmatized": true
+    },
+    "atleast1, balancing count 0.5": {
+        "jaccard": 0.37186084240026146,
+        "hamming": 0.11005476773111628,
+        "precision": 0.5030662456492333,
+        "recall": 0.5396700003546477,
+        "at_least_one": 0.7945526119799978,
+        "at_least_two": 0.28524311096925203,
+        "lemmatized": true
+    },
+    "atleast1, balancing tf-idf 0.75": {
+        "jaccard": 0.3776412595395997,
+        "hamming": 0.10176867853216401,
+        "precision": 0.5356613418854083,
+        "recall": 0.5114826045323971,
+        "at_least_one": 0.7719438238110438,
+        "at_least_two": 0.25944249388232793,
+        "lemmatized": true
+    },
+    "atleast1, balancing count 0.75": {
+        "jaccard": 0.3679649380894194,
+        "hamming": 0.12323246140673527,
+        "precision": 0.4687290713742996,
+        "recall": 0.5982905982905983,
+        "at_least_one": 0.839504202574742,
+        "at_least_two": 0.35184594105755934,
+        "lemmatized": true
+    },
+    "full tf-idf 0.5": {
+        "jaccard": 0.3823621948262611,
+        "hamming": 0.11563475511392765,
+        "precision": 0.4867954956816915,
+        "recall": 0.6035811585216917,
+        "at_least_one": 0.8431317287638803,
+        "at_least_two": 0.36643932134603463,
+        "lemmatized": true
+    },
+    "full count 0.5": {
+        "jaccard": 0.36454257073867014,
+        "hamming": 0.1356207439855487,
+        "precision": 0.439455887760662,
+        "recall": 0.6541908573361142,
+        "at_least_one": 0.8768953272081619,
+        "at_least_two": 0.42336959585141765,
+        "lemmatized": true
+    }
+}

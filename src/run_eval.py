@@ -65,7 +65,8 @@ def evaluate(X: np.ndarray,
              classifier: MultiLabelClassifier,
              text_model: Union[BagOfWords, WordEmbeddingModel],
              model: DataManager,
-             features: bool):
+             features: bool,
+             plots: bool = False):
     '''
     Wrapper function to analyse a trained model. Computes a set of matrices and plots
     Args:
@@ -90,25 +91,27 @@ def evaluate(X: np.ndarray,
     metrics["lemmatized"] = model.lemmatized
     log.info(f"Metrics:\n {metrics}")
 
-    if features and classifier_name != "MovieGenreClassifier":
-        analyse_features(classifier, text_model, path=dir_path)
+    if plots:
+        log.info(f"Plots will be saved in {dir_path}")
+        if features and classifier_name != "MovieGenreClassifier":
+            analyse_features(classifier, text_model, path=dir_path)
 
-    plot_metrics_per_genre(ytrue, ypred, metrics_names=['balanced_accuracy', 'precision', 'recall'], path=dir_path)
-    plot_metrics_per_length(X, ytrue, ypred, path=dir_path, metric='jaccard')
-    plot_metrics_per_genre_distribution(ytrue, ypred, path=dir_path, metric='jaccard')
+        plot_metrics_per_genre(ytrue, ypred, metrics_names=['balanced_accuracy', 'precision', 'recall'], path=dir_path)
+        plot_metrics_per_length(X, ytrue, ypred, path=dir_path, metric='jaccard')
+        plot_metrics_per_genre_distribution(ytrue, ypred, path=dir_path, metric='jaccard')
 
-    plot_bad_qualitative_results(X, ytrue, ypred, classifier, text_model, path=dir_path)
-    plot_good_qualitative_results(X, ytrue, ypred, classifier, text_model, path=dir_path)
-    plot_cfm(ytrue, ypred,  path=dir_path)
+        plot_bad_qualitative_results(X, ytrue, ypred, classifier, text_model, path=dir_path)
+        plot_good_qualitative_results(X, ytrue, ypred, classifier, text_model, path=dir_path)
+        plot_cfm(ytrue, ypred,  path=dir_path)
 
-    if classifier_name != "MovieGenreClassifier" and classifier.multi_output_clf_.estimators_[0].__class__.__name__ == "DecisionTreeClassifier":
-        plot_decision_tree(classifier, text_model, path=dir_path)
+        if classifier_name != "MovieGenreClassifier" and classifier.multi_output_clf_.estimators_[0].__class__.__name__ == "DecisionTreeClassifier":
+            plot_decision_tree(classifier, text_model, path=dir_path)
 
     with open(os.path.join(dir_path, "metrics.json"), "w") as file:
         json.dump(metrics, file, indent=4)
 
 
-def fit_predict(classifier, text_model, manager: DataManager, fine_tune=False, dev=True):
+def fit_predict(classifier, text_model, manager: DataManager, fine_tune=False, dev=True, at_least_one=True):
     if dev:
         _, test, train = load_stratified_data()
     else:
@@ -141,39 +144,173 @@ def fit_predict(classifier, text_model, manager: DataManager, fine_tune=False, d
         scaler = MaxAbsScaler()
         transformed_data = scaler.fit_transform(transformed_data)
         classifier = classifier.fit(transformed_data, y_train)
-        y_pred = classifier.predict_at_least_1(scaler.transform(text_model.transform(X_test)))
+        if at_least_one:
+            y_pred = classifier.predict_at_least_1(scaler.transform(text_model.transform(X_test)))
+        else:
+            y_pred = classifier.predict(scaler.transform(text_model.transform(X_test)))
 
     return X_test, y_pred, y_test, classifier, text_model, manager
 
 
 def run_eval(predict=True, eval=True, dev=True):
-    #X, y_pred, y_true, classifier, text_model, manager = fit_predict(MultiLabelClassifier("lreg", n_jobs=-1, balancing_ratio=None, solver='liblinear', max_iter=1000),
-                                                                     #BagOfWords("count", ngram_range=(1, 3)),
-                                                                    # DataManager(lemmatized=True, prune=False), dev=dev)
-    #evaluate(X, y_pred, y_true, classifier, text_model, manager, features=True)
-
-    X, y_pred, y_true, classifier, text_model, manager = fit_predict(MultiLabelClassifier("lreg", n_jobs=-1, balancing_ratio=None, solver='lbfgs', max_iter=1000),
-                                                                     BagOfWords("count", ngram_range=(1, 1)),
-                                                                     DataManager(lemmatized=True, prune=False), dev=dev)
+    # baseline lreg tf-idf w/o lemmatized
+    print("Baseline lreg tf-idf w/o lemmatized")
+    X, y_pred, y_true, classifier, text_model, manager = fit_predict(
+        MultiLabelClassifier("lreg", n_jobs=-1, balancing_ratio=None, solver='lbfgs', max_iter=1000),
+        BagOfWords("tf-idf", ngram_range=(1, 1)),
+        DataManager(lemmatized=False, prune=False),
+        dev=dev, at_least_one=False)
     evaluate(X, y_pred, y_true, classifier, text_model, manager, features=True)
 
-    X, y_pred, y_true, classifier, text_model, manager = fit_predict(MultiLabelClassifier("lreg", n_jobs=-1, balancing_ratio=None, solver='lbfgs', max_iter=1000),
-                                                                     BagOfWords("count", ngram_range=(1, 1)),
-                                                                     DataManager(lemmatized=True, prune=True), dev=dev)
+    # baseline lreg count w/o lemmatized
+    print("Baseline lreg count w/o lemmatized")
+    X, y_pred, y_true, classifier, text_model, manager = fit_predict(
+        MultiLabelClassifier("lreg", n_jobs=-1, balancing_ratio=None, solver='lbfgs', max_iter=1000),
+        BagOfWords("count", ngram_range=(1, 1)),
+        DataManager(lemmatized=False, prune=False),
+        dev=dev, at_least_one=False)
     evaluate(X, y_pred, y_true, classifier, text_model, manager, features=True)
 
-    X, y_pred, y_true, classifier, text_model, manager = fit_predict(MultiLabelClassifier("lreg", n_jobs=-1, balancing_ratio=1, solver='lbfgs', max_iter=1000),
-                                                                     BagOfWords("count", ngram_range=(1, 1)),
-                                                                     DataManager(lemmatized=True, prune=True), dev=dev)
+    ##################################################################################################################################
+
+    # baseline lreg tf-idf
+    print("Baseline lreg tf-idf")
+    X, y_pred, y_true, classifier, text_model, manager = fit_predict(
+        MultiLabelClassifier("lreg", n_jobs=-1, balancing_ratio=None, solver='lbfgs', max_iter=1000),
+        BagOfWords("tf-idf", ngram_range=(1, 1)),
+        DataManager(lemmatized=True, prune=False),
+        dev=dev, at_least_one=False)
     evaluate(X, y_pred, y_true, classifier, text_model, manager, features=True)
 
-    X, y_pred, y_true, classifier, text_model, manager = fit_predict(MultiLabelClassifier("lreg", n_jobs=-1, balancing_ratio=1, solver='lbfgs', max_iter=1000),
-                                                                     BagOfWords("tf-idf", ngram_range=(1, 1)),
-                                                                     DataManager(lemmatized=True, prune=True), dev=dev)
+    # baseline lreg count
+    print("Baseline lreg count")
+    X, y_pred, y_true, classifier, text_model, manager = fit_predict(
+        MultiLabelClassifier("lreg", n_jobs=-1, balancing_ratio=None, solver='lbfgs', max_iter=1000),
+        BagOfWords("count", ngram_range=(1, 1)),
+        DataManager(lemmatized=True, prune=False),
+        dev=dev, at_least_one=False)
     evaluate(X, y_pred, y_true, classifier, text_model, manager, features=True)
 
+    #################################################################################################################################
+    # lreg only
+    #################################################################################################################################
 
+    # atleast1 tf-idf
+    print("atleast1 tf-idf")
+    X, y_pred, y_true, classifier, text_model, manager = fit_predict(
+        MultiLabelClassifier("lreg", n_jobs=-1, balancing_ratio=None, solver='lbfgs', max_iter=1000),
+        BagOfWords("tf-idf", ngram_range=(1, 1)),
+        DataManager(lemmatized=True, prune=False),
+        dev=dev)
+    evaluate(X, y_pred, y_true, classifier, text_model, manager, features=True)
+
+    # atleast1 count
+    print("atleast1 count")
+    X, y_pred, y_true, classifier, text_model, manager = fit_predict(
+        MultiLabelClassifier("lreg", n_jobs=-1, balancing_ratio=None, solver='lbfgs', max_iter=1000),
+        BagOfWords("count", ngram_range=(1, 1)),
+        DataManager(lemmatized=True, prune=False),
+        dev=dev)
+    evaluate(X, y_pred, y_true, classifier, text_model, manager, features=True)
+
+    ##################################################################################################################################
+
+    # atleast1, prune tf-idf
+    print("atleast1, prune tf-idf")
+    X, y_pred, y_true, classifier, text_model, manager = fit_predict(
+        MultiLabelClassifier("lreg", n_jobs=-1, balancing_ratio=None, solver='lbfgs', max_iter=1000),
+        BagOfWords("tf-idf", ngram_range=(1, 1)),
+        DataManager(lemmatized=True, prune=True),
+        dev=dev)
+    evaluate(X, y_pred, y_true, classifier, text_model, manager, features=True)
+
+    # atleast1, prune count
+    print("atleast1, prune count")
+    X, y_pred, y_true, classifier, text_model, manager = fit_predict(
+        MultiLabelClassifier("lreg", n_jobs=-1, balancing_ratio=None, solver='lbfgs', max_iter=1000),
+        BagOfWords("count", ngram_range=(1, 1)),
+        DataManager(lemmatized=True, prune=True),
+        dev=dev)
+    evaluate(X, y_pred, y_true, classifier, text_model, manager, features=True)
+
+    ##################################################################################################################################
+
+    # atleast1, balancing tf-idf 0.5
+    print("atleast1, balancing tf-idf 0.5")
+    X, y_pred, y_true, classifier, text_model, manager = fit_predict(
+        MultiLabelClassifier("lreg", n_jobs=-1, balancing_ratio=0.5, solver='lbfgs', max_iter=1000),
+        BagOfWords("tf-idf", ngram_range=(1, 1)),
+        DataManager(lemmatized=True, prune=False),
+        dev=dev)
+    evaluate(X, y_pred, y_true, classifier, text_model, manager, features=True)
+
+    # atleast1, balancing count 0.5
+    print("atleast1, balancing count 0.5")
+    X, y_pred, y_true, classifier, text_model, manager = fit_predict(
+        MultiLabelClassifier("lreg", n_jobs=-1, balancing_ratio=0.5, solver='lbfgs', max_iter=1000),
+        BagOfWords("count", ngram_range=(1, 1)),
+        DataManager(lemmatized=True, prune=False),
+        dev=dev)
+    evaluate(X, y_pred, y_true, classifier, text_model, manager, features=True)
+
+    #################################################################################################################################
+
+    # atleast1, balancing tf-idf 0.75
+    print("atleast1, balancing tf-idf 0.75")
+    X, y_pred, y_true, classifier, text_model, manager = fit_predict(
+        MultiLabelClassifier("lreg", n_jobs=-1, balancing_ratio=0.75, solver='lbfgs', max_iter=1000),
+        BagOfWords("tf-idf", ngram_range=(1, 1)),
+        DataManager(lemmatized=True, prune=False),
+        dev=dev)
+    evaluate(X, y_pred, y_true, classifier, text_model, manager, features=True)
+
+    # atleast1, balancing count 0.75
+    print("atleast1, balancing count 0.75")
+    X, y_pred, y_true, classifier, text_model, manager = fit_predict(
+        MultiLabelClassifier("lreg", n_jobs=-1, balancing_ratio=0.75, solver='lbfgs', max_iter=1000),
+        BagOfWords("count", ngram_range=(1, 1)),
+        DataManager(lemmatized=True, prune=False),
+        dev=dev)
+    evaluate(X, y_pred, y_true, classifier, text_model, manager, features=True)
+
+    ##################################################################################################################################
+
+    # full tf-idf, 0.5 balancing
+    print("full tf-idf 0.5")
+    X, y_pred, y_true, classifier, text_model, manager = fit_predict(
+        MultiLabelClassifier("lreg", n_jobs=-1, balancing_ratio=0.5, solver='lbfgs', max_iter=1000, class_weight='balanced'),
+        BagOfWords("tf-idf", ngram_range=(1, 1), stop_words='english', sublinear_tf=True),
+        DataManager(lemmatized=True, prune=True),
+        dev=dev)
+    evaluate(X, y_pred, y_true, classifier, text_model, manager, features=True)
+
+    # full count, 0.5 balancing
+    print("full count 0.5")
+    X, y_pred, y_true, classifier, text_model, manager = fit_predict(
+        MultiLabelClassifier("lreg", n_jobs=-1, balancing_ratio=0.5, solver='lbfgs', max_iter=1000, class_weight='balanced'),
+        BagOfWords("count", ngram_range=(1, 1), stop_words='english'),
+        DataManager(lemmatized=True, prune=True),
+        dev=dev)
+    evaluate(X, y_pred, y_true, classifier, text_model, manager, features=True)
+
+    # full tf-idf, 0.75 balancing
+    print("full tf-idf 0.75")
+    X, y_pred, y_true, classifier, text_model, manager = fit_predict(
+        MultiLabelClassifier("lreg", n_jobs=-1, balancing_ratio=0.75, solver='lbfgs', max_iter=1000, class_weight='balanced'),
+        BagOfWords("tf-idf", ngram_range=(1, 1), stop_words='english', sublinear_tf=True),
+        DataManager(lemmatized=True, prune=True),
+        dev=dev)
+    evaluate(X, y_pred, y_true, classifier, text_model, manager, features=True)
+
+    # full count, 0.75 balancing
+    print("full count 0.75")
+    X, y_pred, y_true, classifier, text_model, manager = fit_predict(
+        MultiLabelClassifier("lreg", n_jobs=-1, balancing_ratio=0.75, solver='lbfgs', max_iter=1000, class_weight='balanced'),
+        BagOfWords("count", ngram_range=(1, 1), stop_words='english'),
+        DataManager(lemmatized=True, prune=True),
+        dev=dev)
+    evaluate(X, y_pred, y_true, classifier, text_model, manager, features=True)
 
 
 if __name__ == "__main__":
-    run_eval(dev=True)
+    run_eval(dev=False)
