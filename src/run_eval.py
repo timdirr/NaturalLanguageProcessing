@@ -29,6 +29,24 @@ log.basicConfig(level=log.INFO,
                 datefmt='%Y-%m-%d %H:%M:%S')
 
 
+def plot_pred_hist(y_pred, path=None):
+    log.info("Plotting prediction histogram...")
+    import matplotlib.pyplot as plt
+    genres = load_genres()
+    genre_counts = np.sum(y_pred, axis=0)
+    # sort by genre count
+    genre_counts, genres = zip(*sorted(zip(genre_counts, genres), reverse=True))
+    plt.figure(figsize=(10, 6))
+    plt.bar(genres, genre_counts)
+    plt.xlabel('Genres')
+    plt.ylabel('Number of Predictions')
+    plt.title('Number of Predictions for Each Genre')
+    plt.xticks(rotation=45)
+    plt.tight_layout()
+    plt.savefig(os.path.join(path, 'pred_hist.png'))
+    plt.close()
+
+
 def analyse_features(clf: MultiLabelClassifier,
                      text_model: Union[BagOfWords, WordEmbeddingModel],
                      top_k: int = 10,
@@ -87,10 +105,13 @@ def evaluate(X: np.ndarray,
         model_name = type(text_model.model).__name__
 
     dir_path = prepare_evaluate(classifier_name, model_name, model, balancing_ratio=classifier.balancing_ratio)
+    log.info(f"Saved evaluation results in: {dir_path}")
+    log.info("Computing metrics for complete predictions...")
+    log.info("Averaging should be samples")
     metrics = compute_metrics(ytrue, ypred, metrics_names=['jaccard', 'hamming', 'precision', 'recall', 'at_least_one', 'at_least_two'])
     metrics["lemmatized"] = model.lemmatized
     log.info(f"Metrics:\n {metrics}")
-
+    plot_pred_hist(ypred, path=dir_path)
     if plots:
         log.info(f"Plots will be saved in {dir_path}")
         if features and classifier_name != "MovieGenreClassifier":
@@ -111,7 +132,7 @@ def evaluate(X: np.ndarray,
         json.dump(metrics, file, indent=4)
 
 
-def fit_predict(classifier, text_model, manager: DataManager, fine_tune=False, dev=True, at_least_one=True):
+def fit_predict(classifier, text_model, manager: DataManager, fine_tune=False, dev=True, at_least_one=True, custom_pred=False):
     if dev:
         _, test, train = load_stratified_data()
     else:
@@ -144,10 +165,11 @@ def fit_predict(classifier, text_model, manager: DataManager, fine_tune=False, d
         scaler = MaxAbsScaler()
         transformed_data = scaler.fit_transform(transformed_data)
         classifier = classifier.fit(transformed_data, y_train)
+
         if at_least_one:
-            y_pred = classifier.predict_at_least_1(scaler.transform(text_model.transform(X_test)))
+            y_pred = classifier.predict_at_least_1(scaler.transform(text_model.transform(X_test)), custom_pred, X_test)
         else:
-            y_pred = classifier.predict(scaler.transform(text_model.transform(X_test)))
+            y_pred = classifier.predict(scaler.transform(text_model.transform(X_test)), custom_pred, X_test)
 
     return X_test, y_pred, y_test, classifier, text_model, manager
 
@@ -156,31 +178,35 @@ def run_eval(predict=True, eval=True, dev=True):
     # baseline lreg tf-idf w/o lemmatized
     print("Baseline lreg tf-idf w/o lemmatized")
     X, y_pred, y_true, classifier, text_model, manager = fit_predict(
-        MultiLabelClassifier("lreg", n_jobs=-1, balancing_ratio=None, solver='lbfgs', max_iter=1000),
-        BagOfWords("tf-idf", ngram_range=(1, 1)),
-        DataManager(lemmatized=False, prune=False),
-        dev=dev, at_least_one=False)
-    evaluate(X, y_pred, y_true, classifier, text_model, manager, features=True)
-
-    # baseline lreg count w/o lemmatized
-    print("Baseline lreg count w/o lemmatized")
-    X, y_pred, y_true, classifier, text_model, manager = fit_predict(
-        MultiLabelClassifier("lreg", n_jobs=-1, balancing_ratio=None, solver='lbfgs', max_iter=1000),
-        BagOfWords("count", ngram_range=(1, 1)),
-        DataManager(lemmatized=False, prune=False),
-        dev=dev, at_least_one=False)
-    evaluate(X, y_pred, y_true, classifier, text_model, manager, features=True)
-
-    ##################################################################################################################################
-
-    # baseline lreg tf-idf
-    print("Baseline lreg tf-idf")
-    X, y_pred, y_true, classifier, text_model, manager = fit_predict(
-        MultiLabelClassifier("lreg", n_jobs=-1, balancing_ratio=None, solver='lbfgs', max_iter=1000),
+        MultiLabelClassifier("lreg", n_jobs=-1, balancing_ratio=None, solver='lbfgs', max_iter=1000, class_weight='balanced'),
         BagOfWords("tf-idf", ngram_range=(1, 1)),
         DataManager(lemmatized=True, prune=False),
-        dev=dev, at_least_one=False)
-    evaluate(X, y_pred, y_true, classifier, text_model, manager, features=True)
+        dev=dev, at_least_one=True, custom_pred=False)
+    evaluate(X, y_pred, y_true, classifier, text_model, manager, features=True, plots=False)
+
+    X, y_pred, y_true, classifier, text_model, manager = fit_predict(
+        MultiLabelClassifier("lreg", n_jobs=-1, balancing_ratio=None, solver='lbfgs', max_iter=1000, class_weight='balanced'),
+        BagOfWords("tf-idf", ngram_range=(1, 1)),
+        DataManager(lemmatized=True, prune=False),
+        dev=dev, at_least_one=True, custom_pred=True)
+    evaluate(X, y_pred, y_true, classifier, text_model, manager, features=True, plots=False)
+
+    return
+
+    # baseline lreg count w/o lemmatized
+    X, y_pred, y_true, classifier, text_model, manager = fit_predict(
+        MultiLabelClassifier("lreg", n_jobs=-1, balancing_ratio=None, solver='lbfgs', max_iter=1000, class_weight='balanced'),
+        Word2VecModel(),
+        DataManager(lemmatized=True, prune=False),
+        dev=dev, at_least_one=True, custom_pred=False)
+    evaluate(X, y_pred, y_true, classifier, text_model, manager, features=True, plots=False)
+
+    X, y_pred, y_true, classifier, text_model, manager = fit_predict(
+        MultiLabelClassifier("lreg", n_jobs=-1, balancing_ratio=None, solver='lbfgs', max_iter=1000, class_weight='balanced'),
+        Word2VecModel(),
+        DataManager(lemmatized=True, prune=False),
+        dev=dev, at_least_one=True, custom_pred=True)
+    evaluate(X, y_pred, y_true, classifier, text_model, manager, features=True, plots=False)
 
     # baseline lreg count
     print("Baseline lreg count")
@@ -314,3 +340,20 @@ def run_eval(predict=True, eval=True, dev=True):
 
 if __name__ == "__main__":
     run_eval(dev=False)
+
+
+'''
+No balacing + drama
+{'jaccard': 0.3322474935345591, 'hamming': 0.08811472298559131, 'precision': 0.5174823750309987, 'recall': 0.3854793283026889, 'at_least_one': 0.6229142310553725, 'at_least_two': 0.16101604846423637, 'lemmatized': False}
+{'jaccard': 0.37536987802292304, 'hamming': 0.09376787169326228, 'precision': 0.5341656790322961, 'recall': 0.4900635915966982, 'at_least_one': 0.7310553725156764, 'at_least_two': 0.2594855988946753, 'lemmatized': True}
+
+X, y_pred, y_true, classifier, text_model, manager = fit_predict(
+    MultiLabelClassifier("lreg", n_jobs=-1, balancing_ratio=0.5, solver='lbfgs', max_iter=1000, class_weight='balanced'),
+    BagOfWords("tf-idf", ngram_range=(1, 1)),
+    DataManager(lemmatized=True, prune=False),
+    dev=dev, at_least_one=False, custom_pred=False)
+
+ {'jaccard': 0.36769923933012466, 'hamming': 0.13541239643907302, 'precision': 0.42865702291119445, 'recall': 0.6797746838133701, 'at_least_one': 0.8896800935274737, 'at_least_two': 0.4476033584865554, 'lemmatized': True}
+ {'jaccard': 0.3421701398000295, 'hamming': 0.16740557419694416, 'precision': 0.3792213139951616, 'recall': 0.7581809969178447, 'at_least_one': 0.9302263789988309, 'at_least_two': 0.5382080986289722, 'lemmatized': True}
+ 
+ '''

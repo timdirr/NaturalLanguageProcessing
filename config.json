@@ -1,8 +1,8 @@
 {
     "preprocess": false,
-    "explore": false,
+    "explore": "clean",
     "tokenize": false,
     "store_intermediate": false,
     "verbose": true,
-    "predict": true
+    "predict": false
 }
