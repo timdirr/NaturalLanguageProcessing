@@ -51,7 +51,7 @@ All functions are run through `main.py` and configured by the `config.json` file
 ### Results and Insights
 We trained a multitude of different clasifiers in combination with different text modelling approaches. The goal was to find common pitfalls and patterns all classifiers are strunggling with and to determine tasks based on these insights.
 
-First, the quantitative results are presented as an overview of the classifiers and then insights into the dataset itself are presented. Note that the models were trained on the small dev set, as computing power was a limited resources. Further, 5-fold CV was used to get predictions on all samples in the test set. 
+First, the quantitative results are presented as an overview of the classifiers and then insights into the dataset itself are presented. Note that the models were trained on the small dev set, as computing power was a limited resources. Further, 5-fold CV was used to get predictions on all samples in the test set. All of the models are trained on a smaller dataset of ~17k rows (as opposed to the presentation).
 
 
 ### Quantitative results
@@ -457,11 +457,11 @@ Since very low-support genres (see the [distribution graph](images/genre_distrib
 The next step is to train the model on a smaller dataset with the genres in question removed to see if the model's performance improves further. However, as for the metrics above, also the graphs below show performance for the full dataset (with just Drama removed).
 
 <div id="dl_diff">
-  <img src="images/jaccard_diff_nodrama_orig_long.svg" style="width: 50%;"/>
+  <img src="images/jaccard_diff_nodrama_orig_long.svg" style="width: 75%;"/>
 </div>
 
 <div>
-  <img src="images/genre_metrics_diff_nodrama_orig_long_1.svg" style="width: 50%;" />
+  <img src="images/genre_metrics_diff_nodrama_orig_long_1.svg" style="width: 75%;" />
 </div>
 
 The graphs reveals some interesting results, for example low-support genres like **Biography, History, War** and **Animation** all saw a big impact on their performnace, where only only **Animation** saw a decrease in both precison (altought pretty small) and recall. On the other hand higher-support genres like **Action, Crime** or **Romance** saw a more conservative difference in metrics.
@@ -481,7 +481,7 @@ This chapter investigates the impact of removing the Drama label on model perfor
 
 
 <div id="drama_cooccurence_matrix">
-  <img src="images/cooccurence_matrix_norm_less.svg" style="width: 50%;" />
+  <img src="images/cooccurence_matrix_norm_less.svg" style="width: 75%;" />
 </div>
 
 
@@ -500,21 +500,21 @@ The logistic regression model was also evaluated on the dataset with the Drama l
 #### CountVectorizer model
 
 <div>
-  <img src="images/jaccard_diff_nodrama_orig_long_logregCount.svg" style="width: 50%;" />
+  <img src="images/jaccard_diff_nodrama_orig_long_logregCount.svg" style="width: 75%;" />
 </div>
 
 <div>
-  <img src="images/genre_metrics_diff_nodrama_orig_long_1_logregCount.svg" style="width: 50%;" />
+  <img src="images/genre_metrics_diff_nodrama_orig_long_1_logregCount.svg" style="width: 75%;" />
 </div>
 
 #### TfidfVectorizer model
 
 <div>
-  <img src="images/jaccard_diff_nodrama_orig_long_logregTfidf.svg" style="width: 50%;" />
+  <img src="images/jaccard_diff_nodrama_orig_long_logregTfidf.svg" style="width: 75%;" />
 </div>
 
 <div id="logreg_tfidf_diff">
-  <img src="images/genre_metrics_diff_nodrama_orig_long_1_logregTdidf.svg" style="width: 50%;" />
+  <img src="images/genre_metrics_diff_nodrama_orig_long_1_logregTdidf.svg" style="width: 75%;" />
 </div>
 
 The distribution of the metric differences seems to be the similiar to the **DL model**, while the **CountVectorizer** seems to be more uniform across all genres and **TfidfVectorizer** more extreme in its changes (the differences in precison/recall are bigger in magnitude). Also worth mentioning is the fact that the Jaccard score differences are only positive for the **LogReg** model, while the [**DL model**](#dl_diff) saw a decrease in Jaccard score for some genres. Another interesting fact is that only the **History** genre saw an increase in both recall and precision (**TfidfVectorizer** model).
@@ -576,7 +576,7 @@ To further understand the changes in performance metrics, we analyzed the featur
 </td>
 </table>
 
-<h4><center>Similiarity between top 100 + worst 100 features of each genre against Drama</center></h4>
+<h4 align="center">Similiarity between top 100 + worst 100 features of each genre against Drama</h4>
 <table align="center" id="second_row">
 <tr></tr>
 <td>
@@ -736,7 +736,7 @@ The results of both TF-IDF and feature importance analyses align closely with pr
 To further understand the DL model's decision-making process, we used SHAP (SHapley Additive exPlanations) values to analyze the impact of individual features on the model's predictions. SHAP values provide insights into how each feature contributes to the model's output, helping identify the most influential keywords for each genre also for the DL model. -->
 
 <div>
-  <img src="images/shap_values.png" style="width: 50%;" />
+  <img src="images/shap_values.png" style="width: 75%;" />
 </div>
 
 <!-- The superdocument approach concatenates all descriptions for a given genre into a single document, while the average approach calculates the average TF-IDF vector for each genre. The superdocument approach provides a comprehensive overview of the genre's unique features, while the average approach offers a more generalized representation. -->
