@@ -8,6 +8,7 @@ from concurrent.futures import ThreadPoolExecutor
 from tqdm import tqdm
 import threading
 import re
+import json
 
 from nltk.corpus import stopwords
 from wordcloud import WordCloud
@@ -115,6 +116,9 @@ def plot_wordcloud(df):
 
     for genre, word_count in genre_word_counts.items():
         top_words = dict(word_count.most_common(20))
+        # save top words to json file
+        with open(os.path.join(EXPORT_PATH, f"top_words_{genre}.json"), 'w') as file:
+            json.dump(list(top_words.keys()), file)
 
         wordcloud = WordCloud(width=800, height=400, background_color='white').generate_from_frequencies(top_words)
         plt.figure(figsize=(10, 5))

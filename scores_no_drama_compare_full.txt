@@ -1,0 +1,33 @@
+---------- count ------------
+balancing count with drama: 
+ {'jaccard': 0.36341465597851974, 'hamming': 0.13677741453153908, 'precision': 0.43811176464715584, 'recall': 0.656632960794749, 'at_least_one': 0.8788185204896222, 'at_least_two': 0.4218201170835551, 'lemmatized': True}
+no balancing count with drama:
+ {'jaccard': 0.360302592564434, 'hamming': 0.09023796852429104, 'precision': 0.604776476849388, 'recall': 0.4074738335994323, 'at_least_one': 0.69542309739223, 'at_least_two': 0.13762639701969132, 'lemmatized': True}
+no balancing count with drama with prune:
+ {'jaccard': 0.3655748605748606, 'hamming': 0.0899077649077649, 'precision': 0.6083323948948949, 'recall': 0.41548517267267265, 'at_least_one': 0.7044481981981981, 'at_least_two': 0.14577702702702702, 'lemmatized': True}
+
+---------- tf-idf ------------
+balancing tf-idf with drama:
+{'jaccard': 0.38691736992827996, 'hamming': 0.11115334904584505, 'precision': 0.497552142730429, 'recall': 0.5909597303530246, 'at_least_one': 0.8297498669505056, 'at_least_two': 0.3530601383714742, 'lemmatized': True}
+balancing tf-idf with drama with prune:
+{'jaccard': 0.38787175568425564, 'hamming': 0.11291023166023166, 'precision': 0.4921539173101674, 'recall': 0.6054832957957957, 'at_least_one': 0.8420608108108109, 'at_least_two': 0.36649774774774774, 'lemmatized': True}
+no balancing tf-idf with drama:
+ {'jaccard': 0.3766294128082313, 'hamming': 0.08837020705035607, 'precision': 0.6122928862870322, 'recall': 0.42733812311513214, 'at_least_one': 0.7139435870143693, 'at_least_two': 0.1594465141032464, 'lemmatized': True}
+no balancing tf-idf with drama with prune:
+ {'jaccard': 0.3760698198198198, 'hamming': 0.08878432003432003, 'precision': 0.6114001501501501, 'recall': 0.42840746996997003, 'at_least_one': 0.7170045045045045, 'at_least_two': 0.16126126126126125, 'lemmatized': True}
+
+---------- count ------------
+balancing count without drama: 
+ {'jaccard': 0.3558332967079578, 'hamming': 0.12646839951097646, 'precision': 0.4135682787891367, 'recall': 0.6557743758748383, 'at_least_one': 0.8135863498644554, 'at_least_two': 0.26890979641737095, 'lemmatized': True}
+no balancing count without drama:
+ {'jaccard': 0.3924467123797374, 'hamming': 0.07916865996917026, 'precision': 0.5747975690568579, 'recall': 0.4249898120094261, 'at_least_one': 0.6254185935257535, 'at_least_two': 0.058044968904480944, 'lemmatized': True}
+no balancing  count without drama with prune:
+ {'jaccard': 0.39322254714505306, 'hamming': 0.07946800134967945, 'precision': 0.5744629400517377, 'recall': 0.42992914182881564, 'at_least_one': 0.6304690136092678, 'at_least_two': 0.06365988077831515, 'lemmatized': True}
+
+---------- tf-idf ------------
+balancing tf-idf without drama with prune:
+{'jaccard': 0.38356506401158297, 'hamming': 0.10207513215611293, 'precision': 0.4681680511592782, 'recall': 0.590944025793874, 'at_least_one': 0.760600607355753, 'at_least_two': 0.21763581149477, 'lemmatized': True}
+no balancing tf-idf without drama:
+{'jaccard': 0.4032433246513935, 'hamming': 0.07776537500664434, 'precision': 0.582749517177838, 'recall': 0.43720654157586064, 'at_least_one': 0.6372720990804231, 'at_least_two': 0.06851645138999628, 'lemmatized': True}
+no balancing tf-idf without drama with prune:
+ {'jaccard': 0.4024547295017433, 'hamming': 0.0780930154088404, 'precision': 0.5812525775128407, 'recall': 0.43861770329546734, 'at_least_one': 0.6390169834664268, 'at_least_two': 0.07254527049825667, 'lemmatized': True}

@@ -152,6 +152,7 @@ def compute_metrics(y_true,
         averaging = 'samples'
         warnings.filterwarnings("ignore")
     metrics = {}
+    print("Averaging: ", averaging)
 
     if 'jaccard' in metrics_names:
         metrics['jaccard'] = jaccard_score(y_true, y_pred, average=averaging)
