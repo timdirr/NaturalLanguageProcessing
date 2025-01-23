@@ -762,7 +762,7 @@ The decision was made to use a ratio of **0.5 positive samples to negative sampl
 The provided information outlines different types of movie descriptions in the dataset:
 
 **1.** Some descriptions directly describe the movie's content, such as:
-    - "Anny works in a cigar shop. Wholesaler Willmann fancy Anny and hire her as her..."
+  - "Anny works in a cigar shop. Wholesaler Willmann fancy Anny and hire her as her..."
 
 **2.** Others are more **"meta"** in nature, such as:
   - "The life of queen victoria."
