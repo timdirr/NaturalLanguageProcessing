@@ -454,7 +454,7 @@ The following metrics are based on the full dataset (with just Drama removed).
 
 Since very low-support genres (see the [distribution graph](images/genre_distribution.png)) like **Music, Musical, Sport, Film-Noir and Western** achieved zero true positives, we are not showing them in the graphs. We also decided that the genre **Comedy** is not intersting for us, since like **Drama** it co-occurs with a lot of other genres, is common in the dataset and is very general. Also like Drama it has no single-label ground truths (only co-occurs with other genres).
 
-The next step is to train the model on a smaller dataset with the genres in question removed to see if the model's performance improves further. However, as for the metrics above, also the graphs below show performance for the full dataset (with just Drama removed).
+The next step is to train the model on a smaller dataset with the genres in question removed to [see](#reduced-genres) if the model's performance improves further. However, as for the metrics above, also the graphs below show performance for the full dataset (with just Drama removed).
 
 <div id="dl_diff">
   <img src="images/jaccard_diff_nodrama_orig_long.svg" style="width: 75%;"/>
@@ -499,7 +499,7 @@ The logistic regression model was also evaluated on the dataset with the Drama l
 
 #### CountVectorizer model
 
-<div>
+<div id="logreg_count_diff">
   <img src="images/jaccard_diff_nodrama_orig_long_logregCount.svg" style="width: 75%;" />
 </div>
 
@@ -615,7 +615,7 @@ To further understand the changes in performance metrics, we analyzed the featur
 | Fantasy    | 9.921              |
 | Adventure  | 10.027             |
 | Action     | 10.077             |
-| Mystery    | 10.528             |
+| **Mystery**    | **10.528**             |
 | Horror     | 10.930             |
 
 </td>
@@ -676,7 +676,7 @@ To further investigate the impact of removing Drama on the model's predictions, 
 
 | Genre      | Cosine Similarity |
 |:----------:|:-----------------:|
-| History    | 0.8818            |
+| **History**    | **0.8818**            |
 | Crime      | 0.8645            |
 | War        | 0.8452            |
 | Biography  | 0.8096            |
@@ -689,7 +689,7 @@ To further investigate the impact of removing Drama on the model's predictions, 
 | Fantasy    | 0.6719            |
 | Adventure  | 0.6530            |
 | Horror     | 0.6279            |
-| Animation  | 0.5010            |
+| **Animation**  | **0.5010**            |
 
 </td>
 </tr>
@@ -729,30 +729,125 @@ The **History** genre emerges as an outlier across all configurations, displayin
 
 #### Conclusion
 
-The results of both TF-IDF and feature importance analyses align closely with previous insights derived from the Drama co-occurrence heatmap and support distribution. These findings confirm that the impact on performance is influenced by a combination of these factors. This relationship is further corroborated by the TF-IDF and feature importance comparisons, where the data highlights their interconnected nature.  
+The results of both TF-IDF and feature importance analyses align closely with previous insights derived from the Drama co-occurrence heatmap and support distribution. These findings confirm that the impact on performance may be highly influenced by a combination of these factors. This relationship is further corroborated by the TF-IDF and feature importance comparisons, where the data highlights their interconnected nature.  
  
+### Predict-at-least-one explanation, consequences and possible improvements
+The observed [changes in the Logistic Regression model after removing Drama](#logreg_count_diff) are primarily due to our **predict-at-least-one** function.
+The **MultiOutputClassifier** combines individual **Logistic Regression** models, and if we adjusted the **predict-at-least-one** function
+to not predict the Drama label combined with the fact that Drama **only co-occurs** with other genres (it has no unique rows),
+we would likely see the same results even with Drama **still present** in the dataset and predictions.
+The **DL model** would probably react similarly, altough the result is not as clear as with the Logistic Regression model due to its complexity.
+In the future, it would be beneficial to modify the **predict-at-least-one** function to **exclude the Drama label**
+to evaluate how the model(s) would perform under these conditions.
+
+#### Possible improvements
+**1. Genre Selection Strategy**
+  - Exclude Drama when calculating minimum probability predictions
+  - Select second-highest probability genre if Drama has the highest probability
+
+**2. Dynamic Genre Count Prediction**
+  - Develop logic to estimate optimal number of genres
+  - Possible approaches:
+    - Consider probability proximity between genre predictions
+    - Train separate model for genre count estimation
+    - Train separate models for each genre and combine predictions similiar to LogReg
+
+### SMOTE oversampling
+The project's multilabel genre classification model trains individual classifiers (e.g., LogReg) on an **unbalanced dataset**,
+with a much higher ratio of negative than positive samples.
+To address this imbalance, we implemented **SMOTE** (Synthetic Minority Over-sampling Technique) for oversampling.
+The decision was made to use a ratio of **0.5 positive samples to negative samples** when generating new **synthetic** samples.
+
+### Description pruning
+The provided information outlines different types of movie descriptions in the dataset:
+
+1. Some descriptions directly describe the movie's content, such as:
+  - "Anny works in a cigar shop. Wholesaler Willmann fancy Anny and hire her as her..."
+
+2. Others are more **"meta"** in nature, such as:
+  - "The life of queen victoria."
+  - "An epic italian film 'Quo Vadis' influenced many later works."
+
+3. Certain descriptions also include author information at the end, e.g:
+  - "... lawyer who has robbed him. [Synopsis from BIOSCOPE ...]"
+  - "starring, produced by, directed by"
+
+The goal is to prune these descriptions to remove irrelevant elements like weird characters (e.g. ", " ", -), author details, and "meta" information that does not directly describe the movie's content.
+
+### Models and Metrics
+The results of the LogReg model tested using different settings can be seen below.
+
+All LogReg Models trained with lemmatized descriptions and TfidfVectorizer.
+
+
+
+| CLF            | Improvements | Jaccard | Hamming | Prec. | Recall | at-least-1 |
+|:----------------:|:--------------:|:---------:|:---------:|:-------:|:--------:|:------------:|
+| LReg           | Baseline     | 0.333   | 0.088   | 0.521 | 0.385  | 0.623      |
+| LReg           | AL1          | 0.377   | 0.088   | 0.613 | 0.428  | 0.700      |
+| LReg           | AL1,P        | 0.378   | 0.088   | 0.608 | 0.430  | 0.716      |
+| LReg           | AL1,O        | 0.378   | 0.096   | 0.554 | 0.487  | 0.753      |
+| LReg           | AL1,P,O,C    | 0.382   | 0.116   | 0.487 | 0.604  | 0.843      |
+| DL             | ---            | 0.423   | 0.086   | 0.621 | 0.504  | 0.785      |
+
+**AL1**=Predict-at-least-1 **O**=Oversampling **C**=Balanced Class Weights **P**=Prune
+
+### Reduced genres
+We decided to remove genres that either had no single-label ground truths or had very low support in the dataset. From the low(er)-support genres only **War** was kept.
+
+The remaining genres are **Action, Adventure, Crime, Family, Fantasy, Horror, Mystery, Romance, SciFi, Thriller and War**.
+The removal of these genres had a positive impact on the model's performance, as it reduced the number of classes and improved the model's ability to focus on the remaining genres.
+
+<div>
+  <img src="images/genre_metrics_diff_reduced_orig1.svg" style="width: 75%;" />
+</div>
+
+### Experiments summary
+  - Predict-at-least-one 
+  - Less Drama
+  - Oversampling (SMOTE)
+  - Pruning description (dropping "meta" descriptions)
+  - Removing low-support (and other) genres
+  - Increasing classifier probabilities based on frequently occurring words per genre (Hard-coded)
+
+
+### Future works
+  - Include titles and/or reviews of movies
+  - More sophisticated description analysis
+  - More sophisticated text modeling 
+  - Include information on Genre description
+  - Apply insights from removing Drama to the predict_at_least_1 function
+  - Dynamic Genre Count Prediction
+
+## Authors
+
+This project was created as part of the course [**194.093 Natural Language Processing and Information Extraction**](https://github.com/tuw-nlp-ie/tuw-nlp-ie-2024WS) at **TU WIEN**.
+
+- **Daniel Chudý**
+- **Tim Dirr**
+- **Filip Faber**
+- **Sebastian Pinter**
+
+
+
 <!-- ### SHAP values
 
 To further understand the DL model's decision-making process, we used SHAP (SHapley Additive exPlanations) values to analyze the impact of individual features on the model's predictions. SHAP values provide insights into how each feature contributes to the model's output, helping identify the most influential keywords for each genre also for the DL model. -->
-
-<div>
-  <img src="images/shap_values.png" style="width: 75%;" />
-</div>
 
 <!-- The superdocument approach concatenates all descriptions for a given genre into a single document, while the average approach calculates the average TF-IDF vector for each genre. The superdocument approach provides a comprehensive overview of the genre's unique features, while the average approach offers a more generalized representation. -->
 
 <!-- The results show that genres with higher cosine similarity to Drama in the TF-IDF vectors have more overlapping signals, potentially leading to more misclassifications after Drama's removal. For example, **Thriller, Romance, and Action** have high cosine similarity to Drama, indicating significant feature overlap. This overlap could explain the decrease in precision for these genres after Drama's removal, as the model may struggle to distinguish them from Drama. On the other hand, **War, Biography, and History** have lower cosine similarity to Drama, suggesting distinct features with little overlap. This lack of overlap could explain the increase in recall for these genres after Drama's removal, as the model can better identify them without Drama's dominant signals. The results underline the need for strategies to address class imbalance and improve contextual understanding without relying on dominant genres. -->
 
-are the logreg weigths normalized?
-are the tf-idf vectors normalized by default?
+<!-- are the logreg weigths normalized? 
+are the tf-idf vectors normalized by default? -->
 
-real co-occurence from predictions
-keywords specific to differntiate drama and other genres
-SHAP
+<!-- real co-occurence from predictions
+keywords specific to differntiate drama and other genres [wont do]
+SHAP [cant do]
 graphs for logreg [done] tables for feature importance maybe
 tf-idf comparison [done]
-logreg balanced weights
-logreg normalized tf-idf
+logreg balanced weights [done]
+logreg normalized tf-idf [done] -->
 <!-- #### **Low-Support Genres**
 
 Low-support genres saw a big jump in performance, where genres that have a high co-occurence with drama (**War, History, Biography**) saw a significant increase in performance (precision slightly down, recall significantly up). On the other hand **Animation**, with relatively low co-occurence with Drama, saw an overall worst decrease in performance out of all the genres (recall dramatically down, precison up). 
