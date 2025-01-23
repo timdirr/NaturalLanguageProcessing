@@ -761,14 +761,14 @@ The decision was made to use a ratio of **0.5 positive samples to negative sampl
 ### Description pruning
 The provided information outlines different types of movie descriptions in the dataset:
 
-1. Some descriptions directly describe the movie's content, such as:
-  - "Anny works in a cigar shop. Wholesaler Willmann fancy Anny and hire her as her..."
+**1.** Some descriptions directly describe the movie's content, such as:
+    - "Anny works in a cigar shop. Wholesaler Willmann fancy Anny and hire her as her..."
 
-2. Others are more **"meta"** in nature, such as:
+**2.** Others are more **"meta"** in nature, such as:
   - "The life of queen victoria."
   - "An epic italian film 'Quo Vadis' influenced many later works."
 
-3. Certain descriptions also include author information at the end, e.g:
+**3.** Certain descriptions also include **author information** at the end, e.g:
   - "... lawyer who has robbed him. [Synopsis from BIOSCOPE ...]"
   - "starring, produced by, directed by"
 
