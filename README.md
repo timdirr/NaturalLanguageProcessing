@@ -6,6 +6,16 @@ This repository contains the implementation of models to classify movie genres b
 
 The dataset was initially sourced from **Kaggle** (link below). Since the data was divided into multiple `.csv` files by genre, these files were merged into a single dataset. After merging, data analysis and cleaning were conducted to address some detected issues. Over 70k rows had incomplete **descriptions** ("See full summary"), while an additional 50k entries were missing descriptions ("Add a plot"). Missing data was subsequently retrieved via the IMDb API and saved in `crawl_data.csv`, then merged with the original dataset and further cleaned, resulting in `clean_data.csv`. Standard preprocessing steps were then applied, and the finalized dataset was saved in **CoNLL-U** format (`conllu_data.conllu`).
 
+## Environment Setup
+The required packages should be completely listed in `requirements.txt`. To setup a conda environment tun
+```
+conda create -n <envname> python==3.12
+conda activate envname
+pip install -r requirements.txt
+```
+
+
+
 ## Downloading the Files
 
 To automate the download process, run the following:
@@ -45,6 +55,7 @@ All functions are run through `main.py` and configured by the `config.json` file
 * `--store_intermediate`: Saves intermediate files for data crawling.
 * `--verbose`: Enables logging.
 * `--predict`: Enables model prediction and evaluation.
+ `--predict-binary`: Enables model prediction and evaluation for certain binary classifiers.
 
 ## Non-Deep Learning Model(s)
 
@@ -379,13 +390,13 @@ These examples highlight model strengths in handling explicit genre cues but als
 ![Description Length Distribution](plots/description_length_char_distribution_cleaned.png)
 
 With **mean being ~240** and **median ~181**, the distribution is right-skewed, with a few outliers having descriptions over 1000 characters. The majority of descriptions fall within **100-300** characters (interquantile range is (124, 237)), maximum length is 9733. Removing outliers and truncating descriptions to a reasonable length could improve model performance.
-
+<!---
 ![Description Length vs. Jaccard](images/metrics_per_length/metrics_per_length_DL.png)
 
-The graph above shows the Jaccard scores for the **DL model** across different input text lengths. Similar trends were observed for KNN with Bag-of-Words (BOW) and TF-IDF Vectorizer, as well as Logistic Regression with BOW + TF-IDF, where performance increased after a certain text length. However, models using CountVectorizer did not exhibit this improvement, indicating that CountVectorizer may struggle to capture patterns in longer texts compared to other vectorization techniques. See [more graphs](images/metrics_per_length/).
+<> The graph above shows the Jaccard scores for the **DL model** across different input text lengths. Similar trends were observed for KNN with Bag-of-Words (BOW) and TF-IDF Vectorizer, as well as Logistic Regression with BOW + TF-IDF, where performance increased after a certain text length. However, models using CountVectorizer did not exhibit this improvement, indicating that CountVectorizer may struggle to capture patterns in longer texts compared to other vectorization techniques. See [more graphs](images/metrics_per_length/).
 
-Performance peaks at **250–450** characters, likely because this range provides sufficient information **without introducing noise**. Interestingly, performance rises again around **700+** characters, possibly because longer descriptions contain **additional context** that helps the model make better predictions despite earlier noise.
-
+<>  Performance peaks at **250–450** characters, likely because this range provides sufficient information **without introducing noise**. Interestingly, performance rises again around **700+** characters, possibly because longer descriptions contain **additional context** that helps the model make better predictions despite earlier noise.
+--->
 ## Summary of Findings
 While the DL model performs better overall, it is still heavily influenced by class imbalances, primarily due to the prevalence of the Drama genre. This bias towards Drama affects the model's predictions, often leading to misclassifications. Many of the DL model's behaviors can be explained by the feature importances observed in the logistic regression model. For instance, keywords that are highly indicative of certain genres in logistic regression also tend to dominate the DL model's predictions, highlighting the need for more balanced training data and advanced techniques to mitigate class imbalance effects.
 
@@ -772,7 +783,7 @@ The provided information outlines different types of movie descriptions in the d
   - "... lawyer who has robbed him. [Synopsis from BIOSCOPE ...]"
   - "starring, produced by, directed by"
 
-The goal is to prune these descriptions to remove irrelevant elements like weird characters (e.g. ", " ", -), author details, and "meta" information that does not directly describe the movie's content.
+The goal is to prune these descriptions to remove irrelevant elements like weird characters (e.g. ", " ", -), author details, and "meta" information that does not directly describe the movie's content. Also, we descriptions shorter then 10 words, as we assume they are not able to carry enough information to properly represent the genres.
 
 ### Models and Metrics
 The results of the LogReg model tested using different settings can be seen below.

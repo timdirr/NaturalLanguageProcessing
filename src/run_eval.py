@@ -91,7 +91,7 @@ def evaluate(X: np.ndarray,
         :param X: the set of input features used for the prediction
         :param ypred: predicted labels
         :param ytrue: ground truth labels
-        :param classifier: the fitted classifier object
+        :param classifier: the fitted classifier object, can
         :param text_model: the fitted text model
         :param lemmatized: (boolean) if lemmatized text was used
         :param features: (boolean) if we want to analyse the feature importance. Only applicable for certain models
@@ -180,32 +180,30 @@ def run_eval(predict=True, eval=True, dev=True):
     X, y_pred, y_true, classifier, text_model, manager = fit_predict(
         MultiLabelClassifier("lreg", n_jobs=-1, balancing_ratio=None, solver='lbfgs', max_iter=1000, class_weight='balanced'),
         BagOfWords("tf-idf", ngram_range=(1, 1)),
-        DataManager(lemmatized=True, prune=False),
-        dev=dev, at_least_one=True, custom_pred=False)
-    evaluate(X, y_pred, y_true, classifier, text_model, manager, features=True, plots=False)
+        DataManager(lemmatized=True, prune=True),
+        dev=dev, at_least_one=True)
+    evaluate(X, y_pred, y_true, classifier, text_model, manager, features=True, plots=True)
 
     X, y_pred, y_true, classifier, text_model, manager = fit_predict(
         MultiLabelClassifier("lreg", n_jobs=-1, balancing_ratio=None, solver='lbfgs', max_iter=1000, class_weight='balanced'),
         BagOfWords("tf-idf", ngram_range=(1, 1)),
         DataManager(lemmatized=True, prune=False),
-        dev=dev, at_least_one=True, custom_pred=True)
+        dev=dev, at_least_one=True)
     evaluate(X, y_pred, y_true, classifier, text_model, manager, features=True, plots=False)
-
-    return
 
     # baseline lreg count w/o lemmatized
     X, y_pred, y_true, classifier, text_model, manager = fit_predict(
         MultiLabelClassifier("lreg", n_jobs=-1, balancing_ratio=None, solver='lbfgs', max_iter=1000, class_weight='balanced'),
         Word2VecModel(),
         DataManager(lemmatized=True, prune=False),
-        dev=dev, at_least_one=True, custom_pred=False)
+        dev=dev, at_least_one=True)
     evaluate(X, y_pred, y_true, classifier, text_model, manager, features=True, plots=False)
 
     X, y_pred, y_true, classifier, text_model, manager = fit_predict(
         MultiLabelClassifier("lreg", n_jobs=-1, balancing_ratio=None, solver='lbfgs', max_iter=1000, class_weight='balanced'),
         Word2VecModel(),
         DataManager(lemmatized=True, prune=False),
-        dev=dev, at_least_one=True, custom_pred=True)
+        dev=dev, at_least_one=True)
     evaluate(X, y_pred, y_true, classifier, text_model, manager, features=True, plots=False)
 
     # baseline lreg count

@@ -1,13 +1,40 @@
-gdown==5.2.0
-IMDbPY==2022.7.9
-matplotlib==3.9.2
-nltk==3.9.1
-numpy==2.1.2
-pandas==2.2.3
-requests==2.31.0
+# Core Deep Learning and NLP
+torch
+torchvision
+torchaudio
+accelerate==1.2.0
+transformers==4.47.0
+datasets==3.2.0
+tokenizers==0.21.0
 stanza==1.9.2
-tqdm==4.66.6
-wordcloud==1.9.3
-scikit-learn==1.5.2
+nltk==3.9.1
 gensim==4.3.3
-iterative-stratification
+
+# Complementary ML / NLP Tools
+scikit-learn==1.5.2
+imbalanced-learn==0.13.0
+iterative-stratification==0.1.9
+scikit-multilearn==0.2.0
+sympy==1.13.1
+wordcloud==1.9.3
+
+# Data & Plotting
+numpy==1.26.4
+pandas==2.2.3
+matplotlib==3.9.2
+scipy==1.13.1
+
+# General Utilities
+requests==2.32.3
+aiohttp==3.11.10
+click==8.1.7
+colorama==0.4.6
+beautifulsoup4==4.12.3
+gdown==5.2.0
+psutil==6.1.0
+regex==2024.11.6
+tqdm==4.66.6
+
+# (Optional) Hugging Face Hub pinned version
+huggingface-hub==0.26.5
+

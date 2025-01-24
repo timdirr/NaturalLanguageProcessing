@@ -67,10 +67,7 @@ class DataManager:
 
     @test.setter
     def test(self, value):
-        if self.prune:
-            self._test = self.__prune_description(value)
-        else:
-            self._test = value
+        self._test = value
 
     def __str__(self):
         return f"lemma={self.lemmatized}_prune={self.prune}"

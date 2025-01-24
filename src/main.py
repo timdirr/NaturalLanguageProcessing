@@ -1,17 +1,16 @@
 from preprocess.dataloader import load_raw_data
 from preprocess.dataclean import clean_data
-from preprocess.tokenizer import tokenize
 import exploritory_analysis.raw_data_exploration as raw_data_exploration
 import exploritory_analysis.clean_data_exploration as clean_data_exploration
 import logging as log
 import pandas as pd
 import os
-import argparse
 import re
 import json
 
-from globals import DATA_PATH, EXPORT_PATH, CONFIG_PATH
+from globals import DATA_PATH, CONFIG_PATH
 from run_eval import run_eval
+from run_eval_binary import run_eval as run_eval_binary
 
 OUTPUT_PATH = os.path.join(DATA_PATH, "clean_data.csv")
 RAW_PATH = os.path.join(DATA_PATH, "raw_data.csv")
@@ -52,6 +51,9 @@ def main():
 
         predict = config['predict']
         assert predict in [True, False], "Invalid value for predict"
+
+        predict_binary = config['predict_binary']
+        assert predict in [True, False], "Invalid value for predict_binary"
     else:
         raise FileNotFoundError("Config file not found")
 
@@ -86,6 +88,9 @@ def main():
 
     if predict:
         run_eval()
+
+    if predict_binary:
+        run_eval_binary()
 
 
 if __name__ == '__main__':
